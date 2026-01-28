@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Patschi Reservierung" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="apple-touch-icon" href="./crew-icon-180.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./crew-icon-180.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="./crew-icon-512.png" />
+    <link rel="icon" type="image/png" href="./crew-icon-180.png" />
+    <title>Patschi Reservierung</title>
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+             user-select: none;
+        -webkit-touch-callout: none;
+      }
+      #root {
+        width: 100vw;
+      }
+
+      /* Smooth scrolling for all scrollable areas */
+      * {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+      }
+
+      /* Allow scrolling on mobile, fixed on desktop */
+      @media (max-width: 1023px) {
+        body {
+          overflow-y: auto;
+          overflow-x: hidden;
+          position: relative;
+        }
+        #root {
+          min-height: 100vh;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        body {
+          overflow: hidden;
+          position: fixed;
+          width: 100%;
+          height: 100%;
+        }
+        #root {
+          height: 100vh;
+          overflow: hidden;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/crew-CbZfw1JH.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/index-CgnU8eyS.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-CACX0dB1.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

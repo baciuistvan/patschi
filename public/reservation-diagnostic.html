@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservierungs-Diagnose</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+    }
+    .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #4ade80;
+    }
+    .stat-label {
+      color: #999;
+      margin-top: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #2a2a2a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #3a3a3a;
+    }
+    th {
+      background: #3a3a3a;
+      font-weight: bold;
+    }
+    .paid {
+      color: #4ade80;
+      font-weight: bold;
+    }
+    .unpaid {
+      color: #fbbf24;
+    }
+    .online {
+      background: #7c3aed;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .manual {
+      background: #f59e0b;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Reservierungs-Diagnose - Januar 2026</h1>
+
+  <div id="loading" class="loading">
+    Lade Daten...
+  </div>
+
+  <div id="content" style="display: none;">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">Gesamt Reservierungen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="paidCount">0</div>
+        <div class="stat-label">Bezahlte Reservierungen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="onlineCount">0</div>
+        <div class="stat-label">Online-Buchungen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stripeCount">0</div>
+        <div class="stat-label">Stripe-Zahlungen</div>
+      </div>
+    </div>
+
+    <h2>Alle bezahlten Januar-Reservierungen</h2>
+    <table id="reservationsTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Datum</th>
+          <th>Zeit</th>
+          <th>Personen</th>
+          <th>Zahlungsstatus</th>
+          <th>Buchungsart</th>
+          <th>Code</th>
+          <th>Betrag</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Initialize Supabase
+    const SUPABASE_URL = 'https://ahrcgvsmzpclclwqmlod.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFocmNndnNtenBjbGNsd3FtbG9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA4MTIzNTgsImV4cCI6MjA0NjM4ODM1OH0.gF7yfFfqsjJbS9Pz_2dO6TtZUh9hbf40f7qjg7yXJrs';
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadData() {
+      try {
+        // Get all paid reservations for January 2026
+        const { data: reservations, error } = await client
+          .from('reservations')
+          .select('*')
+          .gte('reservation_date', '2026-01-01')
+          .lt('reservation_date', '2026-02-01')
+          .eq('payment_status', 'paid')
+          .order('reservation_date')
+          .order('reservation_time');
+
+        if (error) {
+          console.error('Error:', error);
+          document.getElementById('loading').innerHTML = 'Fehler beim Laden: ' + error.message;
+          return;
+        }
+
+        // Calculate stats
+        const totalCount = reservations.length;
+        const paidCount = reservations.filter(r => r.payment_status === 'paid').length;
+        const onlineCount = reservations.filter(r => r.booking_method === 'online').length;
+        const stripeCount = reservations.filter(r => r.payment_method === 'stripe').length;
+
+        // Update stats
+        document.getElementById('totalCount').textContent = totalCount;
+        document.getElementById('paidCount').textContent = paidCount;
+        document.getElementById('onlineCount').textContent = onlineCount;
+        document.getElementById('stripeCount').textContent = stripeCount;
+
+        // Populate table
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        reservations.forEach(res => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${res.customer_name}</td>
+            <td>${new Date(res.reservation_date).toLocaleDateString('de-DE')}</td>
+            <td>${res.reservation_time}</td>
+            <td>${res.party_size}</td>
+            <td><span class="${res.payment_status}">${res.payment_status === 'paid' ? 'Bezahlt' : 'Unbezahlt'}</span></td>
+            <td><span class="${res.booking_method}">${res.booking_method === 'online' ? 'Online' : res.booking_method === 'manual' ? 'Manuell' : 'Frei'}</span></td>
+            <td>${res.booking_code || '-'}</td>
+            <td>€${res.payment_amount || '0'}</td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        // Show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+      } catch (err) {
+        console.error('Error:', err);
+        document.getElementById('loading').innerHTML = 'Fehler: ' + err.message;
+      }
+    }
+
+    // Load data on page load
+    loadData();
+  </script>
+</body>
+</html>

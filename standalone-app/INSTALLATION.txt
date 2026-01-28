@@ -1,0 +1,120 @@
+====================================================================
+   APRÈS-SKI MANAGEMENT SYSTEM - STANDALONE APPLICATION
+====================================================================
+
+COMPLETE FEATURES INCLUDED:
+====================================================================
+✓ Reservation System (floor plan, table management, bookings)
+✓ Gift Card System (create, sell, verify gift cards)
+✓ User Management (admin, staff roles)
+✓ Floor Plan Designer (drag, drop, resize, rotate tables)
+✓ Drawing Tools (freehand, shapes, decorations)
+✓ Settings (rooms, booking hours, email, Stripe, widgets)
+✓ Dark Mode Toggle
+✓ Multi-language Support (English/German)
+✓ System Switcher (Reservations/Gift Cards)
+✓ WordPress Integration Files
+✓ Embeddable Widgets
+
+QUICK INSTALLATION (5 MINUTES):
+====================================================================
+
+1. UPLOAD FILES TO YOUR WEB SERVER
+   - index.html (main app)
+   - admin.html
+   - reservation-widget.html
+   - assets/ folder (JavaScript & CSS)
+
+2. SETUP SUPABASE (FREE ACCOUNT)
+   - Go to supabase.com and create account
+   - Create new project "apres-ski-system"
+   - Get URL and anon key from Settings > API
+
+3. CONFIGURE APP
+   - Open index.html in browser
+   - Follow setup wizard
+   - Enter Supabase URL and key
+
+4. RUN DATABASE MIGRATIONS
+   - In Supabase, go to SQL Editor
+   - Run each file in migrations/ folder (in order by date)
+
+5. CREATE ADMIN USER
+   - Sign up in the application
+   - In Supabase SQL Editor, run:
+
+   INSERT INTO admin_users (user_id, email, role)
+   VALUES ('your-user-id', 'your-email@example.com', 'admin');
+
+6. LOGIN AND USE!
+   - Login with your email/password
+   - System is ready to use
+
+DETAILED GUIDES:
+====================================================================
+- QUICK-START.md - Step-by-step visual guide
+- README.md - Complete documentation
+- Check folders:
+  * migrations/ - Database setup SQL files
+  * functions/ - Supabase Edge Functions
+
+SYSTEM REQUIREMENTS:
+====================================================================
+- Modern web browser
+- Web server (Apache, Nginx, or any static host)
+- Supabase account (free tier available)
+- Optional: Stripe account for payments
+
+DEPLOYMENT OPTIONS:
+====================================================================
+1. Upload to your existing website
+2. Deploy to Netlify/Vercel (drag & drop)
+3. Use on WordPress (see wordpress-integration.php)
+4. Host on any static hosting service
+
+SUPPORT FILES INCLUDED:
+====================================================================
+- wordpress-integration.php
+- reservation-widget.php (WordPress shortcode)
+- gift-card-widget.php (WordPress shortcode)
+
+OPTIONAL STRIPE SETUP:
+====================================================================
+For payment processing (gift cards & reservation deposits):
+1. Get keys from stripe.com
+2. Add in Settings > Stripe Settings
+3. Deploy Edge Functions to Supabase
+
+EMBED WIDGETS ON YOUR SITE:
+====================================================================
+
+Reservation Widget:
+<iframe src="https://yoursite.com/reservation-widget.html"
+        width="100%" height="600"></iframe>
+
+Gift Card Widget:
+<iframe src="https://yoursite.com/gift-card-widget.html"
+        width="100%" height="600"></iframe>
+
+FIRST TIME SETUP WIZARD:
+====================================================================
+When you first open index.html, a setup wizard will guide you
+through:
+1. Supabase configuration
+2. Database setup instructions
+3. Admin account creation
+4. System initialization
+
+The wizard makes setup easy even for non-technical users!
+
+NEED HELP?
+====================================================================
+1. Read QUICK-START.md for visual guide
+2. Check README.md for detailed docs
+3. Browser console (F12) shows errors
+4. Verify Supabase credentials are correct
+5. Ensure all migrations ran successfully
+
+====================================================================
+                   YOUR SYSTEM IS READY!
+====================================================================

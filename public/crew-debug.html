@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crew Debug</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #00ff00;
+    }
+    .section {
+      background: #2a2a2a;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .label {
+      color: #ffff00;
+      font-weight: bold;
+    }
+    .value {
+      color: #00ff00;
+      word-break: break-all;
+    }
+    .error {
+      color: #ff0000;
+    }
+    .success {
+      color: #00ff00;
+    }
+  </style>
+</head>
+<body>
+  <h1>Crew Dashboard Debug Info</h1>
+
+  <div class="section">
+    <div class="label">Window Variables:</div>
+    <div class="value">VITE_SUPABASE_URL: <span id="window-url"></span></div>
+    <div class="value">VITE_SUPABASE_ANON_KEY: <span id="window-key"></span></div>
+  </div>
+
+  <div class="section">
+    <div class="label">LocalStorage:</div>
+    <div class="value">supabase_url: <span id="ls-url"></span></div>
+    <div class="value">supabase_anon_key: <span id="ls-key"></span></div>
+  </div>
+
+  <div class="section">
+    <div class="label">URL Parameters:</div>
+    <div class="value">mode: <span id="url-mode"></span></div>
+    <div class="value">Full URL: <span id="full-url"></span></div>
+  </div>
+
+  <div class="section">
+    <div class="label">Supabase Connection Test:</div>
+    <div id="supabase-test">Testing...</div>
+  </div>
+
+  <script>
+    // Set config BEFORE any tests
+    window.VITE_SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    window.VITE_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+    localStorage.setItem('supabase_url', window.VITE_SUPABASE_URL);
+    localStorage.setItem('supabase_anon_key', window.VITE_SUPABASE_ANON_KEY);
+
+    // Display info
+    document.getElementById('window-url').textContent = window.VITE_SUPABASE_URL || 'NOT SET';
+    document.getElementById('window-key').textContent = window.VITE_SUPABASE_ANON_KEY ? '***' + window.VITE_SUPABASE_ANON_KEY.slice(-10) : 'NOT SET';
+
+    document.getElementById('ls-url').textContent = localStorage.getItem('supabase_url') || 'NOT SET';
+    document.getElementById('ls-key').textContent = localStorage.getItem('supabase_anon_key') ? '***' + localStorage.getItem('supabase_anon_key').slice(-10) : 'NOT SET';
+
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById('url-mode').textContent = params.get('mode') || 'NOT SET';
+    document.getElementById('full-url').textContent = window.location.href;
+
+    // Test Supabase connection
+    fetch(window.VITE_SUPABASE_URL + '/rest/v1/', {
+      headers: {
+        'apikey': window.VITE_SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + window.VITE_SUPABASE_ANON_KEY
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        document.getElementById('supabase-test').innerHTML = '<span class="success">✓ Connection successful! Status: ' + response.status + '</span>';
+      } else {
+        document.getElementById('supabase-test').innerHTML = '<span class="error">✗ Connection failed! Status: ' + response.status + '</span>';
+      }
+    })
+    .catch(error => {
+      document.getElementById('supabase-test').innerHTML = '<span class="error">✗ Connection error: ' + error.message + '</span>';
+    });
+  </script>
+</body>
+</html>

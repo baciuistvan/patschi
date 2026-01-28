@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card Recovery Admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 30px 40px;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 28px; }
+        .subtitle { opacity: 0.9; font-size: 14px; }
+        .content { padding: 40px; }
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+        .section h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .critical {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+        .critical h2 { color: #991b1b; }
+        .btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+        }
+        .btn:hover { background: #b91c1c; transform: translateY(-1px); }
+        .btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: #0ea5e9;
+        }
+        .btn-secondary:hover {
+            background: #0284c7;
+        }
+        .card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .card h3 {
+            color: #1e293b;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row strong { color: #475569; }
+        .info-row span { color: #1e293b; }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge.success { background: #d1fae5; color: #065f46; }
+        .badge.error { background: #fee; color: #991b1b; }
+        .badge.warning { background: #fef3c7; color: #78350f; }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .result.success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+        .result.error {
+            background: #fee;
+            border: 2px solid #fca5a5;
+            color: #991b1b;
+        }
+        .code-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .webhook-url {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .webhook-url code {
+            background: #1e293b;
+            color: #fbbf24;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: block;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        ol {
+            margin: 15px 0 15px 25px;
+        }
+        ol li {
+            margin: 10px 0;
+            color: #475569;
+            line-height: 1.6;
+        }
+        .loading {
+            color: #64748b;
+            font-style: italic;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+        a {
+            color: #dc2626;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Gift Card Recovery & Webhook Fix</h1>
+            <p class="subtitle">Fix webhook errors and resend emails for existing gift cards</p>
+        </div>
+
+        <div class="content">
+            <div class="section critical">
+                <h2>🚨 CRITICAL: Fix Webhook 404 Error</h2>
+                <p style="color: #991b1b; margin-bottom: 20px;">
+                    <strong>Your webhook is broken!</strong> New purchases won't create gift cards until you fix this.
+                </p>
+
+                <div class="webhook-url">
+                    <strong>Your webhook endpoint URL should be:</strong>
+                    <code>https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/handle-payment-link-webhook</code>
+                </div>
+
+                <h3 style="margin: 20px 0 10px 0; color: #991b1b;">Fix Steps:</h3>
+                <ol>
+                    <li>Go to <a href="https://dashboard.stripe.com/webhooks" target="_blank">Stripe Dashboard → Webhooks</a></li>
+                    <li>Find your webhook (it will show 404 errors)</li>
+                    <li>Click "Edit endpoint" or delete and create new</li>
+                    <li>Paste the URL above exactly</li>
+                    <li>Select event: <code>checkout.session.completed</code></li>
+                    <li>Save and copy the <strong>Signing Secret</strong> (whsec_...)</li>
+                    <li>Go to <a href="https://supabase.com/dashboard/project/qwwerwkekvmaswusvgxy/settings/functions" target="_blank">Supabase Secrets</a></li>
+                    <li>Add secret: <code>STRIPE_WEBHOOK_SECRET</code> = your signing secret</li>
+                    <li>Add secret: <code>STRIPE_SECRET_KEY</code> = your sk_live_... or sk_test_... key</li>
+                    <li>Test with a new purchase</li>
+                </ol>
+            </div>
+
+            <div class="section">
+                <h2>📋 Existing Gift Cards (Missing PDFs/Emails)</h2>
+                <p style="color: #64748b; margin-bottom: 20px;">
+                    These gift cards were created but emails were never sent. Resend them below.
+                </p>
+                <button class="btn" onclick="loadGiftCards()">Load Gift Cards</button>
+                <div id="gift-cards-list"></div>
+            </div>
+
+            <div class="section">
+                <h2>📧 Test Email System</h2>
+                <p style="color: #64748b; margin-bottom: 20px;">
+                    Verify your SMTP settings are working correctly.
+                </p>
+                <button class="btn btn-secondary" onclick="testSMTP()">Test SMTP Connection</button>
+                <div id="smtp-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadGiftCards() {
+            const container = document.getElementById('gift-cards-list');
+            container.innerHTML = '<p class="loading">Loading gift cards...</p>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('gift_cards')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="empty">No gift cards found</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(card => {
+                    const hasPDF = !!card.pdf_url;
+                    const hasEmail = !!card.recipient_email;
+                    const isPaid = card.payment_status === 'paid';
+
+                    html += `
+                        <div class="card">
+                            <h3>
+                                ${card.code}
+                                ${isPaid ? '<span class="badge success">Paid</span>' : '<span class="badge error">Unpaid</span>'}
+                                ${hasPDF ? '<span class="badge success">Has PDF</span>' : '<span class="badge error">No PDF</span>'}
+                            </h3>
+                            <div class="info-row">
+                                <strong>Amount:</strong>
+                                <span>€${parseFloat(card.current_balance).toFixed(2)}</span>
+                            </div>
+                            <div class="info-row">
+                                <strong>Recipient:</strong>
+                                <span>${card.recipient_email || 'No email'}</span>
+                            </div>
+                            <div class="info-row">
+                                <strong>Purchaser:</strong>
+                                <span>${card.purchaser_name || 'Unknown'}</span>
+                            </div>
+                            <div class="info-row">
+                                <strong>Created:</strong>
+                                <span>${new Date(card.created_at).toLocaleString('de-DE')}</span>
+                            </div>
+                            <div class="info-row">
+                                <strong>ID:</strong>
+                                <span style="font-family: monospace; font-size: 12px;">${card.id}</span>
+                            </div>
+                            ${hasEmail ? `
+                                <button
+                                    class="btn"
+                                    style="margin-top: 15px;"
+                                    onclick="resendEmail('${card.id}')"
+                                    id="btn-${card.id}">
+                                    📧 ${hasPDF ? 'Resend' : 'Send'} Email
+                                </button>
+                                <div id="result-${card.id}"></div>
+                            ` : '<p style="margin-top: 15px; color: #dc2626;">⚠️ No recipient email configured</p>'}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="result error">
+                        <strong>Error loading gift cards:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function resendEmail(giftCardId) {
+            const btn = document.getElementById(`btn-${giftCardId}`);
+            const resultDiv = document.getElementById(`result-${giftCardId}`);
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Sending...';
+            resultDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/send-gift-card-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({ giftCardId })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || `HTTP ${response.status}`);
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        ✅ Email sent successfully!
+                    </div>
+                `;
+                btn.textContent = '✓ Sent';
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Failed: ${error.message}
+                    </div>
+                `;
+                btn.textContent = '📧 Retry';
+                btn.disabled = false;
+            }
+        }
+
+        async function testSMTP() {
+            const resultDiv = document.getElementById('smtp-result');
+            resultDiv.innerHTML = '<p class="loading">Testing SMTP configuration...</p>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('key, value')
+                    .in('key', ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_password']);
+
+                if (error) throw error;
+
+                const settings = {};
+                data.forEach(s => settings[s.key] = s.value);
+
+                if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_password) {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>❌ SMTP Not Configured</strong><br>
+                            Missing: ${!settings.smtp_host ? 'Host ' : ''}${!settings.smtp_user ? 'User ' : ''}${!settings.smtp_password ? 'Password' : ''}<br>
+                            <br>
+                            Go to your admin panel → Settings → Email to configure SMTP.
+                        </div>
+                    `;
+                    return;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <strong>✅ SMTP Configured</strong><br>
+                        Host: ${settings.smtp_host}<br>
+                        Port: ${settings.smtp_port}<br>
+                        User: ${settings.smtp_user}<br>
+                        <br>
+                        SMTP appears to be configured correctly!
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>Error checking SMTP:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            loadGiftCards();
+        });
+    </script>
+</body>
+</html>

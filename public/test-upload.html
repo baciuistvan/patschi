@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        h1 {
+            font-size: 48px;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        p {
+            font-size: 18px;
+            margin: 20px 0;
+            opacity: 0.9;
+        }
+        .info {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-width: 600px;
+        }
+        .success {
+            color: #4ade80;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>✓ Upload Successful!</h1>
+    <p class="success">Your file upload system is working correctly.</p>
+    <div class="info">
+        <p><strong>Test Results:</strong></p>
+        <p>✓ HTML file uploaded successfully</p>
+        <p>✓ File is accessible via web browser</p>
+        <p>✓ CSS is loading correctly</p>
+        <p>✓ JavaScript execution: <span id="js-test">TESTING...</span></p>
+    </div>
+    <p style="font-size: 14px; margin-top: 40px; opacity: 0.7;">
+        Current Time: <span id="time"></span>
+    </p>
+
+    <script>
+        document.getElementById('js-test').textContent = '✓ WORKING';
+        document.getElementById('js-test').style.color = '#4ade80';
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time').textContent = now.toLocaleString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        console.log('Test page loaded successfully!');
+        console.log('If you can see this message, JavaScript is working.');
+    </script>
+</body>
+</html>

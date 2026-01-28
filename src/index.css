@@ -1,0 +1,391 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* iOS Safe Area Support */
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+  }
+
+  /* iOS Optimizations */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  /* Better touch targets for iOS */
+  button, a, input, select, textarea {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* iOS-style focus states */
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+  }
+}
+
+@layer utilities {
+  /* Safe area padding utilities */
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* iOS-style smooth scrolling */
+  .ios-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS bounce effect */
+  .ios-bounce {
+    overscroll-behavior-y: contain;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar styling */
+  .overflow-auto::-webkit-scrollbar,
+  .floor-plan-canvas::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .overflow-auto::-webkit-scrollbar-track,
+  .floor-plan-canvas::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+  }
+
+  .overflow-auto::-webkit-scrollbar-thumb,
+  .floor-plan-canvas::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+  }
+
+  .overflow-auto::-webkit-scrollbar-thumb:hover,
+  .floor-plan-canvas::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .dark .overflow-auto::-webkit-scrollbar-track,
+  .dark .floor-plan-canvas::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .dark .overflow-auto::-webkit-scrollbar-thumb,
+  .dark .floor-plan-canvas::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .overflow-auto::-webkit-scrollbar-thumb:hover,
+  .dark .floor-plan-canvas::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  html {
+    height: 210mm !important;
+    width: 297mm !important;
+    overflow: hidden !important;
+  }
+
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  /* Hide everything except floor plan */
+  body > *:not(#root) {
+    display: none !important;
+  }
+
+  #root {
+    width: 297mm !important;
+    height: 210mm !important;
+    overflow: hidden !important;
+  }
+
+  #root > *:not(.min-h-screen) {
+    display: none !important;
+  }
+
+  .min-h-screen {
+    min-height: 0 !important;
+    height: 210mm !important;
+    width: 297mm !important;
+    overflow: hidden !important;
+  }
+
+  .min-h-screen > *:not(main) {
+    display: none !important;
+  }
+
+  main {
+    width: 297mm !important;
+    height: 210mm !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  main > *:not(.space-y-4):not(.space-y-6) {
+    display: none !important;
+  }
+
+  main .space-y-4,
+  main .space-y-6 {
+    width: 297mm !important;
+    height: 210mm !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  main .space-y-4 > *:not(#floor-plan-printable),
+  main .space-y-6 > *:not(#floor-plan-printable) {
+    display: none !important;
+  }
+
+  /* Floor plan container - single page only */
+  #floor-plan-printable {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: 297mm !important;
+    max-height: 210mm !important;
+    min-height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    border: none !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    display: block !important;
+    transform: translateZ(0) !important;
+    will-change: auto !important;
+  }
+
+  /* SVG drawings and lines visible */
+  #floor-plan-printable svg,
+  #floor-plan-printable svg * {
+    opacity: 1 !important;
+    display: block !important;
+  }
+
+  /* Preserve CSS transforms (rotation) in print - don't override inline styles */
+  #floor-plan-printable > div > div[style*="transform: rotate"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Bookable tables - blue background with white text */
+  #floor-plan-printable .bg-blue-600,
+  #floor-plan-printable [class*="bg-blue"] {
+    background-color: #2563eb !important;
+  }
+
+  #floor-plan-printable .fill-blue-600 {
+    fill: #2563eb !important;
+  }
+
+  /* Non-reservable tables - gray background with white text */
+  #floor-plan-printable .bg-slate-600 {
+    background-color: #64748b !important;
+  }
+
+  #floor-plan-printable .fill-slate-600 {
+    fill: #64748b !important;
+  }
+
+  /* White text on all tables */
+  #floor-plan-printable .text-white,
+  #floor-plan-printable [class*="text-white"] {
+    color: white !important;
+  }
+
+  /* Dark borders on tables for visibility on white background */
+  #floor-plan-printable .print\:border-black {
+    border-color: #000000 !important;
+    border-width: 2px !important;
+  }
+
+  #floor-plan-printable .print\:stroke-2 {
+    stroke: #000000 !important;
+    stroke-width: 2 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation and UI elements for reservation print */
+  nav,
+  header,
+  footer,
+  .no-print,
+  button:not(.printable-reservations button) {
+    display: none !important;
+  }
+
+  /* Force white background */
+  body {
+    background: white !important;
+  }
+
+  /* Container styling - single page fit */
+  .printable-reservations {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 8pt !important;
+    line-height: 1.2 !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  /* Blue table cards with white background */
+  .printable-reservations > div {
+    background: #2563eb !important;
+    color: white !important;
+    box-shadow: none !important;
+    border: 2px solid #1e40af !important;
+    border-radius: 4px !important;
+    page-break-inside: avoid !important;
+    padding: 8px !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    max-height: 150px !important;
+    overflow: hidden !important;
+  }
+
+  /* All text white on blue background */
+  .printable-reservations > div,
+  .printable-reservations > div * {
+    color: white !important;
+    background: transparent !important;
+  }
+
+  /* Customer name styling */
+  .printable-reservations h3 {
+    font-size: 10pt !important;
+    font-weight: bold !important;
+    margin: 0 0 4px 0 !important;
+    color: white !important;
+  }
+
+  /* Booking code styling */
+  .printable-reservations [class*="font-mono"] {
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 9pt !important;
+    font-weight: bold !important;
+    color: white !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    padding: 2px 4px !important;
+    border-radius: 2px !important;
+  }
+
+  /* Info text styling */
+  .printable-reservations span,
+  .printable-reservations div:not(.printable-reservations > div) {
+    font-size: 8pt !important;
+    color: white !important;
+    border: none !important;
+  }
+
+  /* Hide icons in print */
+  .printable-reservations svg {
+    display: none !important;
+  }
+
+  /* Compact layout for grid items */
+  .printable-reservations > div > div {
+    gap: 3px !important;
+  }
+
+  /* Grid adjustments for better spacing */
+  .printable-reservations > div > div > div {
+    margin: 2px 0 !important;
+  }
+
+  /* Status badges - make them blend in */
+  .printable-reservations [class*="status"] {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    padding: 1px 4px !important;
+    border-radius: 2px !important;
+    font-size: 7pt !important;
+  }
+
+  /* Ensure single page for all prints */
+  * {
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Force GPU acceleration for smoother rendering - but preserve rotation transforms */
+  .printable-reservations * {
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+  }
+
+  /* Don't override transforms on tables and decorations */
+  #floor-plan-printable > div > div[style*="transform"] {
+    backface-visibility: hidden !important;
+  }
+}

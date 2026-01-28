@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gutschein kaufen & prüfen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const PRESET_AMOUNTS = [50, 100, 200];
+    const MIN_AMOUNT = 10;
+
+    let state = {
+      formData: {
+        amount: 50,
+        customAmount: '',
+        recipientName: '',
+        recipientEmail: '',
+        buyerName: '',
+        buyerEmail: '',
+        message: ''
+      },
+      isCustomAmount: false,
+      loading: false,
+      success: false,
+      error: '',
+      verifyCode: '',
+      verifyLoading: false,
+      verifyResult: null,
+      giftCardDetails: null,
+      downloadingPdf: false
+    };
+
+    function setState(updates) {
+      state = { ...state, ...updates };
+      render();
+    }
+
+    function updateFormData(updates) {
+      setState({ formData: { ...state.formData, ...updates } });
+    }
+
+    const isExpired = (expiryDate) => {
+      return new Date(expiryDate) < new Date();
+    };
+
+    const isValid = (card) => {
+      return card.status === 'active' &&
+             card.payment_status === 'paid' &&
+             card.current_balance > 0 &&
+             !isExpired(card.expiry_date);
+    };
+
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'active':
+          return 'bg-green-100 text-green-800 border-green-200';
+        case 'redeemed':
+          return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'expired':
+          return 'bg-red-100 text-red-800 border-red-200';
+        case 'cancelled':
+          return 'bg-gray-100 text-gray-800 border-gray-200';
+        default:
+          return 'bg-slate-100 text-slate-800 border-slate-200';
+      }
+    };
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      setState({ error: '', loading: true });
+
+      try {
+        const finalAmount = state.isCustomAmount
+          ? parseFloat(state.formData.customAmount)
+          : state.formData.amount;
+
+        if (finalAmount < MIN_AMOUNT) {
+          setState({ error: `Mindestbetrag ist €${MIN_AMOUNT}`, loading: false });
+          return;
+        }
+
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/purchase-gift-card`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            amount: finalAmount,
+            recipientName: state.formData.recipientName,
+            recipientEmail: state.formData.recipientEmail,
+            buyerName: state.formData.buyerName,
+            buyerEmail: state.formData.buyerEmail,
+            message: state.formData.message
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Zahlung konnte nicht verarbeitet werden');
+        }
+
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        }
+      } catch (err) {
+        setState({ error: err.message, loading: false });
+      }
+    }
+
+    async function handleVerifyGiftCard(e) {
+      e.preventDefault();
+      setState({ verifyLoading: true, verifyResult: null, giftCardDetails: null });
+
+      try {
+        const { data: giftCard, error } = await supabase
+          .from('gift_cards')
+          .select(`
+            *,
+            redemptions:gift_card_redemptions(
+              id,
+              amount,
+              redeemed_at
+            )
+          `)
+          .eq('barcode', state.verifyCode.trim())
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!giftCard) {
+          setState({
+            verifyResult: { valid: false, error: 'Gutschein mit diesem Barcode nicht gefunden' },
+            verifyLoading: false
+          });
+        } else {
+          const expired = isExpired(giftCard.expiry_date);
+          const valid = giftCard.status === 'active' &&
+                       giftCard.payment_status === 'paid' &&
+                       giftCard.current_balance > 0 &&
+                       !expired;
+
+          let errorMessage;
+          if (!valid) {
+            if (giftCard.payment_status === 'pending') {
+              errorMessage = 'Gutschein wartet auf Zahlungsbestätigung';
+            } else if (expired) {
+              errorMessage = 'Gutschein ist abgelaufen';
+            } else if (giftCard.status === 'cancelled') {
+              errorMessage = 'Gutschein wurde storniert';
+            } else if (giftCard.current_balance <= 0) {
+              errorMessage = 'Gutschein ist vollständig eingelöst';
+            } else {
+              errorMessage = 'Gutschein ist nicht mehr gültig';
+            }
+          }
+
+          setState({
+            verifyResult: {
+              valid: valid,
+              balance: giftCard.current_balance,
+              expiryDate: giftCard.expiry_date,
+              error: errorMessage
+            },
+            giftCardDetails: giftCard,
+            verifyLoading: false
+          });
+        }
+      } catch (err) {
+        setState({
+          verifyResult: { valid: false, error: 'Ein Fehler ist aufgetreten' },
+          verifyLoading: false
+        });
+      }
+    }
+
+    async function downloadPdf() {
+      if (!state.giftCardDetails) return;
+
+      try {
+        setState({ downloadingPdf: true });
+
+        const card = state.giftCardDetails;
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+
+        const pageWidth = 210;
+        const pageHeight = 297;
+
+        // White background
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Load and add background image
+        const bgImg = new Image();
+        bgImg.crossOrigin = 'anonymous';
+        bgImg.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = bgImg.width;
+          canvas.height = bgImg.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(bgImg, 0, 0);
+          const bgData = canvas.toDataURL('image/jpeg');
+
+          const imgAspectRatio = bgImg.width / bgImg.height;
+          const pageAspectRatio = pageWidth / pageHeight;
+          let imgWidth, imgHeight, offsetX, offsetY;
+
+          if (imgAspectRatio > pageAspectRatio) {
+            imgHeight = pageHeight;
+            imgWidth = imgHeight * imgAspectRatio;
+            offsetX = -(imgWidth - pageWidth) / 2;
+            offsetY = 0;
+          } else {
+            imgWidth = pageWidth;
+            imgHeight = imgWidth / imgAspectRatio;
+            offsetX = 0;
+            offsetY = -(imgHeight - pageHeight) / 2;
+          }
+
+          pdf.setGState(new pdf.GState({ opacity: 0.2 }));
+          pdf.addImage(bgData, 'JPEG', offsetX, offsetY, imgWidth, imgHeight, '', 'NONE');
+          pdf.setGState(new pdf.GState({ opacity: 1.0 }));
+
+          // Load and add logo
+          const logoImg = new Image();
+          logoImg.crossOrigin = 'anonymous';
+          logoImg.onload = function() {
+            const logoCanvas = document.createElement('canvas');
+            logoCanvas.width = logoImg.width;
+            logoCanvas.height = logoImg.height;
+            const logoCtx = logoCanvas.getContext('2d');
+            logoCtx.drawImage(logoImg, 0, 0);
+            const logoData = logoCanvas.toDataURL('image/png');
+
+            const logoWidth = 60;
+            const logoHeight = (logoWidth / logoImg.width) * logoImg.height;
+            const logoX = (pageWidth - logoWidth) / 2;
+            pdf.addImage(logoData, 'PNG', logoX, 40, logoWidth, logoHeight, '', 'NONE');
+
+            finishPDF();
+          };
+          logoImg.onerror = function() {
+            // Fallback text if logo fails
+            pdf.setFontSize(24);
+            pdf.setTextColor(220, 38, 38);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('PATSCHI', pageWidth / 2, 50, { align: 'center' });
+            finishPDF();
+          };
+          logoImg.src = '/Patschi Serfaus - Logo transparent schwarz.PNG';
+        };
+        bgImg.onerror = function() {
+          finishPDF();
+        };
+        bgImg.src = '/image00398.jpeg';
+
+        function finishPDF() {
+          // Title
+          pdf.setFontSize(32);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(220, 38, 38);
+          pdf.text('GUTSCHEIN', pageWidth / 2, 100, { align: 'center' });
+
+          // Amount
+          pdf.setFontSize(56);
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(`€ ${Number(card.current_balance).toFixed(2)}`, pageWidth / 2, 130, { align: 'center' });
+
+          // Recipient box
+          pdf.setFillColor(248, 249, 250);
+          pdf.roundedRect(20, 145, pageWidth - 40, 22, 3, 3, 'F');
+
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(102, 102, 102);
+          pdf.text('GESCHENK FÜR:', pageWidth / 2, 153, { align: 'center' });
+
+          pdf.setFontSize(18);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(220, 38, 38);
+          pdf.text(card.recipient_name || 'Geschenk', pageWidth / 2, 162, { align: 'center' });
+
+          // Message box
+          let currentY = 175;
+          if (card.message) {
+            pdf.setFillColor(240, 247, 241);
+            const messageHeight = 20;
+            pdf.roundedRect(20, currentY, pageWidth - 40, messageHeight, 2, 2, 'F');
+
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(1);
+            pdf.line(20, currentY, 20, currentY + messageHeight);
+
+            pdf.setFontSize(11);
+            pdf.setFont('helvetica', 'italic');
+            pdf.setTextColor(85, 85, 85);
+            const messageLines = pdf.splitTextToSize(`"${card.message}"`, pageWidth - 50);
+            pdf.text(messageLines, pageWidth / 2, currentY + 6, { align: 'center', maxWidth: pageWidth - 50 });
+            currentY += 25;
+          }
+
+          // Divider
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
+          pdf.line(75, currentY, 135, currentY);
+
+          // GT Code label
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(102, 102, 102);
+          pdf.text('GT CODE', pageWidth / 2, currentY + 10, { align: 'center' });
+
+          // Code box
+          const codeBoxY = currentY + 15;
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
+          pdf.setLineDash([2, 2]);
+          pdf.roundedRect(40, codeBoxY, pageWidth - 80, 15, 3, 3, 'S');
+          pdf.setLineDash([]);
+
+          pdf.setFontSize(16);
+          pdf.setFont('courier', 'bold');
+          pdf.setTextColor(220, 38, 38);
+          pdf.text(card.code, pageWidth / 2, codeBoxY + 10, { align: 'center' });
+
+          // Details
+          const detailsY = codeBoxY + 25;
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(220, 38, 38);
+          pdf.text('Gültig ab: ', 30, detailsY);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(102, 102, 102);
+          pdf.text(new Date().toLocaleDateString('de-DE'), 57, detailsY);
+
+          // Footer line
+          pdf.setDrawColor(233, 236, 239);
+          pdf.setLineWidth(0.5);
+          pdf.line(20, detailsY + 7, pageWidth - 20, detailsY + 7);
+
+          // Terms
+          pdf.setFontSize(7);
+          pdf.setTextColor(0, 0, 0);
+          const footerText = [
+            'Dieser Gutschein kann für Speisen und Dienstleistungen verwendet werden.',
+            'Kein Wechselgeld oder Barauszahlung möglich. Verlorene Gutscheine können nicht ersetzt werden.'
+          ];
+          pdf.text(footerText, pageWidth / 2, detailsY + 10, { align: 'center', maxWidth: pageWidth - 40 });
+
+          // Company info
+          pdf.setFontSize(7);
+          pdf.setTextColor(0, 0, 0);
+          const companyInfo = [
+            'Patschi by Köhle GmbH, Dorfbahnstrasse 82, 6534 Serfaus',
+            'Tel. +43 5476 6290 | E-Mail: info@patschi.at'
+          ];
+          pdf.text(companyInfo, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+          pdf.save(`gift-card-${card.code}.pdf`);
+          setState({ downloadingPdf: false });
+        }
+      } catch (err) {
+        console.error('Error downloading PDF:', err);
+        alert('PDF konnte nicht heruntergeladen werden. Bitte versuchen Sie es erneut.');
+        setState({ downloadingPdf: false });
+      }
+    }
+
+    function renderSuccessScreen() {
+      return `
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8">
+          <div class="text-center">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Gutschein gekauft!</h2>
+            <p class="text-sm sm:text-base text-slate-600 mb-6">
+              Ihr Gutschein wurde an ${state.formData.recipientEmail || state.formData.buyerEmail} gesendet
+            </p>
+            <button
+              onclick="resetForm()"
+              class="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm sm:text-base"
+            >
+              Weiteren Gutschein kaufen
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGiftCardDetails() {
+      if (!state.verifyResult || !state.giftCardDetails) return '';
+
+      const card = state.giftCardDetails;
+      const valid = isValid(card);
+
+      return `
+        <div class="mt-4 border-2 rounded-xl p-4 sm:p-6 ${valid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 ${valid ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 ${valid ? 'text-green-600' : 'text-red-600'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  ${valid
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>'
+                  }
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold ${valid ? 'text-green-900' : 'text-red-900'}">
+                  ${valid ? 'Gültiger Gutschein' : 'Ungültiger Gutschein'}
+                </h3>
+                <p class="text-xs ${valid ? 'text-green-700' : 'text-red-700'}">
+                  ${state.verifyResult.error || 'Dieser Gutschein kann verwendet werden'}
+                </p>
+              </div>
+            </div>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(card.status)}">
+              ${card.status.toUpperCase()}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div class="bg-white rounded-lg p-3">
+              <div class="flex items-center space-x-2 mb-1">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+                <span class="text-xs text-slate-600">Gutschein-Code</span>
+              </div>
+              <p class="font-mono font-bold text-sm text-slate-900">${card.code}</p>
+            </div>
+
+            <div class="bg-white rounded-lg p-3">
+              <div class="flex items-center space-x-2 mb-1">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-xs text-slate-600">Ursprünglicher Betrag</span>
+              </div>
+              <p class="text-lg font-bold text-slate-900">€${Number(card.original_amount).toFixed(2)}</p>
+            </div>
+
+            <div class="bg-white rounded-lg p-3">
+              <div class="flex items-center space-x-2 mb-1">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-xs text-slate-600">Aktuelles Guthaben</span>
+              </div>
+              <p class="text-lg font-bold text-slate-900">€${Number(card.current_balance).toFixed(2)}</p>
+            </div>
+
+            <div class="bg-white rounded-lg p-3">
+              <div class="flex items-center space-x-2 mb-1">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span class="text-xs text-slate-600">Ablaufdatum</span>
+              </div>
+              <p class="text-sm font-semibold ${isExpired(card.expiry_date) ? 'text-red-600' : 'text-slate-900'}">
+                ${new Date(card.expiry_date).toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' })}
+                ${isExpired(card.expiry_date) ? ' (Abgelaufen)' : ''}
+              </p>
+            </div>
+          </div>
+
+          ${card.recipient_name ? `
+            <div class="bg-white rounded-lg p-3 mb-3">
+              <div class="flex items-center space-x-2 mb-1">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-xs text-slate-600">Empfänger</span>
+              </div>
+              <p class="font-semibold text-sm text-slate-900">${card.recipient_name}</p>
+              ${card.recipient_email ? `<p class="text-xs text-slate-600">${card.recipient_email}</p>` : ''}
+            </div>
+          ` : ''}
+
+          ${card.message ? `
+            <div class="bg-white rounded-lg p-3 mb-3">
+              <p class="text-xs text-slate-600 mb-1">Nachricht</p>
+              <p class="text-sm text-slate-900">${card.message}</p>
+            </div>
+          ` : ''}
+
+          ${card.redemptions && card.redemptions.length > 0 ? `
+            <div class="bg-white rounded-lg p-3 mb-3">
+              <p class="text-xs text-slate-600 mb-2 font-semibold">Einlösungen</p>
+              <div class="space-y-2">
+                ${card.redemptions.map(redemption => `
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-600">
+                      ${new Date(redemption.redeemed_at).toLocaleDateString('de-DE')}
+                    </span>
+                    <span class="font-semibold text-slate-900">
+                      -€${Number(redemption.amount).toFixed(2)}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <button
+            onclick="downloadPdf()"
+            ${state.downloadingPdf ? 'disabled' : ''}
+            class="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+          >
+            ${state.downloadingPdf ? `
+              <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <span>PDF wird erstellt...</span>
+            ` : `
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <span>Gutschein-PDF herunterladen</span>
+            `}
+          </button>
+        </div>
+      `;
+    }
+
+    function renderMainForm() {
+      const finalAmount = state.isCustomAmount && state.formData.customAmount
+        ? parseFloat(state.formData.customAmount)
+        : state.formData.amount;
+
+      return `
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8">
+          <div class="flex flex-col sm:flex-row items-center justify-center mb-6 sm:mb-8 gap-3 sm:gap-4">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-2xl flex items-center justify-center">
+              <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+              </svg>
+            </div>
+            <div class="text-center sm:text-left">
+              <h2 class="text-2xl sm:text-3xl font-bold text-slate-900">Gutschein kaufen</h2>
+              <p class="text-sm sm:text-base text-slate-600">Schenken Sie Freude</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleSubmit(event)" class="space-y-4 sm:space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-slate-900 mb-2 sm:mb-3">
+                Betrag auswählen
+              </label>
+              <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+                ${PRESET_AMOUNTS.map(amount => `
+                  <button
+                    type="button"
+                    onclick="selectAmount(${amount})"
+                    class="py-3 sm:py-4 px-3 sm:px-6 rounded-xl border-2 font-semibold text-base sm:text-lg transition ${
+                      !state.isCustomAmount && state.formData.amount === amount
+                        ? 'border-green-600 bg-green-50 text-green-700'
+                        : 'border-slate-200 text-slate-700 hover:border-green-300 hover:bg-slate-50'
+                    }"
+                  >
+                    €${amount}
+                  </button>
+                `).join('')}
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                  Individueller Betrag (min. €${MIN_AMOUNT})
+                </label>
+                <input
+                  type="number"
+                  min="${MIN_AMOUNT}"
+                  step="0.01"
+                  value="${state.formData.customAmount}"
+                  oninput="handleCustomAmount(event)"
+                  placeholder="€${MIN_AMOUNT}"
+                  class="w-full px-4 py-3 rounded-lg border-2 transition ${
+                    state.isCustomAmount
+                      ? 'border-green-600 bg-green-50'
+                      : 'border-slate-200 focus:border-green-500 focus:outline-none'
+                  }"
+                />
+              </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4 sm:pt-6">
+              <h3 class="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">Empfänger-Informationen (Optional)</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Name des Empfängers
+                  </label>
+                  <input
+                    type="text"
+                    value="${state.formData.recipientName}"
+                    oninput="updateFormData({ recipientName: event.target.value })"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-green-500 focus:outline-none transition"
+                    placeholder="Max Mustermann"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    E-Mail des Empfängers
+                  </label>
+                  <input
+                    type="email"
+                    value="${state.formData.recipientEmail}"
+                    oninput="updateFormData({ recipientEmail: event.target.value })"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-green-500 focus:outline-none transition"
+                    placeholder="max@beispiel.de"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4 sm:pt-6">
+              <h3 class="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">Ihre Informationen</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Ihr Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value="${state.formData.buyerName}"
+                    oninput="updateFormData({ buyerName: event.target.value })"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-green-500 focus:outline-none transition"
+                    placeholder="Anna Schmidt"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Ihre E-Mail *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value="${state.formData.buyerEmail}"
+                    oninput="updateFormData({ buyerEmail: event.target.value })"
+                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-green-500 focus:outline-none transition"
+                    placeholder="anna@beispiel.de"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Persönliche Nachricht (Optional)
+              </label>
+              <textarea
+                value="${state.formData.message}"
+                oninput="updateFormData({ message: event.target.value })"
+                rows="4"
+                maxlength="500"
+                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-green-500 focus:outline-none transition resize-none"
+                placeholder="Fügen Sie eine persönliche Nachricht für den Empfänger hinzu..."
+              ></textarea>
+              <p class="text-xs text-slate-500 mt-1">${state.formData.message.length}/500 Zeichen</p>
+            </div>
+
+            ${state.error ? `
+              <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                <p class="text-red-800 text-sm font-medium">${state.error}</p>
+              </div>
+            ` : ''}
+
+            <div class="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
+              <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <span class="text-sm sm:text-base text-slate-700 font-medium">Gesamtbetrag:</span>
+                <span class="text-xl sm:text-2xl font-bold text-slate-900">
+                  €${finalAmount.toFixed(2)}
+                </span>
+              </div>
+              <p class="text-xs text-slate-600">
+                Der Gutschein wird nach der Zahlung sofort per E-Mail zugestellt
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              ${state.loading ? 'disabled' : ''}
+              class="w-full py-3 sm:py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-semibold text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              ${state.loading ? `
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>Wird verarbeitet...</span>
+              ` : `
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+                <span>Gutschein kaufen</span>
+              `}
+            </button>
+          </form>
+
+          <p class="text-xs text-slate-500 text-center mt-4 sm:mt-6 px-2">
+            Mit dem Kauf stimmen Sie unseren Geschäftsbedingungen zu. Gutscheine sind 1 Jahr ab Kaufdatum gültig.
+          </p>
+
+          <div class="mt-6 sm:mt-8 pt-6 border-t border-slate-200">
+            <div class="text-center mb-4">
+              <h3 class="text-sm font-semibold text-slate-900 mb-2">Gutschein prüfen</h3>
+              <p class="text-xs text-slate-600">
+                Geben Sie die Barcode-Nummer Ihres Gutscheins ein, um die Gültigkeit und den Restbetrag zu überprüfen
+              </p>
+            </div>
+
+            <form onsubmit="handleVerifyGiftCard(event)" class="max-w-md mx-auto">
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  value="${state.verifyCode}"
+                  oninput="setState({ verifyCode: event.target.value })"
+                  placeholder="Barcode-Nummer eingeben"
+                  class="flex-1 px-4 py-2 rounded-lg border-2 border-slate-200 focus:border-green-500 focus:outline-none transition text-sm"
+                  required
+                />
+                <button
+                  type="submit"
+                  ${state.verifyLoading ? 'disabled' : ''}
+                  class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  ${state.verifyLoading ? `
+                    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                  ` : `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                  `}
+                  <span>Prüfen</span>
+                </button>
+              </div>
+            </form>
+
+            ${renderGiftCardDetails()}
+
+            ${state.verifyResult && !state.giftCardDetails ? `
+              <div class="mt-4 p-4 rounded-lg border-2 bg-red-50 border-red-200">
+                <div class="text-center">
+                  <p class="text-sm font-medium text-red-800">
+                    ${state.verifyResult.error || 'Ungültiger oder abgelaufener Gutschein'}
+                  </p>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      if (state.success) {
+        app.innerHTML = renderSuccessScreen();
+      } else {
+        app.innerHTML = renderMainForm();
+      }
+    }
+
+    window.handleSubmit = handleSubmit;
+    window.handleVerifyGiftCard = handleVerifyGiftCard;
+    window.downloadPdf = downloadPdf;
+
+    window.selectAmount = (amount) => {
+      setState({
+        isCustomAmount: false,
+        formData: { ...state.formData, amount, customAmount: '' }
+      });
+    };
+
+    window.handleCustomAmount = (event) => {
+      const value = event.target.value;
+      const numValue = parseFloat(value);
+      setState({
+        isCustomAmount: true,
+        formData: {
+          ...state.formData,
+          customAmount: value,
+          amount: !isNaN(numValue) && numValue >= MIN_AMOUNT ? numValue : state.formData.amount
+        }
+      });
+    };
+
+    window.updateFormData = updateFormData;
+    window.setState = setState;
+
+    window.resetForm = () => {
+      setState({
+        formData: {
+          amount: 50,
+          customAmount: '',
+          recipientName: '',
+          recipientEmail: '',
+          buyerName: '',
+          buyerEmail: '',
+          message: ''
+        },
+        isCustomAmount: false,
+        success: false,
+        error: ''
+      });
+    };
+
+    render();
+  </script>
+</body>
+</html>

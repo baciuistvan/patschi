@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geschenkgutschein - Patschi Serfaus</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      padding: 40px;
+      text-align: center;
+    }
+    .logo {
+      max-width: 200px;
+      height: auto;
+      margin: 0 auto 30px;
+    }
+    h1 {
+      font-size: 32px;
+      color: #1e293b;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 30px;
+    }
+    .gift-card-preview {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      border: 2px solid #dc2626;
+      border-radius: 12px;
+      padding: 40px;
+      margin: 30px 0;
+    }
+    .amount {
+      font-size: 48px;
+      font-weight: bold;
+      color: #dc2626;
+      margin: 20px 0;
+    }
+    .code {
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      color: #dc2626;
+      background: white;
+      padding: 15px 30px;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 20px 0;
+      font-family: 'Courier New', monospace;
+    }
+    .details {
+      font-size: 16px;
+      color: #475569;
+      line-height: 1.8;
+      margin: 20px 0;
+    }
+    .download-btn {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s;
+    }
+    .download-btn:hover {
+      background: #b91c1c;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    .download-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .loading {
+      font-size: 18px;
+      color: #64748b;
+    }
+    .error {
+      color: #dc2626;
+      font-size: 16px;
+      padding: 20px;
+      background: #fee2e2;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://qwwerwkekvmaswusvgxy.supabase.co/storage/v1/object/public/images/Patschi-Serfaus-Logo-transparent-schwarz.PNG" alt="Patschi Serfaus Logo" class="logo">
+    <h1>Ihr Geschenkgutschein</h1>
+    <p class="subtitle">Vielen Dank für Ihren Kauf!</p>
+
+    <div id="loading" class="loading">Gutschein wird geladen...</div>
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="gift-card-content" style="display: none;">
+      <div class="gift-card-preview">
+        <h2 style="color: #dc2626; margin-bottom: 20px;">GESCHENKGUTSCHEIN</h2>
+        <div class="amount" id="amount"></div>
+        <div class="code" id="code"></div>
+        <div class="details">
+          <p><strong>Für:</strong> <span id="recipient"></span></p>
+          <p id="from-section"><strong>Von:</strong> <span id="purchaser"></span></p>
+          <p><strong>Gültig bis:</strong> <span id="expiry"></span></p>
+        </div>
+        <div id="message-section" style="display: none; margin-top: 20px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+          <p style="font-style: italic; color: #78350f;" id="message"></p>
+        </div>
+      </div>
+
+      <button class="download-btn" onclick="downloadPDF()">
+        📥 Als PDF herunterladen
+      </button>
+    </div>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let giftCardData = null;
+
+    async function loadGiftCard() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const giftCardId = urlParams.get('id');
+
+      if (!giftCardId) {
+        showError('Kein Gutschein-ID gefunden. Bitte überprüfen Sie Ihren Link.');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('gift_cards')
+          .select('*')
+          .eq('id', giftCardId)
+          .single();
+
+        if (error || !data) {
+          showError('Gutschein konnte nicht gefunden werden. Bitte überprüfen Sie Ihren Link.');
+          return;
+        }
+
+        giftCardData = data;
+        displayGiftCard(data);
+      } catch (err) {
+        console.error('Error loading gift card:', err);
+        showError('Ein Fehler ist aufgetreten beim Laden des Gutscheins.');
+      }
+    }
+
+    function displayGiftCard(giftCard) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('gift-card-content').style.display = 'block';
+
+      document.getElementById('amount').textContent = `€${parseFloat(giftCard.current_balance).toFixed(2)}`;
+      document.getElementById('code').textContent = giftCard.code;
+      document.getElementById('recipient').textContent = giftCard.recipient_name;
+      document.getElementById('purchaser').textContent = giftCard.purchaser_name;
+
+      const expiryDate = new Date(giftCard.expiry_date).toLocaleDateString('de-DE');
+      document.getElementById('expiry').textContent = expiryDate;
+
+      if (giftCard.message) {
+        document.getElementById('message-section').style.display = 'block';
+        document.getElementById('message').textContent = `"${giftCard.message}"`;
+      }
+
+      // Hide "From" section if showPurchaser is false
+      if (giftCard.show_purchaser === false) {
+        document.getElementById('from-section').style.display = 'none';
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = message;
+    }
+
+    window.downloadPDF = async function() {
+      if (!giftCardData) return;
+
+      const btn = document.querySelector('.download-btn');
+      btn.disabled = true;
+      btn.textContent = 'PDF wird heruntergeladen...';
+
+      try {
+        if (giftCardData.pdf_url) {
+          window.open(giftCardData.pdf_url, '_blank');
+          btn.disabled = false;
+          btn.textContent = '📥 Als PDF herunterladen';
+        } else {
+          alert('PDF ist noch nicht verfügbar. Bitte versuchen Sie es in einigen Sekunden erneut.');
+          btn.disabled = false;
+          btn.textContent = '📥 Als PDF herunterladen';
+        }
+      } catch (err) {
+        console.error('Error downloading PDF:', err);
+        alert('Fehler beim Herunterladen des PDFs. Bitte versuchen Sie es erneut.');
+        btn.disabled = false;
+        btn.textContent = '📥 Als PDF herunterladen';
+      }
+    };
+
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          resolve({
+            data: canvas.toDataURL('image/png'),
+            width: img.width,
+            height: img.height
+          });
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = url;
+      });
+    }
+
+    // Load gift card on page load
+    loadGiftCard();
+  </script>
+</body>
+</html>

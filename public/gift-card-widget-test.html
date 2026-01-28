@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card Widget Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        .error {
+            background: #fee;
+            color: #991b1b;
+            border: 2px solid #fcc;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #60a5fa;
+        }
+        pre {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        h1 {
+            color: #1e293b;
+            margin: 0 0 20px 0;
+        }
+        h2 {
+            color: #334155;
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+        }
+        .loading {
+            color: #64748b;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Gift Card Widget - Diagnostic Test</h1>
+        <p class="info">This page will test if your gift card widget can connect to Supabase and Stripe.</p>
+
+        <div id="test-results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const GIFT_CARD_CONFIG = {
+            supabaseUrl: 'https://qwwerwkekvmaswusvgxy.supabase.co',
+            supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE'
+        };
+
+        const results = document.getElementById('test-results');
+        let testOutput = '';
+
+        function addTest(title, status, message, details = '') {
+            const statusClass = status === 'success' ? 'success' : status === 'error' ? 'error' : 'info';
+            testOutput += `
+                <h2>${title}</h2>
+                <div class="${statusClass} status">${message}</div>
+                ${details ? `<pre>${details}</pre>` : ''}
+            `;
+            results.innerHTML = testOutput;
+        }
+
+        async function runTests() {
+            addTest('Test 1: Page Loading', 'success', 'Page loaded successfully');
+
+            // Test 2: Supabase Library
+            if (window.supabase) {
+                addTest('Test 2: Supabase Library', 'success', 'Supabase library loaded successfully');
+            } else {
+                addTest('Test 2: Supabase Library', 'error', 'Supabase library failed to load',
+                    'Make sure the CDN script is loading correctly');
+                return;
+            }
+
+            // Test 3: Supabase Client
+            try {
+                const supabase = window.supabase.createClient(GIFT_CARD_CONFIG.supabaseUrl, GIFT_CARD_CONFIG.supabaseAnonKey);
+                addTest('Test 3: Supabase Client', 'success', 'Supabase client created successfully');
+
+                // Test 4: Database Connection
+                try {
+                    const { data, error } = await supabase
+                        .from('gift_cards')
+                        .select('count')
+                        .limit(1);
+
+                    if (error) {
+                        addTest('Test 4: Database Connection', 'error', 'Database connection failed',
+                            `Error: ${error.message}\nCode: ${error.code}`);
+                    } else {
+                        addTest('Test 4: Database Connection', 'success', 'Database connection successful');
+                    }
+                } catch (err) {
+                    addTest('Test 4: Database Connection', 'error', 'Database query error', err.message);
+                }
+
+                // Test 5: Edge Function
+                try {
+                    const response = await fetch(GIFT_CARD_CONFIG.supabaseUrl + '/functions/v1/purchase-gift-card', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + GIFT_CARD_CONFIG.supabaseAnonKey
+                        },
+                        body: JSON.stringify({
+                            amount: 50,
+                            buyerName: 'Test',
+                            buyerEmail: 'test@test.com'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        addTest('Test 5: Edge Function', 'success', 'Edge function is accessible');
+                    } else if (data.error && data.error.includes('Stripe')) {
+                        addTest('Test 5: Edge Function', 'info', 'Edge function works but Stripe is not configured',
+                            'You need to add STRIPE_SECRET_KEY to your Supabase Edge Function secrets');
+                    } else {
+                        addTest('Test 5: Edge Function', 'error', 'Edge function error',
+                            `Status: ${response.status}\nError: ${data.error || 'Unknown error'}`);
+                    }
+                } catch (err) {
+                    addTest('Test 5: Edge Function', 'error', 'Could not reach edge function', err.message);
+                }
+
+                // Test 6: CORS
+                addTest('Test 6: CORS', 'success',
+                    'CORS is working (you can see test results, which means API calls are allowed from this domain)');
+
+                // Final Summary
+                addTest('Summary', 'success',
+                    'Basic tests completed! Check the results above to identify any issues.',
+                    'If all tests pass except Stripe configuration, you need to:\n' +
+                    '1. Go to Supabase Dashboard\n' +
+                    '2. Project Settings → Edge Functions → Secrets\n' +
+                    '3. Add STRIPE_SECRET_KEY with your Stripe secret key\n\n' +
+                    'Current URL: ' + window.location.href + '\n' +
+                    'Origin: ' + window.location.origin);
+
+            } catch (err) {
+                addTest('Test 3: Supabase Client', 'error', 'Failed to create Supabase client', err.message);
+            }
+        }
+
+        // Run tests when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runTests);
+        } else {
+            runTests();
+        }
+    </script>
+</body>
+</html>

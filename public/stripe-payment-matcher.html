@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe Payment Matcher</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1 { color: #4ade80; margin-bottom: 30px; }
+    h2 { color: #60a5fa; margin-top: 30px; margin-bottom: 15px; }
+    .warning {
+      background: #dc2626;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .info {
+      background: #2563eb;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #3a3a3a;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #3a3a3a;
+    }
+    th {
+      background: #3a3a3a;
+      font-weight: bold;
+    }
+    .match-button {
+      background: #4ade80;
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .match-button:hover {
+      background: #22c55e;
+    }
+    .matched {
+      background: #166534;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .unmatched {
+      background: #dc2626;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      color: #fff;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    .search-form {
+      margin-bottom: 30px;
+    }
+    .result-row {
+      padding: 15px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      border: 1px solid #3a3a3a;
+    }
+    .result-row strong {
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Stripe Payment Matcher</h1>
+
+  <div class="warning">
+    <strong>⚠️ Wichtig:</strong> Dieses Tool hilft dabei, Stripe-Zahlungen zu finden, die nicht automatisch mit Reservierungen verknüpft wurden.
+  </div>
+
+  <div class="info">
+    <strong>💡 So funktioniert's:</strong> Geben Sie den Namen des Kunden oder die Stripe Payment Intent ID ein, um passende Zahlungen und Reservierungen zu finden.
+  </div>
+
+  <div class="section search-form">
+    <h2>Suche nach Zahlungen</h2>
+    <label>Kundenname oder Email:</label>
+    <input type="text" id="searchName" placeholder="z.B. Zwarthoed oder info@example.com">
+
+    <label>Oder Stripe Payment Intent ID:</label>
+    <input type="text" id="searchPaymentIntent" placeholder="z.B. pi_xxxxxxxxxxxxx">
+
+    <button onclick="searchPayments()" class="match-button">Suchen</button>
+  </div>
+
+  <div id="loading" class="loading" style="display: none;">
+    Suche läuft...
+  </div>
+
+  <div id="results" style="display: none;">
+    <div class="section">
+      <h2>📋 Gefundene Reservierungen</h2>
+      <div id="reservationResults"></div>
+    </div>
+
+    <div class="section">
+      <h2>💳 Manuelles Update</h2>
+      <p>Wenn Sie eine passende Reservierung gefunden haben, können Sie sie manuell aktualisieren:</p>
+
+      <label>Reservierungs-ID:</label>
+      <input type="text" id="reservationId" placeholder="UUID der Reservierung">
+
+      <label>Stripe Payment Intent ID (optional):</label>
+      <input type="text" id="paymentIntentId" placeholder="z.B. pi_xxxxxxxxxxxxx">
+
+      <label>Zahlungsbetrag (€):</label>
+      <input type="text" id="paymentAmount" placeholder="z.B. 350.00">
+
+      <button onclick="updateReservation()" class="match-button">Reservierung aktualisieren</button>
+
+      <div id="updateResult" style="margin-top: 15px;"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ahrcgvsmzpclclwqmlod.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFocmNndnNtenBjbGNsd3FtbG9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA4MTIzNTgsImV4cCI6MjA0NjM4ODM1OH0.gF7yfFfqsjJbS9Pz_2dO6TtZUh9hbf40f7qjg7yXJrs';
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function searchPayments() {
+      const searchName = document.getElementById('searchName').value.trim();
+      const searchPaymentIntent = document.getElementById('searchPaymentIntent').value.trim();
+
+      if (!searchName && !searchPaymentIntent) {
+        alert('Bitte geben Sie einen Suchbegriff ein');
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+
+      try {
+        let query = client.from('reservations').select('*');
+
+        if (searchName) {
+          query = query.or(`customer_name.ilike.%${searchName}%,customer_email.ilike.%${searchName}%`);
+        } else if (searchPaymentIntent) {
+          query = query.eq('stripe_payment_intent_id', searchPaymentIntent);
+        }
+
+        const { data: reservations, error } = await query.order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error:', error);
+          alert('Fehler beim Suchen: ' + error.message);
+          return;
+        }
+
+        displayResults(reservations);
+
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Fehler: ' + err.message);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+      }
+    }
+
+    function displayResults(reservations) {
+      const resultsDiv = document.getElementById('reservationResults');
+
+      if (reservations.length === 0) {
+        resultsDiv.innerHTML = '<p>Keine Reservierungen gefunden.</p>';
+      } else {
+        resultsDiv.innerHTML = reservations.map(res => {
+          const hasPayment = res.stripe_payment_intent_id && res.payment_status === 'paid';
+          const statusClass = hasPayment ? 'matched' : 'unmatched';
+          const statusText = hasPayment ? '✓ Bezahlt & Verknüpft' : '✗ Nicht bezahlt oder nicht verknüpft';
+
+          return `
+            <div class="result-row">
+              <strong>${res.customer_name}</strong> - ${res.customer_email || 'keine Email'}<br>
+              <strong>Datum:</strong> ${res.reservation_date} um ${res.reservation_time}<br>
+              <strong>Personen:</strong> ${res.party_size}<br>
+              <strong>Status:</strong> <span class="${statusClass}">${statusText}</span><br>
+              <strong>Zahlungsstatus:</strong> ${res.payment_status || 'unbekannt'}<br>
+              <strong>Zahlungsmethode:</strong> ${res.payment_method || 'keine'}<br>
+              <strong>Betrag:</strong> €${res.payment_amount || '0.00'}<br>
+              <strong>Buchungsart:</strong> ${res.booking_method || 'unbekannt'}<br>
+              <strong>Payment Intent ID:</strong> ${res.stripe_payment_intent_id || 'nicht vorhanden'}<br>
+              <strong>Reservierungs-ID:</strong> <code style="background: #000; padding: 2px 4px; border-radius: 3px; font-size: 11px;">${res.id}</code>
+              ${!hasPayment ? `<br><br><button class="match-button" onclick="fillUpdateForm('${res.id}')">Diese Reservierung aktualisieren</button>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('results').style.display = 'block';
+    }
+
+    function fillUpdateForm(reservationId) {
+      document.getElementById('reservationId').value = reservationId;
+      document.getElementById('paymentAmount').value = '350.00';
+      window.scrollTo({ top: document.getElementById('reservationId').offsetTop - 100, behavior: 'smooth' });
+    }
+
+    async function updateReservation() {
+      const reservationId = document.getElementById('reservationId').value.trim();
+      const paymentIntentId = document.getElementById('paymentIntentId').value.trim();
+      const paymentAmount = document.getElementById('paymentAmount').value.trim();
+
+      if (!reservationId) {
+        alert('Bitte geben Sie eine Reservierungs-ID ein');
+        return;
+      }
+
+      if (!paymentAmount) {
+        alert('Bitte geben Sie einen Zahlungsbetrag ein');
+        return;
+      }
+
+      if (!confirm(`Möchten Sie diese Reservierung wirklich aktualisieren?\n\nReservierung: ${reservationId}\nBetrag: €${paymentAmount}`)) {
+        return;
+      }
+
+      try {
+        const updateData = {
+          payment_status: 'paid',
+          payment_method: 'stripe',
+          payment_amount: parseFloat(paymentAmount),
+          booking_method: 'manual'
+        };
+
+        if (paymentIntentId) {
+          updateData.stripe_payment_intent_id = paymentIntentId;
+        }
+
+        const { error } = await client
+          .from('reservations')
+          .update(updateData)
+          .eq('id', reservationId);
+
+        if (error) {
+          throw error;
+        }
+
+        document.getElementById('updateResult').innerHTML = `
+          <div style="background: #166534; padding: 15px; border-radius: 6px;">
+            <strong>✓ Erfolg!</strong><br>
+            Die Reservierung wurde aktualisiert und als bezahlt markiert.
+          </div>
+        `;
+
+        // Clear form
+        document.getElementById('reservationId').value = '';
+        document.getElementById('paymentIntentId').value = '';
+        document.getElementById('paymentAmount').value = '';
+
+      } catch (err) {
+        console.error('Error:', err);
+        document.getElementById('updateResult').innerHTML = `
+          <div style="background: #dc2626; padding: 15px; border-radius: 6px;">
+            <strong>✗ Fehler!</strong><br>
+            ${err.message}
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

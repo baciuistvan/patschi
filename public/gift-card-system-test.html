@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card System Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 32px; }
+        .subtitle { opacity: 0.9; font-size: 16px; }
+        .content { padding: 40px; }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+        .test-section h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-section h3 {
+            color: #334155;
+            margin: 20px 0 10px 0;
+            font-size: 16px;
+        }
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        .status.pending { background: #e0e7ff; color: #3730a3; }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee; color: #991b1b; }
+        .status.warning { background: #fef3c7; color: #78350f; }
+        .btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #b91c1c; transform: translateY(-1px); }
+        .btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .result.success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+        .result.error {
+            background: #fee;
+            border: 2px solid #fcc;
+            color: #991b1b;
+        }
+        .result pre {
+            margin: 10px 0 0 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .code .comment { color: #94a3b8; }
+        .code .string { color: #a5f3fc; }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #dc2626;
+        }
+        ol { margin: 15px 0 15px 25px; }
+        ol li { margin: 8px 0; color: #475569; }
+        .important {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gift Card System Diagnostic</h1>
+            <p class="subtitle">Test email sending and PDF generation</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h2>
+                    1. Check Recent Gift Cards
+                    <span class="status pending" id="status-1">Pending</span>
+                </h2>
+                <p style="color: #64748b; margin-bottom: 15px;">Let's see if any gift cards were created from your widget purchases.</p>
+                <button class="btn" onclick="checkGiftCards()">Check Gift Cards</button>
+                <div id="result-1"></div>
+            </div>
+
+            <div class="test-section">
+                <h2>
+                    2. Test Email Sending
+                    <span class="status pending" id="status-2">Pending</span>
+                </h2>
+                <p style="color: #64748b; margin-bottom: 15px;">Test if SMTP email delivery is working.</p>
+
+                <div class="input-group">
+                    <label>Gift Card ID (from step 1 above):</label>
+                    <input type="text" id="gift-card-id" placeholder="Enter gift card ID">
+                </div>
+
+                <button class="btn" onclick="testEmail()" id="email-btn">Send Test Email</button>
+                <div id="result-2"></div>
+            </div>
+
+            <div class="test-section">
+                <h2>
+                    3. Webhook Configuration
+                    <span class="status warning" id="status-3">Check Required</span>
+                </h2>
+                <p style="color: #64748b; margin-bottom: 15px;">Your Stripe webhook must be configured correctly.</p>
+
+                <div class="important">
+                    <strong>Required Webhook URL:</strong>
+                    <div class="code" style="margin-top: 10px;">https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/handle-payment-link-webhook</div>
+                </div>
+
+                <h3>Steps to Fix Webhook 404 Error:</h3>
+                <ol>
+                    <li>Go to <a href="https://dashboard.stripe.com/webhooks" target="_blank" style="color: #dc2626;">Stripe Dashboard → Webhooks</a></li>
+                    <li>Click on your webhook endpoint (or create a new one)</li>
+                    <li>Set the endpoint URL to the URL shown above</li>
+                    <li>Make sure <code>checkout.session.completed</code> event is selected</li>
+                    <li>Copy the <strong>Signing secret</strong> (starts with <code>whsec_...</code>)</li>
+                    <li>Go to <a href="https://supabase.com/dashboard/project/qwwerwkekvmaswusvgxy/settings/functions" target="_blank" style="color: #dc2626;">Supabase Edge Function Secrets</a></li>
+                    <li>Add secret: Name = <code>STRIPE_WEBHOOK_SECRET</code>, Value = your signing secret</li>
+                    <li>Add secret: Name = <code>STRIPE_SECRET_KEY</code>, Value = your Stripe secret key (sk_live_...)</li>
+                </ol>
+            </div>
+
+            <div class="test-section">
+                <h2>
+                    4. Test Complete Purchase Flow
+                    <span class="status pending" id="status-4">Manual Test</span>
+                </h2>
+                <p style="color: #64748b; margin-bottom: 15px;">After fixing the webhook, test the complete flow:</p>
+                <ol>
+                    <li>Go to your gift card widget</li>
+                    <li>Purchase a test gift card (use Stripe test card: 4242 4242 4242 4242)</li>
+                    <li>Check if:
+                        <ul style="margin-top: 10px;">
+                            <li>No 404 error in Stripe webhook logs</li>
+                            <li>Gift card appears in step 1 above</li>
+                            <li>Email is received</li>
+                            <li>PDF is attached or downloadable</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function checkGiftCards() {
+            const resultDiv = document.getElementById('result-1');
+            const statusSpan = document.getElementById('status-1');
+
+            resultDiv.innerHTML = '<p style="color: #64748b;">Loading...</p>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('gift_cards')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>No gift cards found!</strong><br>
+                            This means either:<br>
+                            1. No gift card has been purchased yet<br>
+                            2. The webhook is failing (404 error) so gift cards aren't being created<br>
+                            <br>
+                            <strong>Action:</strong> Fix the webhook configuration in step 3 below.
+                        </div>
+                    `;
+                    statusSpan.className = 'status error';
+                    statusSpan.textContent = 'No Data';
+                    return;
+                }
+
+                let html = `<div class="result success">
+                    <strong>Found ${data.length} gift card(s):</strong><br><br>`;
+
+                data.forEach((card, i) => {
+                    html += `
+                        <div style="margin-bottom: 15px; padding: 12px; background: white; border-radius: 6px;">
+                            <strong>#${i + 1}</strong> - ID: <code>${card.id}</code><br>
+                            Code: <strong>${card.code}</strong><br>
+                            Amount: <strong>€${card.current_balance}</strong><br>
+                            Recipient: ${card.recipient_email || 'No email'}<br>
+                            Status: <span style="color: ${card.payment_status === 'paid' ? '#059669' : '#dc2626'}">${card.payment_status}</span><br>
+                            PDF: ${card.pdf_url ? '✅ Available' : '❌ Missing'}<br>
+                            Created: ${new Date(card.created_at).toLocaleString('de-DE')}
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+                html += `<p style="margin-top: 15px; color: #64748b; font-size: 13px;">
+                    💡 Copy a gift card ID above to test email sending in step 2
+                </p>`;
+
+                resultDiv.innerHTML = html;
+                statusSpan.className = 'status success';
+                statusSpan.textContent = 'Found ' + data.length;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>Error:</strong> ${error.message}<br>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>
+                `;
+                statusSpan.className = 'status error';
+                statusSpan.textContent = 'Error';
+            }
+        }
+
+        async function testEmail() {
+            const giftCardId = document.getElementById('gift-card-id').value.trim();
+            const resultDiv = document.getElementById('result-2');
+            const statusSpan = document.getElementById('status-2');
+            const btn = document.getElementById('email-btn');
+
+            if (!giftCardId) {
+                alert('Please enter a gift card ID from step 1');
+                return;
+            }
+
+            btn.disabled = true;
+            resultDiv.innerHTML = '<p style="color: #64748b;">Sending email...</p>';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/send-gift-card-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({ giftCardId })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <strong>✅ Email sent successfully!</strong><br>
+                        Check the recipient's inbox.<br>
+                        ${data.downloadUrl ? `<br>Download URL: <a href="${data.downloadUrl}" target="_blank">${data.downloadUrl}</a>` : ''}
+                    </div>
+                `;
+                statusSpan.className = 'status success';
+                statusSpan.textContent = 'Success';
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Email failed:</strong> ${error.message}<br>
+                        <br>
+                        Common causes:<br>
+                        • SMTP settings not configured<br>
+                        • Invalid SMTP credentials<br>
+                        • Recipient email invalid<br>
+                        • Edge function not deployed<br>
+                    </div>
+                `;
+                statusSpan.className = 'status error';
+                statusSpan.textContent = 'Failed';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
