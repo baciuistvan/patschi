@@ -10,7 +10,7 @@ export default defineConfig({
   },
   server: {
     fs: {
-      deny: ['**/crew-standalone4/**'],
+      allow: ['..'],
     },
   },
   build: {
