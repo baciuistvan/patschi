@@ -20,6 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Skip authentication entirely for crew mode
+    if ((window as any).FORCE_CREW_MODE) {
+      console.log('🚀 Crew mode detected - skipping auth');
+      setLoading(false);
+      return;
+    }
+
     console.log('🔐 AuthContext: Initializing...', {
       hasSupabase: !!supabase,
       url: (window as any).VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL
