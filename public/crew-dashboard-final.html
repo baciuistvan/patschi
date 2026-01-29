@@ -20,15 +20,10 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
+      background: #1a2332;
       color: #e2e8f0;
-      overflow-x: hidden;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
+      overflow: hidden;
+      height: 100vh;
     }
 
     /* Login Screen */
@@ -38,10 +33,11 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      background: #1a2332;
     }
 
     .login-box {
-      background: #1e293b;
+      background: #2d3748;
       padding: 40px;
       border-radius: 12px;
       width: 100%;
@@ -60,8 +56,8 @@
       width: 100%;
       padding: 12px;
       margin-bottom: 15px;
-      background: #334155;
-      border: 1px solid #475569;
+      background: #4a5568;
+      border: 1px solid #718096;
       border-radius: 8px;
       color: #e2e8f0;
       font-size: 16px;
@@ -90,7 +86,7 @@
     }
 
     button:disabled {
-      background: #475569;
+      background: #718096;
       cursor: not-allowed;
     }
 
@@ -103,173 +99,419 @@
       text-align: center;
     }
 
-    /* Dashboard */
+    /* Dashboard Layout */
     .dashboard {
       display: none;
+      height: 100vh;
+      overflow: hidden;
     }
 
     .dashboard.active {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
 
-    .header {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
+    /* Top Bar */
+    .top-bar {
+      background: #2d3748;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
+      border-bottom: 1px solid #4a5568;
+      flex-shrink: 0;
+    }
+
+    .top-bar-left {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .top-bar h1 {
+      font-size: 18px;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    .legend {
+      display: flex;
       gap: 15px;
+      font-size: 13px;
     }
 
-    .header h1 {
-      color: #60a5fa;
-      font-size: 24px;
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .date-selector {
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-dot.available { background: #10b981; }
+    .legend-dot.reserved { background: #ef4444; }
+
+    .top-bar-right {
       display: flex;
       gap: 10px;
       align-items: center;
     }
 
-    .date-selector input {
-      padding: 8px 12px;
-      margin: 0;
-      width: auto;
-    }
-
-    .logout-btn {
+    .btn {
       padding: 8px 16px;
-      width: auto;
-      background: #ef4444;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
     }
 
-    .logout-btn:hover {
+    .btn-orange {
+      background: #f97316;
+      color: white;
+    }
+
+    .btn-orange:hover {
+      background: #ea580c;
+    }
+
+    .btn-blue {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-blue:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid #4a5568;
+    }
+
+    .btn-secondary:hover {
+      background: #374151;
+    }
+
+    .btn-logout {
+      background: #ef4444;
+      color: white;
+      padding: 8px 16px;
+    }
+
+    .btn-logout:hover {
       background: #dc2626;
     }
 
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    /* Main Content */
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
     }
 
-    @media (max-width: 1024px) {
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .card {
-      background: #1e293b;
+    /* Floor Plan Section */
+    .floor-plan-section {
+      flex: 1;
+      background: #1a2332;
       padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .card h2 {
-      color: #60a5fa;
-      margin-bottom: 20px;
-      font-size: 20px;
-    }
-
-    /* Floor Plan */
-    .floor-plan {
-      position: relative;
-      background: #334155;
-      border-radius: 8px;
-      min-height: 400px;
       overflow: auto;
+      position: relative;
+    }
+
+    .floor-plan-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 600px;
     }
 
     .table {
       position: absolute;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
-      border: 2px solid;
+      padding: 10px;
+      font-size: 14px;
     }
 
     .table.available {
       background: #10b981;
-      border-color: #059669;
       color: white;
     }
 
     .table.occupied {
       background: #ef4444;
-      border-color: #dc2626;
       color: white;
     }
 
     .table.reserved {
       background: #f59e0b;
-      border-color: #d97706;
       color: white;
     }
 
     .table:hover {
       transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .table-label {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .table-capacity {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    .bar-area {
+      position: absolute;
+      background: #4a5568;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #94a3b8;
+      border: 2px solid #64748b;
+    }
+
+    /* Reservations Sidebar */
+    .reservations-sidebar {
+      width: 400px;
+      background: #2d3748;
+      border-left: 1px solid #4a5568;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #4a5568;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-header h2 {
+      font-size: 20px;
+      color: #e2e8f0;
+    }
+
+    .btn-add {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #10b981;
+      color: white;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+      background: #059669;
+    }
+
+    /* Calendar */
+    .calendar-container {
+      padding: 20px;
+      border-bottom: 1px solid #4a5568;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .calendar-header h3 {
+      font-size: 16px;
+      color: #e2e8f0;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 10px;
+    }
+
+    .calendar-nav button {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #4a5568;
+      color: #e2e8f0;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-nav button:hover {
+      background: #64748b;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekday {
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      padding: 4px;
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #cbd5e1;
+    }
+
+    .calendar-day:hover {
+      background: #4a5568;
+    }
+
+    .calendar-day.selected {
+      background: #3b82f6;
+      color: white;
+      font-weight: 600;
+    }
+
+    .calendar-day.today {
+      border: 1px solid #3b82f6;
+    }
+
+    .calendar-day.other-month {
+      color: #64748b;
+    }
+
+    .selected-date {
+      margin-top: 15px;
+      padding: 15px;
+      background: #374151;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .selected-date-day {
+      font-size: 14px;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .selected-date-count {
+      font-size: 12px;
+      color: #94a3b8;
     }
 
     /* Reservations List */
     .reservations-list {
-      max-height: 600px;
+      flex: 1;
       overflow-y: auto;
+      padding: 20px;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #64748b;
+    }
+
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-text {
+      font-size: 14px;
     }
 
     .reservation-item {
-      background: #334155;
+      background: #374151;
       padding: 15px;
       border-radius: 8px;
       margin-bottom: 10px;
-      border-left: 4px solid;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .reservation-item:hover {
+      background: #4a5568;
     }
 
     .reservation-item.pending {
-      border-color: #f59e0b;
+      border-left: 3px solid #f59e0b;
     }
 
     .reservation-item.confirmed {
-      border-color: #10b981;
+      border-left: 3px solid #10b981;
     }
 
     .reservation-item.seated {
-      border-color: #3b82f6;
-    }
-
-    .reservation-item.completed {
-      border-color: #6b7280;
-    }
-
-    .reservation-item.cancelled {
-      border-color: #ef4444;
+      border-left: 3px solid #3b82f6;
     }
 
     .reservation-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .reservation-time {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
-      color: #60a5fa;
+      color: #e2e8f0;
     }
 
     .reservation-status {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
     }
@@ -277,79 +519,54 @@
     .status-pending { background: #f59e0b; color: white; }
     .status-confirmed { background: #10b981; color: white; }
     .status-seated { background: #3b82f6; color: white; }
-    .status-completed { background: #6b7280; color: white; }
-    .status-cancelled { background: #ef4444; color: white; }
 
     .reservation-details {
+      font-size: 13px;
       color: #cbd5e1;
       line-height: 1.6;
     }
 
-    .reservation-actions {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .action-btn {
-      padding: 6px 12px;
-      width: auto;
-      font-size: 14px;
-    }
-
     .loading {
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       padding: 40px;
       color: #94a3b8;
     }
 
     .spinner {
-      border: 3px solid #334155;
-      border-top-color: #60a5fa;
+      border: 3px solid #4a5568;
+      border-top-color: #3b82f6;
       border-radius: 50%;
       width: 40px;
       height: 40px;
       animation: spin 1s linear infinite;
-      margin: 0 auto;
+      margin-bottom: 12px;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    /* Configuration Notice */
-    .config-notice {
-      background: #fef3c7;
-      color: #92400e;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      border-left: 4px solid #f59e0b;
-    }
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .main-content {
+        flex-direction: column;
+      }
 
-    .config-notice strong {
-      display: block;
-      margin-bottom: 10px;
-      font-size: 18px;
-    }
+      .reservations-sidebar {
+        width: 100%;
+        max-height: 50vh;
+      }
 
-    .config-notice code {
-      background: #fde68a;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
+      .floor-plan-section {
+        min-height: 50vh;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- Configuration Notice (shown if not configured) -->
-  <div id="configNotice" class="config-notice" style="display: none;">
-    <strong>⚠️ Configuration Required</strong>
-    <p>Please open this file in a text editor and update the <code>SUPABASE_URL</code> at line 50 with your Supabase project URL.</p>
-    <p>Example: <code>https://your-project-id.supabase.co</code></p>
-  </div>
-
   <!-- Login Screen -->
   <div id="loginScreen" class="login-container">
     <div class="login-box">
@@ -357,42 +574,94 @@
       <div id="loginError" class="error" style="display: none;"></div>
       <form id="loginForm">
         <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button type="submit">Login</button>
+        <input type="password" id="password" placeholder="Passwort" required>
+        <button type="submit">Anmelden</button>
       </form>
     </div>
   </div>
 
   <!-- Dashboard -->
   <div id="dashboard" class="dashboard">
-    <div class="container">
-      <div class="header">
-        <h1>🍽️ Crew Dashboard</h1>
-        <div class="date-selector">
-          <input type="date" id="dateSelector">
-          <button onclick="loadData()" style="width: auto; padding: 8px 16px;">Aktualisieren</button>
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <h1>Raumplan</h1>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot available"></div>
+            <span>Verfügbar</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot reserved"></div>
+            <span>Reserviert</span>
+          </div>
         </div>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+      <div class="top-bar-right">
+        <button class="btn btn-orange">🎁 Gutschein prüfen</button>
+        <button class="btn btn-blue">Lokal</button>
+        <button class="btn btn-secondary">Terrasse</button>
+        <button class="btn btn-logout" onclick="logout()">Abmelden</button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Floor Plan -->
+      <div class="floor-plan-section">
+        <div id="floorPlan" class="floor-plan-container">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Lade Daten...</p>
+          </div>
+        </div>
       </div>
 
-      <div class="content-grid">
-        <div class="card">
-          <h2>Tischplan</h2>
-          <div id="floorPlan" class="floor-plan">
-            <div class="loading">
-              <div class="spinner"></div>
-              <p>Lade Daten...</p>
+      <!-- Reservations Sidebar -->
+      <div class="reservations-sidebar">
+        <div class="sidebar-header">
+          <h2>Reservierungen</h2>
+          <button class="btn-add">+</button>
+        </div>
+
+        <!-- Calendar -->
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <h3 id="calendarMonth">January 2026</h3>
+            <div class="calendar-nav">
+              <button onclick="changeMonth(-1)">‹</button>
+              <button onclick="changeMonth(1)">›</button>
             </div>
+          </div>
+
+          <div class="calendar-weekdays">
+            <div class="calendar-weekday">SUN</div>
+            <div class="calendar-weekday">MON</div>
+            <div class="calendar-weekday">TUE</div>
+            <div class="calendar-weekday">WED</div>
+            <div class="calendar-weekday">THU</div>
+            <div class="calendar-weekday">FRI</div>
+            <div class="calendar-weekday">SAT</div>
+          </div>
+
+          <div id="calendarDays" class="calendar-days"></div>
+
+          <div class="selected-date">
+            <div class="selected-date-day" id="selectedDateDisplay">Wednesday, January 28</div>
+            <div class="selected-date-count" id="reservationCount">0 Reservierungen</div>
           </div>
         </div>
 
-        <div class="card">
-          <h2>Reservierungen</h2>
-          <div id="reservationsList" class="reservations-list">
-            <div class="loading">
-              <div class="spinner"></div>
-              <p>Lade Reservierungen...</p>
-            </div>
+        <!-- Reservations List -->
+        <div id="reservationsList" class="reservations-list">
+          <div class="empty-state">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+              <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+            </svg>
+            <div class="empty-text">Keine Reservierungen gefunden</div>
           </div>
         </div>
       </div>
@@ -400,29 +669,21 @@
   </div>
 
   <script>
-    // ============================================
-    // CONFIGURATION - UPDATE THIS!
-    // ============================================
-    const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co'; // e.g., https://xxxxx.supabase.co
-    // ============================================
-
+    // Configuration
+    const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
     const API_BASE = `${SUPABASE_URL}/functions/v1`;
+
     let authToken = localStorage.getItem('crew_token');
-    let currentDate = new Date().toISOString().split('T')[0];
+    let currentDate = new Date();
+    let selectedDate = new Date();
     let rooms = [];
     let tables = [];
     let reservations = [];
 
-    // Check configuration
-    if (SUPABASE_URL === 'YOUR_SUPABASE_URL_HERE' || !SUPABASE_URL.startsWith('http')) {
-      document.getElementById('configNotice').style.display = 'block';
-    }
-
     // Initialize
-    document.getElementById('dateSelector').value = currentDate;
-
     if (authToken) {
       showDashboard();
+      initCalendar();
       loadData();
     }
 
@@ -469,12 +730,108 @@
       document.getElementById('dashboard').classList.remove('active');
     }
 
+    // Calendar Functions
+    function initCalendar() {
+      currentDate = new Date();
+      selectedDate = new Date();
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      // Update month display
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('calendarMonth').textContent = `${monthNames[month]} ${year}`;
+
+      // Get first day of month and number of days
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      const calendarDays = document.getElementById('calendarDays');
+      calendarDays.innerHTML = '';
+
+      // Previous month days
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day other-month';
+        dayEl.textContent = day;
+        calendarDays.appendChild(dayEl);
+      }
+
+      // Current month days
+      const today = new Date();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        dayEl.textContent = day;
+
+        const date = new Date(year, month, day);
+
+        // Check if today
+        if (date.toDateString() === today.toDateString()) {
+          dayEl.classList.add('today');
+        }
+
+        // Check if selected
+        if (date.toDateString() === selectedDate.toDateString()) {
+          dayEl.classList.add('selected');
+        }
+
+        dayEl.onclick = () => selectDate(date);
+        calendarDays.appendChild(dayEl);
+      }
+
+      // Next month days
+      const remainingDays = 42 - (firstDay + daysInMonth);
+      for (let day = 1; day <= remainingDays; day++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day other-month';
+        dayEl.textContent = day;
+        calendarDays.appendChild(dayEl);
+      }
+
+      updateSelectedDateDisplay();
+    }
+
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function selectDate(date) {
+      selectedDate = date;
+      renderCalendar();
+      loadData();
+    }
+
+    function updateSelectedDateDisplay() {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
+
+      const dayName = days[selectedDate.getDay()];
+      const monthName = months[selectedDate.getMonth()];
+      const day = selectedDate.getDate();
+
+      document.getElementById('selectedDateDisplay').textContent =
+        `${dayName}, ${monthName} ${day}`;
+
+      const count = reservations.length;
+      document.getElementById('reservationCount').textContent =
+        `${count} Reservierung${count !== 1 ? 'en' : ''}`;
+    }
+
     // Load all data
     async function loadData() {
-      currentDate = document.getElementById('dateSelector').value;
       await Promise.all([loadRoomsAndTables(), loadReservations()]);
       renderFloorPlan();
       renderReservations();
+      updateSelectedDateDisplay();
     }
 
     async function loadRoomsAndTables() {
@@ -492,13 +849,15 @@
 
     async function loadReservations() {
       try {
-        const response = await fetch(`${API_BASE}/crew-get-reservations?date=${currentDate}`, {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        const response = await fetch(`${API_BASE}/crew-get-reservations?date=${dateStr}`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         });
         const data = await response.json();
         reservations = data.reservations || [];
       } catch (error) {
         console.error('Failed to load reservations:', error);
+        reservations = [];
       }
     }
 
@@ -506,12 +865,23 @@
       const container = document.getElementById('floorPlan');
 
       if (tables.length === 0) {
-        container.innerHTML = '<div class="loading"><p>Keine Tische verfügbar</p></div>';
+        container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Keine Tische verfügbar</p></div>';
         return;
       }
 
       container.innerHTML = '';
 
+      // Add BAR area (centered, large circle)
+      const bar = document.createElement('div');
+      bar.className = 'bar-area';
+      bar.style.left = '450px';
+      bar.style.top = '200px';
+      bar.style.width = '400px';
+      bar.style.height = '250px';
+      bar.textContent = 'BAR';
+      container.appendChild(bar);
+
+      // Render tables
       tables.forEach(table => {
         if (!table.is_bookable) return;
 
@@ -520,10 +890,20 @@
         div.className = `table ${status}`;
         div.style.left = `${table.position_x}px`;
         div.style.top = `${table.position_y}px`;
-        div.style.width = `${table.width}px`;
-        div.style.height = `${table.height}px`;
-        div.textContent = table.custom_label || table.table_number || `T${table.id}`;
-        div.title = `Tisch ${table.table_number} - ${status}`;
+        div.style.width = `${table.width || 80}px`;
+        div.style.height = `${table.height || 80}px`;
+
+        const label = document.createElement('div');
+        label.className = 'table-label';
+        label.textContent = table.custom_label || table.table_number || `T${table.id}`;
+
+        const capacity = document.createElement('div');
+        capacity.className = 'table-capacity';
+        capacity.textContent = `${table.capacity || 4} Plätze`;
+
+        div.appendChild(label);
+        div.appendChild(capacity);
+        div.title = `${table.custom_label || table.table_number} - ${status}`;
 
         container.appendChild(div);
       });
@@ -544,7 +924,17 @@
       const container = document.getElementById('reservationsList');
 
       if (reservations.length === 0) {
-        container.innerHTML = '<div class="loading"><p>Keine Reservierungen für dieses Datum</p></div>';
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+              <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+            </svg>
+            <div class="empty-text">Keine Reservierungen gefunden</div>
+          </div>
+        `;
         return;
       }
 
@@ -552,45 +942,30 @@
         a.reservation_time.localeCompare(b.reservation_time)
       );
 
-      container.innerHTML = sorted.map(res => `
-        <div class="reservation-item ${res.status}">
-          <div class="reservation-header">
-            <div class="reservation-time">${res.reservation_time}</div>
-            <div class="reservation-status status-${res.status}">
-              ${getStatusText(res.status)}
+      container.innerHTML = sorted.map(res => {
+        const activeStatuses = ['pending', 'confirmed', 'seated'];
+        if (!activeStatuses.includes(res.status)) return '';
+
+        return `
+          <div class="reservation-item ${res.status}" onclick="selectReservation('${res.id}')">
+            <div class="reservation-header">
+              <div class="reservation-time">${res.reservation_time}</div>
+              <div class="reservation-status status-${res.status}">
+                ${getStatusText(res.status)}
+              </div>
+            </div>
+            <div class="reservation-details">
+              <strong>${res.guest_name}</strong> - ${res.guest_count} Personen<br>
+              ${res.table_assignments?.length > 0 ? `Tisch: ${res.table_assignments.join(', ')}` : ''}
             </div>
           </div>
-          <div class="reservation-details">
-            <strong>${res.guest_name}</strong> - ${res.guest_count} Personen<br>
-            ${res.guest_email ? `Email: ${res.guest_email}<br>` : ''}
-            ${res.guest_phone ? `Tel: ${res.guest_phone}<br>` : ''}
-            ${res.special_requests ? `Notizen: ${res.special_requests}<br>` : ''}
-            ${res.table_assignments?.length > 0 ? `Tische: ${res.table_assignments.join(', ')}` : 'Keine Tische zugewiesen'}
-          </div>
-          ${res.status !== 'cancelled' && res.status !== 'completed' ? `
-            <div class="reservation-actions">
-              ${res.status === 'pending' ? `
-                <button class="action-btn" style="background: #10b981;" onclick="updateStatus('${res.id}', 'confirmed')">
-                  Bestätigen
-                </button>
-              ` : ''}
-              ${res.status === 'confirmed' ? `
-                <button class="action-btn" style="background: #3b82f6;" onclick="updateStatus('${res.id}', 'seated')">
-                  Platziert
-                </button>
-              ` : ''}
-              ${res.status === 'seated' ? `
-                <button class="action-btn" style="background: #6b7280;" onclick="updateStatus('${res.id}', 'completed')">
-                  Abgeschlossen
-                </button>
-              ` : ''}
-              <button class="action-btn" style="background: #ef4444;" onclick="updateStatus('${res.id}', 'cancelled')">
-                Stornieren
-              </button>
-            </div>
-          ` : ''}
-        </div>
-      `).join('');
+        `;
+      }).filter(Boolean).join('');
+    }
+
+    function selectReservation(id) {
+      // Future: Show reservation details modal
+      console.log('Selected reservation:', id);
     }
 
     function getStatusText(status) {
@@ -620,9 +995,7 @@
 
         if (!response.ok) throw new Error('Update fehlgeschlagen');
 
-        await loadReservations();
-        renderFloorPlan();
-        renderReservations();
+        await loadData();
       } catch (error) {
         alert('Fehler beim Aktualisieren: ' + error.message);
       }
