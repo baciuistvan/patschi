@@ -1,0 +1,22 @@
+{
+  "name": "Patschi Crew Dashboard",
+  "short_name": "Crew",
+  "description": "Restaurant crew dashboard for managing reservations",
+  "start_url": "./crew-dashboard-final.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "./crew-icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "./crew-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
