@@ -30,7 +30,7 @@ function AppContent() {
   const isWidget = path === '/widget';
   const isGiftCardWidget = path === '/gift-card-widget' || hash === '#/gift-card-widget';
   const isGiftCardSuccess = searchParams.get('success') === 'true' && searchParams.get('gift_card_id');
-  const isCrewMode = path.includes('/crew') || hash === '#/crew' || searchParams.get('mode') === 'crew';
+  const isCrewMode = (window as any).FORCE_CREW_MODE || path.includes('/crew') || hash === '#/crew' || searchParams.get('mode') === 'crew';
 
   useEffect(() => {
     if (!user || !adminUser) {

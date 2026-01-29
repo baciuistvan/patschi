@@ -96,14 +96,15 @@
       localStorage.setItem('supabase_url', window.VITE_SUPABASE_URL);
       localStorage.setItem('supabase_anon_key', window.VITE_SUPABASE_ANON_KEY);
 
-      // Ensure crew mode is triggered
+      // Force crew mode for this standalone version
+      window.FORCE_CREW_MODE = true;
+
+      // Ensure crew mode is triggered in URL
       if (!window.location.search.includes('mode=crew')) {
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('mode', 'crew');
-        window.history.replaceState({}, '', currentUrl);
+        window.location.search = 'mode=crew';
       }
     </script>
-    <script type="module" crossorigin src="./assets/main-Wb28OXBj.js"></script>
+    <script type="module" crossorigin src="./assets/main-CdKQksIO.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/main-CQhF2cm_.css">
   </head>
   <body>
