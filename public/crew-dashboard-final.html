@@ -573,8 +573,8 @@
       <h1>🍽️ Patschi Crew</h1>
       <div id="loginError" class="error" style="display: none;"></div>
       <form id="loginForm">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Passwort" required>
+        <input type="text" id="username" placeholder="Benutzername" required autocomplete="username">
+        <input type="password" id="password" placeholder="Passwort" required autocomplete="current-password">
         <button type="submit">Anmelden</button>
       </form>
     </div>
@@ -690,15 +690,15 @@
     // Login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
+      const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const errorDiv = document.getElementById('loginError');
 
       try {
-        const response = await fetch(`${API_BASE}/crew-auth`, {
+        const response = await fetch(`${API_BASE}/crew-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ username, password })
         });
 
         const data = await response.json();
@@ -707,10 +707,11 @@
           throw new Error(data.error || 'Login fehlgeschlagen');
         }
 
-        authToken = data.access_token;
+        authToken = data.token;
         localStorage.setItem('crew_token', authToken);
         errorDiv.style.display = 'none';
         showDashboard();
+        initCalendar();
         loadData();
       } catch (error) {
         errorDiv.textContent = error.message;

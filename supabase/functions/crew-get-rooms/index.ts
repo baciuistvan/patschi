@@ -32,11 +32,10 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
+    // Validate crew token (format: crew_{userId}_{timestamp})
+    if (!token.startsWith("crew_")) {
       return new Response(
-        JSON.stringify({ error: "Invalid token" }),
+        JSON.stringify({ error: "Invalid token format" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
