@@ -400,7 +400,7 @@
                 </div>
 
                 <div class="flex items-center space-x-2">
-                  <button class="px-3 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition text-sm font-semibold flex items-center shadow-md">
+                  <button onclick="openGiftCardModal()" class="px-3 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition text-sm font-semibold flex items-center shadow-md">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
                     </svg>
@@ -542,6 +542,155 @@
               </div>
             </div>
           </div>
+
+          <!-- Gift Card Modal -->
+          <div id="giftCardModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeGiftCardModalOnBackdrop(event)">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4" onclick="event.stopPropagation()">
+              <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-2xl font-bold text-white flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                    </svg>
+                    Gutschein prüfen
+                  </h2>
+                  <button onclick="closeGiftCardModal()" class="text-white hover:text-orange-100 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Gutschein Code</label>
+                  <div class="flex space-x-2">
+                    <input
+                      type="text"
+                      id="giftCardCode"
+                      class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent uppercase"
+                      placeholder="z.B. GS-XXXXX"
+                      onkeypress="handleGiftCardKeyPress(event)"
+                    />
+                    <button
+                      onclick="verifyGiftCard()"
+                      id="verifyButton"
+                      class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-semibold shadow-md"
+                    >
+                      Prüfen
+                    </button>
+                  </div>
+                </div>
+
+                <div id="giftCardResult" class="hidden">
+                  <!-- Valid Gift Card -->
+                  <div id="validGiftCard" class="hidden">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <div class="flex items-center mb-3">
+                        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-green-800 font-bold">Gutschein gültig</span>
+                      </div>
+                      <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Code:</span>
+                          <span class="font-semibold text-gray-900" id="gcCode"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Empfänger:</span>
+                          <span class="font-semibold text-gray-900" id="gcRecipient"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Wert:</span>
+                          <span class="font-semibold text-gray-900" id="gcAmount"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Gültig bis:</span>
+                          <span class="font-semibold text-gray-900" id="gcExpiry"></span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onclick="redeemGiftCard()"
+                      id="redeemButton"
+                      class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition font-semibold shadow-md text-lg"
+                    >
+                      Einlösen
+                    </button>
+                  </div>
+
+                  <!-- Invalid Gift Card -->
+                  <div id="invalidGiftCard" class="hidden">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div class="flex items-center mb-2">
+                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-red-800 font-bold">Nicht gültig</span>
+                      </div>
+                      <p class="text-red-700 text-sm" id="gcErrorMessage"></p>
+                      <div id="gcDetails" class="mt-3 pt-3 border-t border-red-200 space-y-1 text-sm hidden">
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Code:</span>
+                          <span class="font-semibold text-gray-900" id="gcCodeInvalid"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Status:</span>
+                          <span class="font-semibold text-gray-900" id="gcStatus"></span>
+                        </div>
+                        <div id="gcRedeemedInfo" class="hidden pt-2 border-t border-red-200 mt-2">
+                          <div class="flex justify-between">
+                            <span class="text-gray-600">Eingelöst am:</span>
+                            <span class="font-semibold text-gray-900" id="gcRedeemedAt"></span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-gray-600">Eingelöst von:</span>
+                            <span class="font-semibold text-gray-900" id="gcRedeemedBy"></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Success Message -->
+                  <div id="successMessage" class="hidden">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                      <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      </div>
+                      <h3 class="text-xl font-bold text-green-800 mb-2">Erfolgreich eingelöst!</h3>
+                      <p class="text-green-700 mb-4">Der Gutschein wurde erfolgreich eingelöst.</p>
+                      <div class="space-y-2 text-sm bg-white rounded-lg p-4">
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Code:</span>
+                          <span class="font-semibold text-gray-900" id="gcCodeSuccess"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-600">Betrag:</span>
+                          <span class="font-semibold text-green-600 text-lg" id="gcAmountSuccess"></span>
+                        </div>
+                      </div>
+                      <button
+                        onclick="resetGiftCardModal()"
+                        class="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                      >
+                        Weiteren Gutschein prüfen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="giftCardLoading" class="hidden text-center py-8">
+                  <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-orange-600"></div>
+                  <p class="text-gray-600 mt-4">Wird geprüft...</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       `;
     }
@@ -570,6 +719,200 @@
 
     window.handleRoomSwitch = async function(roomId) {
       await switchRoom(roomId);
+    };
+
+    // Gift Card Modal Functions
+    let currentGiftCard = null;
+
+    window.openGiftCardModal = function() {
+      const modal = document.getElementById('giftCardModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => {
+        document.getElementById('giftCardCode').focus();
+      }, 100);
+    };
+
+    window.closeGiftCardModal = function() {
+      const modal = document.getElementById('giftCardModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      resetGiftCardModal();
+    };
+
+    window.closeGiftCardModalOnBackdrop = function(event) {
+      if (event.target.id === 'giftCardModal') {
+        closeGiftCardModal();
+      }
+    };
+
+    window.resetGiftCardModal = function() {
+      document.getElementById('giftCardCode').value = '';
+      document.getElementById('giftCardResult').classList.add('hidden');
+      document.getElementById('validGiftCard').classList.add('hidden');
+      document.getElementById('invalidGiftCard').classList.add('hidden');
+      document.getElementById('successMessage').classList.add('hidden');
+      document.getElementById('giftCardLoading').classList.add('hidden');
+      currentGiftCard = null;
+    };
+
+    window.handleGiftCardKeyPress = function(event) {
+      if (event.key === 'Enter') {
+        verifyGiftCard();
+      }
+    };
+
+    window.verifyGiftCard = async function() {
+      const code = document.getElementById('giftCardCode').value.trim();
+
+      if (!code) {
+        alert('Bitte geben Sie einen Gutschein Code ein');
+        return;
+      }
+
+      // Show loading
+      document.getElementById('giftCardResult').classList.add('hidden');
+      document.getElementById('giftCardLoading').classList.remove('hidden');
+      document.getElementById('verifyButton').disabled = true;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-verify-gift-card`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ code: code.toUpperCase() })
+        });
+
+        const data = await response.json();
+
+        // Hide loading
+        document.getElementById('giftCardLoading').classList.add('hidden');
+        document.getElementById('giftCardResult').classList.remove('hidden');
+
+        if (data.valid) {
+          // Show valid gift card
+          currentGiftCard = data.giftCard;
+          document.getElementById('validGiftCard').classList.remove('hidden');
+          document.getElementById('invalidGiftCard').classList.add('hidden');
+
+          // Populate data
+          document.getElementById('gcCode').textContent = data.giftCard.code;
+          document.getElementById('gcRecipient').textContent = data.giftCard.recipient_name || 'Nicht angegeben';
+          document.getElementById('gcAmount').textContent = `€${parseFloat(data.giftCard.original_amount).toFixed(2)}`;
+
+          const expiryDate = new Date(data.giftCard.expiry_date);
+          document.getElementById('gcExpiry').textContent = expiryDate.toLocaleDateString('de-DE');
+        } else {
+          // Show invalid gift card
+          currentGiftCard = null;
+          document.getElementById('validGiftCard').classList.add('hidden');
+          document.getElementById('invalidGiftCard').classList.remove('hidden');
+
+          document.getElementById('gcErrorMessage').textContent = data.message;
+
+          // Show details if available
+          if (data.giftCard) {
+            document.getElementById('gcDetails').classList.remove('hidden');
+            document.getElementById('gcCodeInvalid').textContent = data.giftCard.code;
+
+            let statusText = data.giftCard.status;
+            if (statusText === 'used') statusText = 'Eingelöst';
+            else if (statusText === 'expired') statusText = 'Abgelaufen';
+            else if (statusText === 'cancelled') statusText = 'Storniert';
+            document.getElementById('gcStatus').textContent = statusText;
+
+            // Show redeemed info if available
+            if (data.giftCard.is_redeemed && data.giftCard.redeemed_at) {
+              document.getElementById('gcRedeemedInfo').classList.remove('hidden');
+              const redeemedDate = new Date(data.giftCard.redeemed_at);
+              document.getElementById('gcRedeemedAt').textContent = redeemedDate.toLocaleString('de-DE');
+              document.getElementById('gcRedeemedBy').textContent = data.giftCard.redeemed_by || 'Unbekannt';
+            } else {
+              document.getElementById('gcRedeemedInfo').classList.add('hidden');
+            }
+          } else {
+            document.getElementById('gcDetails').classList.add('hidden');
+          }
+        }
+      } catch (error) {
+        console.error('Error verifying gift card:', error);
+        document.getElementById('giftCardLoading').classList.add('hidden');
+        document.getElementById('giftCardResult').classList.remove('hidden');
+        document.getElementById('validGiftCard').classList.add('hidden');
+        document.getElementById('invalidGiftCard').classList.remove('hidden');
+        document.getElementById('gcErrorMessage').textContent = 'Fehler beim Prüfen des Gutscheins. Bitte versuchen Sie es erneut.';
+        document.getElementById('gcDetails').classList.add('hidden');
+      } finally {
+        document.getElementById('verifyButton').disabled = false;
+      }
+    };
+
+    window.redeemGiftCard = async function() {
+      if (!currentGiftCard) {
+        alert('Kein Gutschein ausgewählt');
+        return;
+      }
+
+      // Confirmation dialog
+      const confirmRedeem = confirm(`Möchten Sie den Gutschein über €${parseFloat(currentGiftCard.original_amount).toFixed(2)} wirklich einlösen?`);
+      if (!confirmRedeem) {
+        return;
+      }
+
+      // Show loading
+      document.getElementById('giftCardResult').classList.add('hidden');
+      document.getElementById('giftCardLoading').classList.remove('hidden');
+      document.getElementById('redeemButton').disabled = true;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-redeem-gift-card`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            code: currentGiftCard.code,
+            redeemed_by: state.user ? state.user.name : 'Crew'
+          })
+        });
+
+        const data = await response.json();
+
+        // Hide loading
+        document.getElementById('giftCardLoading').classList.add('hidden');
+        document.getElementById('giftCardResult').classList.remove('hidden');
+
+        if (data.success) {
+          // Show success message
+          document.getElementById('validGiftCard').classList.add('hidden');
+          document.getElementById('invalidGiftCard').classList.add('hidden');
+          document.getElementById('successMessage').classList.remove('hidden');
+
+          document.getElementById('gcCodeSuccess').textContent = data.giftCard.code;
+          document.getElementById('gcAmountSuccess').textContent = `€${parseFloat(data.giftCard.original_amount).toFixed(2)}`;
+        } else {
+          // Show error
+          document.getElementById('validGiftCard').classList.add('hidden');
+          document.getElementById('invalidGiftCard').classList.remove('hidden');
+          document.getElementById('successMessage').classList.add('hidden');
+          document.getElementById('gcErrorMessage').textContent = data.message || 'Fehler beim Einlösen des Gutscheins';
+          document.getElementById('gcDetails').classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Error redeeming gift card:', error);
+        document.getElementById('giftCardLoading').classList.add('hidden');
+        document.getElementById('giftCardResult').classList.remove('hidden');
+        document.getElementById('validGiftCard').classList.add('hidden');
+        document.getElementById('invalidGiftCard').classList.remove('hidden');
+        document.getElementById('successMessage').classList.add('hidden');
+        document.getElementById('gcErrorMessage').textContent = 'Fehler beim Einlösen des Gutscheins. Bitte versuchen Sie es erneut.';
+        document.getElementById('gcDetails').classList.add('hidden');
+      } finally {
+        document.getElementById('redeemButton').disabled = false;
+      }
     };
 
     // Initial render
