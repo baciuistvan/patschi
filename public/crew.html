@@ -1053,6 +1053,15 @@
       await switchRoom(roomId);
     };
 
+    // Calendar functions
+    window.changeMonth = async function(direction) {
+      await changeMonth(direction);
+    };
+
+    window.selectCalendarDate = async function(year, month, day) {
+      await selectCalendarDate(year, month, day);
+    };
+
     // Gift Card Modal Functions
     let currentGiftCard = null;
 
