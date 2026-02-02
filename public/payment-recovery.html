@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Recovery - Patschi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+  <div class="min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-slate-900 mb-2">Payment Recovery Tool</h1>
+        <p class="text-slate-600 mb-8">Find Stripe payments that didn't create reservations</p>
+
+        <!-- Search by Email -->
+        <div class="mb-8">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Search by Email</label>
+          <div class="flex gap-3">
+            <input
+              type="email"
+              id="searchEmail"
+              placeholder="charlotte_goldmann@hotmail.com"
+              class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button
+              onclick="searchPayments()"
+              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              Search Stripe
+            </button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden">
+          <h2 class="text-xl font-bold text-slate-900 mb-4">Found Payments</h2>
+          <div id="paymentsList" class="space-y-4"></div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden text-center py-12">
+          <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-slate-600 mt-4">Searching Stripe...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 text-red-800"></div>
+
+        <!-- Instructions -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 class="text-lg font-bold text-blue-900 mb-2">How to Use This Tool</h3>
+          <ol class="list-decimal list-inside space-y-2 text-blue-800">
+            <li>Enter the customer's email address (charlotte_goldmann@hotmail.com)</li>
+            <li>Click "Search Stripe" to find all payments from that email</li>
+            <li>Review the found payments and their details</li>
+            <li>For each payment, you can manually create the missing reservation</li>
+          </ol>
+
+          <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+            <p class="text-sm text-yellow-800">
+              <strong>Note:</strong> You need to check your Stripe dashboard to see the actual payment details.
+              Go to: <a href="https://dashboard.stripe.com/test/payments" target="_blank" class="underline">dashboard.stripe.com/payments</a>
+              and search for charlotte_goldmann@hotmail.com
+            </p>
+          </div>
+        </div>
+
+        <!-- Manual Creation Form -->
+        <div class="mt-8 bg-slate-50 border border-slate-200 rounded-lg p-6">
+          <h3 class="text-lg font-bold text-slate-900 mb-4">Manually Create Missing Reservation</h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Stripe Payment Intent ID</label>
+              <input type="text" id="paymentIntentId" placeholder="pi_xxxxxxxxxxxxx"
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-slate-500 mt-1">Get this from Stripe dashboard</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Customer Name</label>
+                <input type="text" id="customerName" placeholder="Charlotte Goldmann"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Customer Email</label>
+                <input type="email" id="customerEmail" placeholder="charlotte_goldmann@hotmail.com"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Party Size</label>
+                <input type="number" id="partySize" placeholder="4" min="1"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                <input type="date" id="reservationDate"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Time</label>
+                <input type="time" id="reservationTime"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+              <input type="tel" id="customerPhone" placeholder="+43..."
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Payment Amount (EUR)</label>
+              <input type="number" id="paymentAmount" placeholder="350" step="0.01"
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Special Requests</label>
+              <textarea id="specialRequests" rows="3"
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Any special requests..."></textarea>
+            </div>
+
+            <button
+              onclick="createReservation()"
+              class="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-lg"
+            >
+              Create Reservation
+            </button>
+          </div>
+
+          <div id="createResult" class="mt-4 hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL ||
+      document.querySelector('meta[name="supabase-url"]')?.content ||
+      'https://xwfeecqyqxpmyujgtndk.supabase.co';
+
+    const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY ||
+      document.querySelector('meta[name="supabase-anon-key"]')?.content ||
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3ZmVlY3F5cXhwbXl1amd0bmRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4MDc2MjksImV4cCI6MjA0ODM4MzYyOX0.NNF5u3OW8kHo8TEQRQOcYL_pPSWGRz3tB01q4Fm2fYs';
+
+    window.supabase = createClient(supabaseUrl, supabaseKey);
+
+    window.searchPayments = async function() {
+      const email = document.getElementById('searchEmail').value.trim();
+      if (!email) {
+        alert('Please enter an email address');
+        return;
+      }
+
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('error').classList.add('hidden');
+
+      try {
+        // Search for existing reservations
+        const { data: reservations, error: resError } = await supabase
+          .from('reservations')
+          .select('*')
+          .eq('customer_email', email);
+
+        if (resError) throw resError;
+
+        // Search for gift cards
+        const { data: giftCards, error: gcError } = await supabase
+          .from('gift_cards')
+          .select('*')
+          .or(`purchaser_email.eq.${email},recipient_email.eq.${email}`);
+
+        if (gcError) throw gcError;
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('results').classList.remove('hidden');
+
+        const paymentsList = document.getElementById('paymentsList');
+
+        if (reservations.length === 0 && giftCards.length === 0) {
+          paymentsList.innerHTML = `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+              <h3 class="text-lg font-bold text-yellow-900 mb-2">No Records Found in Database</h3>
+              <p class="text-yellow-800 mb-4">
+                No reservations or gift cards found for <strong>${email}</strong> in the database.
+              </p>
+              <p class="text-yellow-800">
+                If the customer made payments, check Stripe dashboard and use the manual creation form below.
+              </p>
+              <div class="mt-4">
+                <a href="https://dashboard.stripe.com/test/payments?query=${encodeURIComponent(email)}"
+                   target="_blank"
+                   class="inline-block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                  Open Stripe Dashboard →
+                </a>
+              </div>
+            </div>
+          `;
+        } else {
+          let html = '';
+
+          if (reservations.length > 0) {
+            html += `<div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 class="font-bold text-green-900 mb-2">Found ${reservations.length} Reservation(s)</h4>
+              ${reservations.map(r => `
+                <div class="bg-white rounded p-3 mb-2">
+                  <p><strong>${r.customer_name}</strong> - ${r.party_size} guests</p>
+                  <p class="text-sm text-slate-600">${r.reservation_date} at ${r.reservation_time}</p>
+                  <p class="text-sm"><span class="font-medium">Status:</span> ${r.status} | <span class="font-medium">Payment:</span> ${r.payment_status} (€${r.payment_amount})</p>
+                  ${r.stripe_payment_intent_id ? `<p class="text-xs text-slate-500 mt-1">PI: ${r.stripe_payment_intent_id}</p>` : ''}
+                </div>
+              `).join('')}
+            </div>`;
+          }
+
+          if (giftCards.length > 0) {
+            html += `<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <h4 class="font-bold text-blue-900 mb-2">Found ${giftCards.length} Gift Card(s)</h4>
+              ${giftCards.map(gc => `
+                <div class="bg-white rounded p-3 mb-2">
+                  <p><strong>${gc.code}</strong> - €${gc.original_amount}</p>
+                  <p class="text-sm text-slate-600">From: ${gc.purchaser_email}</p>
+                  <p class="text-sm"><span class="font-medium">Status:</span> ${gc.status} | <span class="font-medium">Payment:</span> ${gc.payment_status}</p>
+                </div>
+              `).join('')}
+            </div>`;
+          }
+
+          paymentsList.innerHTML = html;
+        }
+
+        // Pre-fill the manual form
+        document.getElementById('customerEmail').value = email;
+
+      } catch (error) {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.remove('hidden');
+        document.getElementById('error').textContent = 'Error: ' + error.message;
+      }
+    };
+
+    window.createReservation = async function() {
+      const data = {
+        customer_name: document.getElementById('customerName').value.trim(),
+        customer_email: document.getElementById('customerEmail').value.trim(),
+        customer_phone: document.getElementById('customerPhone').value.trim(),
+        party_size: parseInt(document.getElementById('partySize').value),
+        reservation_date: document.getElementById('reservationDate').value,
+        reservation_time: document.getElementById('reservationTime').value,
+        special_requests: document.getElementById('specialRequests').value.trim(),
+        payment_amount: parseFloat(document.getElementById('paymentAmount').value),
+        stripe_payment_intent_id: document.getElementById('paymentIntentId').value.trim(),
+        status: 'confirmed',
+        payment_status: 'paid',
+        payment_method: 'stripe',
+        booking_method: 'online',
+        duration_minutes: 120,
+        booking_code: 'REC-' + Math.random().toString(36).substring(2, 10).toUpperCase()
+      };
+
+      // Validate
+      if (!data.customer_name || !data.customer_email || !data.party_size || !data.reservation_date || !data.reservation_time) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      const resultDiv = document.getElementById('createResult');
+      resultDiv.innerHTML = '<div class="text-center py-4"><div class="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>';
+      resultDiv.classList.remove('hidden');
+
+      try {
+        const { data: reservation, error } = await supabase
+          .from('reservations')
+          .insert([data])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        resultDiv.innerHTML = `
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 class="font-bold text-green-900 mb-2">✓ Reservation Created Successfully!</h4>
+            <p class="text-green-800">Booking Code: <strong>${reservation.booking_code}</strong></p>
+            <p class="text-sm text-green-700 mt-2">
+              ${reservation.customer_name} - ${reservation.party_size} guests on ${reservation.reservation_date} at ${reservation.reservation_time}
+            </p>
+          </div>
+        `;
+
+        // Clear form
+        setTimeout(() => {
+          document.getElementById('paymentIntentId').value = '';
+          document.getElementById('customerName').value = '';
+          document.getElementById('partySize').value = '';
+          document.getElementById('reservationDate').value = '';
+          document.getElementById('reservationTime').value = '';
+          document.getElementById('customerPhone').value = '';
+          document.getElementById('paymentAmount').value = '';
+          document.getElementById('specialRequests').value = '';
+        }, 2000);
+
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h4 class="font-bold text-red-900 mb-2">Error Creating Reservation</h4>
+            <p class="text-red-800">${error.message}</p>
+          </div>
+        `;
+      }
+    };
+  </script>
+</body>
+</html>
