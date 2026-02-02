@@ -447,6 +447,21 @@
                     </div>
                   </div>
                 ` : ''}
+                ${(state.selectedRoom && getRoomName(state.selectedRoom) === 'Terrasse') ? `
+                  <!-- Bar Area in Terrasse -->
+                  <div class="absolute bar-area" style="left: 235px; top: -2px; width: 913px; height: 100px;">
+                    <div class="w-full h-full flex items-center justify-center">
+                      <div>
+                        <div class="text-white font-bold text-4xl text-center mb-2">BAR</div>
+                        <div class="flex items-center justify-center space-x-1">
+                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
 
                 <!-- Dynamic Tables from Database -->
                 ${getRoomTables().map(table => `
