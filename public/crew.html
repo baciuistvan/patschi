@@ -102,7 +102,10 @@
       selectedRoom: null,
       rooms: [],
       tables: [],
-      reservations: []
+      reservations: [],
+      calendarMonth: new Date().getMonth(),
+      calendarYear: new Date().getFullYear(),
+      selectedDate: new Date()
     };
 
     // Fetch rooms from database
@@ -141,12 +144,12 @@
       }
     }
 
-    // Fetch today's reservations
+    // Fetch reservations for selected date
     async function fetchReservations() {
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const dateStr = state.selectedDate.toISOString().split('T')[0];
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${today}&select=*,reservation_tables(table_id)`,
+          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${dateStr}&select=*,reservation_tables(table_id)`,
           {
             headers: {
               'apikey': SUPABASE_ANON_KEY,
@@ -159,6 +162,59 @@
       } catch (error) {
         console.error('Error fetching reservations:', error);
       }
+    }
+
+    // Get booking counts for calendar month
+    async function getMonthBookingCounts() {
+      try {
+        const startDate = new Date(state.calendarYear, state.calendarMonth, 1);
+        const endDate = new Date(state.calendarYear, state.calendarMonth + 1, 0);
+
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=gte.${startDate.toISOString().split('T')[0]}&reservation_date=lte.${endDate.toISOString().split('T')[0]}&select=reservation_date`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          }
+        );
+        const reservations = await response.json();
+
+        // Count bookings per day
+        const counts = {};
+        reservations.forEach(res => {
+          const day = new Date(res.reservation_date).getDate();
+          counts[day] = (counts[day] || 0) + 1;
+        });
+
+        return counts;
+      } catch (error) {
+        console.error('Error fetching booking counts:', error);
+        return {};
+      }
+    }
+
+    // Change calendar month
+    async function changeMonth(direction) {
+      state.calendarMonth += direction;
+
+      if (state.calendarMonth > 11) {
+        state.calendarMonth = 0;
+        state.calendarYear++;
+      } else if (state.calendarMonth < 0) {
+        state.calendarMonth = 11;
+        state.calendarYear--;
+      }
+
+      await render();
+    }
+
+    // Select a date on calendar
+    async function selectCalendarDate(year, month, day) {
+      state.selectedDate = new Date(year, month, day);
+      await fetchReservations();
+      await render();
     }
 
     // Get shape class based on database shape
@@ -235,7 +291,7 @@
           await fetchRooms();
           await fetchTables();
           await fetchReservations();
-          render();
+          await render();
         })();
       } catch (e) {
         localStorage.removeItem('crew_user');
@@ -247,7 +303,7 @@
     async function crewLogin(username, password) {
       state.loading = true;
       state.error = null;
-      render();
+      await render();
 
       try {
         const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-login`, {
@@ -279,24 +335,24 @@
         state.error = err.message;
       } finally {
         state.loading = false;
-        render();
+        await render();
       }
     }
 
     // Logout function
-    function logout() {
+    async function logout() {
       state.user = null;
       state.view = 'login';
       localStorage.removeItem('crew_user');
       localStorage.removeItem('crew_token');
-      render();
+      await render();
     }
 
     // Switch room function
     async function switchRoom(roomId) {
       state.selectedRoom = roomId;
       await fetchReservations();
-      render();
+      await render();
     }
 
     // Render login view
@@ -362,10 +418,11 @@
     }
 
     // Render dashboard view
-    function renderDashboard() {
+    async function renderDashboard() {
       const today = new Date();
       const currentMonth = today.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-      const selectedDate = today.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const selectedDate = state.selectedDate.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const bookingCounts = await getMonthBookingCounts();
 
       return `
         <div class="min-h-screen bg-slate-900">
@@ -471,13 +528,13 @@
               <div class="p-4 border-b border-slate-700/50">
                 <div class="bg-slate-900/50 rounded-xl p-4 backdrop-blur-sm shadow-inner">
                   <div class="flex items-center justify-between mb-4">
-                    <button class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+                    <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                       </svg>
                     </button>
-                    <h3 class="text-white font-bold text-base">Januar 2026</h3>
-                    <button class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+                    <h3 class="text-white font-bold text-base">${new Date(state.calendarYear, state.calendarMonth).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h3>
+                    <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                       </svg>
@@ -485,21 +542,62 @@
                   </div>
 
                   <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                    <div class="text-slate-500 font-semibold py-1">SO</div>
                     <div class="text-slate-500 font-semibold py-1">MO</div>
                     <div class="text-slate-500 font-semibold py-1">DI</div>
                     <div class="text-slate-500 font-semibold py-1">MI</div>
                     <div class="text-slate-500 font-semibold py-1">DO</div>
                     <div class="text-slate-500 font-semibold py-1">FR</div>
                     <div class="text-slate-500 font-semibold py-1">SA</div>
+                    <div class="text-slate-500 font-semibold py-1">SO</div>
                   </div>
 
                   <div class="grid grid-cols-7 gap-1 text-center text-sm">
-                    ${Array.from({length: 31}, (_, i) => {
-                      const day = i + 1;
-                      const isToday = day === today.getDate();
-                      return `<div class="py-2 ${isToday ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-lg font-bold shadow-md' : 'text-slate-300 hover:bg-slate-700 rounded-lg cursor-pointer transition font-medium'}">${day}</div>`;
-                    }).join('')}
+                    ${(() => {
+                      const firstDay = new Date(state.calendarYear, state.calendarMonth, 1);
+                      const lastDay = new Date(state.calendarYear, state.calendarMonth + 1, 0);
+                      const daysInMonth = lastDay.getDate();
+
+                      // Get day of week (0=Sunday, 1=Monday, etc) and adjust to Monday start
+                      let firstDayOfWeek = firstDay.getDay();
+                      firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Convert Sunday=0 to Sunday=6
+
+                      const cells = [];
+
+                      // Empty cells before first day
+                      for (let i = 0; i < firstDayOfWeek; i++) {
+                        cells.push('<div class="py-2"></div>');
+                      }
+
+                      // Days of month
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const isToday = day === today.getDate() &&
+                                       state.calendarMonth === today.getMonth() &&
+                                       state.calendarYear === today.getFullYear();
+                        const isSelected = day === state.selectedDate.getDate() &&
+                                          state.calendarMonth === state.selectedDate.getMonth() &&
+                                          state.calendarYear === state.selectedDate.getFullYear();
+                        const count = bookingCounts[day] || 0;
+
+                        let classes = 'py-2 cursor-pointer transition rounded-lg min-h-[56px] flex flex-col items-center justify-center';
+
+                        if (isSelected) {
+                          classes += ' bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold shadow-md ring-2 ring-blue-300';
+                        } else if (isToday) {
+                          classes += ' bg-slate-700 text-white font-bold';
+                        } else {
+                          classes += ' text-slate-300 hover:bg-slate-700 font-medium';
+                        }
+
+                        cells.push(\`
+                          <div onclick="selectCalendarDate(\${state.calendarYear}, \${state.calendarMonth}, \${day})" class="\${classes}">
+                            <div>\${day}</div>
+                            \${count > 0 ? \`<div class="text-xs text-orange-400 font-bold mt-0.5">\${count}</div>\` : ''}
+                          </div>
+                        \`);
+                      }
+
+                      return cells.join('');
+                    })()}
                   </div>
                 </div>
               </div>
@@ -930,12 +1028,12 @@
     }
 
     // Main render function
-    function render() {
+    async function render() {
       const app = document.getElementById('app');
       if (state.view === 'login') {
         app.innerHTML = renderLogin();
       } else {
-        app.innerHTML = renderDashboard();
+        app.innerHTML = await renderDashboard();
       }
     }
 
@@ -947,8 +1045,8 @@
       crewLogin(username, password);
     };
 
-    window.handleLogout = function() {
-      logout();
+    window.handleLogout = async function() {
+      await logout();
     };
 
     window.handleRoomSwitch = async function(roomId) {
