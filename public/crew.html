@@ -280,6 +280,12 @@
       return room ? room.name : '';
     }
 
+    // Get reservations filtered by selected room
+    function getFilteredReservations() {
+      if (!state.selectedRoom) return state.reservations;
+      return state.reservations.filter(res => res.room_id === state.selectedRoom);
+    }
+
     // Check for saved session
     const savedUser = localStorage.getItem('crew_user');
     const savedToken = localStorage.getItem('crew_token');
@@ -613,7 +619,7 @@
                       <span class="text-sm text-blue-300 font-semibold">${selectedDate}</span>
                     </div>
                     <div class="flex items-center justify-center space-x-2 mb-6">
-                      <div class="text-3xl font-bold text-white">${state.reservations.length}</div>
+                      <div class="text-3xl font-bold text-white">${getFilteredReservations().length}</div>
                       <div class="text-slate-400 text-sm">Reservierungen</div>
                     </div>
                   </div>
