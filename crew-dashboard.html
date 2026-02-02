@@ -68,12 +68,6 @@
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
-    .bar-area {
-      background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-      border: 3px solid #475569;
-      box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-    }
-
     .floor-plan-container {
       background:
         radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
@@ -432,37 +426,6 @@
             <!-- Floor Plan -->
             <div class="flex-1 p-4 relative overflow-hidden floor-plan-container">
               <div class="relative w-full h-full max-w-7xl mx-auto">
-                ${(state.selectedRoom && getRoomName(state.selectedRoom) === 'Lokal') ? `
-                  <!-- Large Bar Area (only in Lokal) -->
-                  <div class="absolute bar-area" style="left: 30%; top: 42%; width: 45%; height: 28%; border-radius: 50%;">
-                    <div class="w-full h-full flex items-center justify-center">
-                      <div>
-                        <div class="text-white font-bold text-4xl text-center mb-2">BAR</div>
-                        <div class="flex items-center justify-center space-x-1">
-                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
-                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ` : ''}
-                ${(state.selectedRoom && getRoomName(state.selectedRoom) === 'Terrasse') ? `
-                  <!-- Bar Area in Terrasse -->
-                  <div class="absolute bar-area" style="left: 235px; top: -2px; width: 913px; height: 100px;">
-                    <div class="w-full h-full flex items-center justify-center">
-                      <div>
-                        <div class="text-white font-bold text-4xl text-center mb-2">BAR</div>
-                        <div class="flex items-center justify-center space-x-1">
-                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
-                          <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ` : ''}
-
                 <!-- Dynamic Tables from Database -->
                 ${getRoomTables().map(table => `
                   <div class="table-item ${table.status} ${table.shape}" style="${table.style}">
