@@ -93,44 +93,122 @@
       view: 'login',
       loading: false,
       error: null,
-      selectedRoom: 'lokal' // 'lokal' or 'terrasse'
+      selectedRoom: null,
+      rooms: [],
+      tables: [],
+      reservations: []
     };
 
-    // Room configurations
-    const roomLayouts = {
-      lokal: [
-        { id: 'D4', name: 'D4', capacity: 10, status: 'available', style: 'left: 2%; top: 3%; width: 140px; height: 160px;', shape: 'rounded-xl' },
-        { id: 'Bassbox', name: 'Bassbox', capacity: 4, status: 'available', style: 'left: 2%; top: 28%; width: 110px; height: 110px;', shape: 'rounded-xl' },
-        { id: 'D6', name: 'D6', capacity: 4, status: 'reserved', style: 'left: 2%; top: 50%; width: 110px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'D7', name: 'D7', capacity: 8, status: 'available', style: 'left: 2%; top: 72%; width: 110px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'D3', name: 'D3', capacity: 10, status: 'available', style: 'left: 20%; top: 3%; width: 150px; height: 110px;', shape: 'rounded-xl' },
-        { id: 'D2', name: 'D2', capacity: 8, status: 'reserved', style: 'left: 38%; top: 3%; width: 150px; height: 110px;', shape: 'rounded-xl' },
-        { id: 'D1', name: 'D1', capacity: 4, status: 'available', style: 'left: 56%; top: 3%; width: 130px; height: 110px;', shape: 'rounded-xl' },
-        { id: 'D5', name: 'D5', capacity: 6, status: 'available', style: 'left: 20%; top: 22%; width: 150px; height: 110px;', shape: 'rounded-xl' },
-        { id: 'Tanztisch', name: 'Tanztisch', capacity: 6, status: 'available', style: 'left: 20%; top: 37%; width: 150px; height: 110px;', shape: 'rounded-xl' },
-        { id: 'R2', name: 'R2', capacity: 4, status: 'available', style: 'left: 45%; top: 24%; width: 90px; height: 90px; border-radius: 50%;', shape: 'round' },
-        { id: 'R1', name: 'R1', capacity: 3, status: 'available', style: 'left: 56%; top: 24%; width: 90px; height: 90px; border-radius: 50%;', shape: 'round' },
-        { id: 'Bartisch', name: 'Bartisch (stehend)', capacity: 4, status: 'available', style: 'left: 22%; top: 74%; width: 52%; height: 20%;', shape: 'rounded-2xl', icon: true },
-        { id: 'D8', name: 'D8', capacity: 10, status: 'available', style: 'left: 2%; bottom: 3%; width: 160px; height: 130px;', shape: 'rounded-xl' },
-        { id: 'T1', name: 'T1', capacity: 6, status: 'available', style: 'right: 2%; top: 3%; width: 140px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'T2', name: 'T2', capacity: 4, status: 'reserved', style: 'right: 2%; top: 26%; width: 140px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'T3', name: 'T3', capacity: 8, status: 'available', style: 'right: 2%; bottom: 3%; width: 140px; height: 130px;', shape: 'rounded-xl' }
-      ],
-      terrasse: [
-        { id: 'T-1', name: 'T-1', capacity: 6, status: 'available', style: 'left: 5%; top: 5%; width: 140px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'T-2', name: 'T-2', capacity: 6, status: 'available', style: 'left: 25%; top: 5%; width: 140px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'T-3', name: 'T-3', capacity: 4, status: 'reserved', style: 'left: 45%; top: 5%; width: 120px; height: 120px;', shape: 'rounded-xl' },
-        { id: 'T-4', name: 'T-4', capacity: 4, status: 'available', style: 'left: 65%; top: 5%; width: 120px; height: 120px;', shape: 'rounded-xl' },
-        { id: 'T-5', name: 'T-5', capacity: 8, status: 'available', style: 'left: 5%; top: 30%; width: 160px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'T-6', name: 'T-6', capacity: 8, status: 'available', style: 'left: 30%; top: 30%; width: 160px; height: 140px;', shape: 'rounded-xl' },
-        { id: 'TR-1', name: 'TR-1', capacity: 4, status: 'available', style: 'left: 60%; top: 32%; width: 100px; height: 100px; border-radius: 50%;', shape: 'round' },
-        { id: 'TR-2', name: 'TR-2', capacity: 4, status: 'available', style: 'left: 75%; top: 32%; width: 100px; height: 100px; border-radius: 50%;', shape: 'round' },
-        { id: 'T-7', name: 'T-7', capacity: 6, status: 'available', style: 'left: 5%; top: 55%; width: 140px; height: 130px;', shape: 'rounded-xl' },
-        { id: 'T-8', name: 'T-8', capacity: 6, status: 'available', style: 'left: 25%; top: 55%; width: 140px; height: 130px;', shape: 'rounded-xl' },
-        { id: 'T-9', name: 'T-9', capacity: 10, status: 'available', style: 'left: 45%; top: 55%; width: 180px; height: 150px;', shape: 'rounded-xl' },
-        { id: 'Lounge', name: 'Lounge', capacity: 12, status: 'available', style: 'left: 70%; top: 58%; width: 200px; height: 160px;', shape: 'rounded-2xl' }
-      ]
-    };
+    // Fetch rooms from database
+    async function fetchRooms() {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/rooms?is_active=eq.true&order=name.asc`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+        const rooms = await response.json();
+        state.rooms = rooms;
+
+        if (rooms.length > 0 && !state.selectedRoom) {
+          state.selectedRoom = rooms[0].id;
+        }
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+      }
+    }
+
+    // Fetch tables from database
+    async function fetchTables() {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/tables?is_active=eq.true&select=*`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+        const tables = await response.json();
+        state.tables = tables;
+      } catch (error) {
+        console.error('Error fetching tables:', error);
+      }
+    }
+
+    // Fetch today's reservations
+    async function fetchReservations() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${today}&select=*,reservation_tables(table_id)`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          }
+        );
+        const reservations = await response.json();
+        state.reservations = reservations;
+      } catch (error) {
+        console.error('Error fetching reservations:', error);
+      }
+    }
+
+    // Get shape class based on database shape
+    function getShapeClass(shape) {
+      switch (shape) {
+        case 'circle': return 'circle';
+        case 'square': return 'rounded-xl';
+        case 'rectangle': return 'rounded-xl';
+        case 'halfcircle': return 'rounded-full';
+        default: return 'rounded-xl';
+      }
+    }
+
+    // Convert database table to render format
+    function convertTableToRender(table) {
+      const isReserved = state.reservations.some(res =>
+        res.reservation_tables && res.reservation_tables.some(rt => rt.table_id === table.id)
+      );
+
+      let style = `left: ${table.position_x}px; top: ${table.position_y}px; width: ${table.width}px; height: ${table.height}px;`;
+
+      if (table.shape === 'circle' || table.shape === 'halfcircle') {
+        style += ' border-radius: 50%;';
+      }
+
+      if (table.rotation && table.rotation !== 0) {
+        style += ` transform: rotate(${table.rotation}deg);`;
+      }
+
+      const isStanding = table.table_number.toLowerCase().includes('stehend') ||
+                        table.table_number.toLowerCase().includes('bartisch');
+
+      return {
+        id: table.id,
+        name: table.custom_label || table.table_number,
+        capacity: table.capacity,
+        status: isReserved ? 'reserved' : 'available',
+        style: style,
+        shape: getShapeClass(table.shape),
+        icon: isStanding
+      };
+    }
+
+    // Get tables for selected room
+    function getRoomTables() {
+      if (!state.selectedRoom || !state.tables.length) return [];
+      return state.tables
+        .filter(table => table.room_id === state.selectedRoom)
+        .map(convertTableToRender);
+    }
+
+    // Get room name by ID
+    function getRoomName(roomId) {
+      const room = state.rooms.find(r => r.id === roomId);
+      return room ? room.name : '';
+    }
 
     // Check for saved session
     const savedUser = localStorage.getItem('crew_user');
@@ -139,6 +217,12 @@
       try {
         state.user = JSON.parse(savedUser);
         state.view = 'dashboard';
+        (async () => {
+          await fetchRooms();
+          await fetchTables();
+          await fetchReservations();
+          render();
+        })();
       } catch (e) {
         localStorage.removeItem('crew_user');
         localStorage.removeItem('crew_token');
@@ -172,6 +256,10 @@
           state.view = 'dashboard';
           localStorage.setItem('crew_user', JSON.stringify(data.user));
           localStorage.setItem('crew_token', data.token);
+
+          await fetchRooms();
+          await fetchTables();
+          await fetchReservations();
         }
       } catch (err) {
         state.error = err.message;
@@ -191,8 +279,9 @@
     }
 
     // Switch room function
-    function switchRoom(room) {
-      state.selectedRoom = room;
+    async function switchRoom(roomId) {
+      state.selectedRoom = roomId;
+      await fetchReservations();
       render();
     }
 
@@ -275,7 +364,7 @@
                       <span class="text-white font-bold text-lg">P</span>
                     </div>
                     <div>
-                      <h1 class="text-lg font-bold text-white leading-tight">Raumplan - ${state.selectedRoom === 'lokal' ? 'Lokal' : 'Terrasse'}</h1>
+                      <h1 class="text-lg font-bold text-white leading-tight">Raumplan - ${getRoomName(state.selectedRoom)}</h1>
                       <p class="text-xs text-slate-400">Live-Ansicht</p>
                     </div>
                   </div>
@@ -299,16 +388,13 @@
                     </svg>
                     Gutschein
                   </button>
-                  <button
-                    onclick="handleRoomSwitch('lokal')"
-                    class="px-5 py-2 ${state.selectedRoom === 'lokal' ? 'bg-blue-600 shadow-lg ring-2 ring-blue-400' : 'bg-slate-700'} text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold shadow-md">
-                    Lokal
-                  </button>
-                  <button
-                    onclick="handleRoomSwitch('terrasse')"
-                    class="px-5 py-2 ${state.selectedRoom === 'terrasse' ? 'bg-blue-600 shadow-lg ring-2 ring-blue-400' : 'bg-slate-700'} text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold shadow-md">
-                    Terrasse
-                  </button>
+                  ${state.rooms.map(room => `
+                    <button
+                      onclick="handleRoomSwitch('${room.id}')"
+                      class="px-5 py-2 ${state.selectedRoom === room.id ? 'bg-blue-600 shadow-lg ring-2 ring-blue-400' : 'bg-slate-700'} text-white rounded-lg hover:bg-blue-700 transition text-sm font-semibold shadow-md">
+                      ${room.name}
+                    </button>
+                  `).join('')}
                   <div class="h-8 w-px bg-slate-700 mx-1"></div>
                   <button onclick="handleLogout()" class="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition text-sm font-semibold shadow-md">
                     Abmelden
@@ -322,7 +408,7 @@
             <!-- Floor Plan -->
             <div class="flex-1 p-4 relative overflow-hidden floor-plan-container">
               <div class="relative w-full h-full max-w-7xl mx-auto">
-                ${state.selectedRoom === 'lokal' ? `
+                ${getRoomName(state.selectedRoom) === 'Lokal' ? `
                   <!-- Large Bar Area (only in Lokal) -->
                   <div class="absolute bar-area" style="left: 30%; top: 42%; width: 45%; height: 28%; border-radius: 50%;">
                     <div class="w-full h-full flex items-center justify-center">
@@ -338,8 +424,8 @@
                   </div>
                 ` : ''}
 
-                <!-- Dynamic Tables -->
-                ${roomLayouts[state.selectedRoom].map(table => `
+                <!-- Dynamic Tables from Database -->
+                ${getRoomTables().map(table => `
                   <div class="table-item ${table.status} ${table.shape}" style="${table.style}">
                     <div class="w-full h-full flex flex-col items-center justify-center ${table.shape === 'rounded-2xl' ? 'p-4' : 'p-3'}">
                       <div class="text-white table-item-label ${table.name.length > 10 ? 'text-lg' : 'text-xl'} mb-2">${table.name}</div>
@@ -424,7 +510,7 @@
                       <span class="text-sm text-blue-300 font-semibold">${selectedDate}</span>
                     </div>
                     <div class="flex items-center justify-center space-x-2 mb-6">
-                      <div class="text-3xl font-bold text-white">0</div>
+                      <div class="text-3xl font-bold text-white">${state.reservations.length}</div>
                       <div class="text-slate-400 text-sm">Reservierungen</div>
                     </div>
                   </div>
@@ -477,8 +563,8 @@
       logout();
     };
 
-    window.handleRoomSwitch = function(room) {
-      switchRoom(room);
+    window.handleRoomSwitch = async function(roomId) {
+      await switchRoom(roomId);
     };
 
     // Initial render
