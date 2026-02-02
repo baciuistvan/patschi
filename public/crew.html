@@ -588,12 +588,12 @@
                           classes += ' text-slate-300 hover:bg-slate-700 font-medium';
                         }
 
-                        cells.push(\`
-                          <div onclick="selectCalendarDate(\${state.calendarYear}, \${state.calendarMonth}, \${day})" class="\${classes}">
-                            <div>\${day}</div>
-                            \${count > 0 ? \`<div class="text-xs text-orange-400 font-bold mt-0.5">\${count}</div>\` : ''}
-                          </div>
-                        \`);
+                        cells.push(
+                          '<div onclick="selectCalendarDate(' + state.calendarYear + ', ' + state.calendarMonth + ', ' + day + ')" class="' + classes + '">' +
+                            '<div>' + day + '</div>' +
+                            (count > 0 ? '<div class="text-xs text-orange-400 font-bold mt-0.5">' + count + '</div>' : '') +
+                          '</div>'
+                        );
                       }
 
                       return cells.join('');
