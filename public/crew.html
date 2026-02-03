@@ -2181,7 +2181,7 @@
         state.reservations = state.reservations.filter(r => r.id !== reservationId);
 
         // Refresh the display
-        displayReservations();
+        await fetchReservations();
 
         // Show success message
         alert('Reservierung erfolgreich gelöscht.');
