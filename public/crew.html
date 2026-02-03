@@ -37,18 +37,15 @@
 
     .table-item {
       position: absolute;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.2s ease;
+      border: 2px solid #000;
       --rotation: 0deg;
       transform: rotate(var(--rotation));
       transform-origin: center;
     }
 
     .table-item:hover {
-      transform: translateY(-4px) scale(1.05) rotate(var(--rotation));
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-      z-index: 10;
+      transform: rotate(var(--rotation));
     }
 
     /* iPad optimization */
@@ -58,7 +55,7 @@
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: translateY(-4px) scale(0.85) rotate(var(--rotation));
+        transform: scale(0.8) rotate(var(--rotation));
       }
     }
 
@@ -69,53 +66,42 @@
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: translateY(-4px) scale(0.7) rotate(var(--rotation));
+        transform: scale(0.65) rotate(var(--rotation));
       }
     }
 
     .table-item.available {
-      background: #059669;
-      border: 2px solid #000;
+      background: #10b981;
     }
 
     .table-item.available:hover {
-      background: #047857;
-      border: 2px solid #000;
+      background: #059669;
     }
 
     .table-item.reserved {
       background: #dc2626;
-      border: 2px solid #000;
     }
 
     .table-item.reserved:hover {
       background: #b91c1c;
-      border: 2px solid #000;
     }
 
     .table-item.not-bookable {
-      background: #475569;
-      border: 2px solid #000;
-      opacity: 1;
+      background: #64748b;
     }
 
     .table-item.not-bookable:hover {
-      background: #334155;
-      border: 2px solid #000;
-      opacity: 1;
+      background: #475569;
     }
 
     .table-item-label {
-      font-weight: 700;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-      letter-spacing: 0.5px;
+      font-weight: 600;
     }
 
     .table-item-capacity {
       font-size: 0.75rem;
-      opacity: 0.95;
-      font-weight: 500;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      opacity: 0.85;
+      font-weight: 400;
     }
 
     /* iPad text optimization */
@@ -139,10 +125,7 @@
     }
 
     .floor-plan-container {
-      background:
-        radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-        linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      background: #1e293b;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -652,27 +635,29 @@
                   const isHalfCircle = table.shape === 'halfcircle';
 
                   if (isHalfCircle) {
-                    // Render halfcircle with SVG like admin backend
+                    const fillColor = table.status === 'available' ? '#10b981' :
+                                     table.status === 'reserved' ? '#dc2626' : '#64748b';
                     return `
-                    <div class="table-item ${table.status}" style="${table.style}">
+                    <div class="table-item" style="${table.style} background: transparent; border: none;">
                       <div class="relative w-full h-full overflow-hidden">
                         <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                           <path
                             d="M 0,50 A 50,50 0 0,1 100,50 L 100,100 A 50,50 0 0,1 0,100 Z"
-                            class="stroke-black"
+                            fill="${fillColor}"
+                            stroke="#000"
                             stroke-width="2"
                           />
                         </svg>
                         <div class="relative w-full h-full flex items-center justify-center text-white font-semibold">
                           <div class="text-center">
                             <div class="text-white table-item-label ${table.name.length > 10 ? 'text-lg' : 'text-xl'}">${table.name}</div>
-                            ${table.capacity > 0 ? `<div class="text-white table-item-capacity text-xs opacity-75">${table.capacity} Plätze</div>` : ''}
+                            ${table.capacity > 0 ? `<div class="text-white table-item-capacity text-xs">${table.capacity} Plätze</div>` : ''}
                             ${table.status === 'reserved' && table.customerName ? `
-                              <div class="mt-2 flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/90 to-amber-600/90 backdrop-blur-sm rounded-lg shadow-lg border border-amber-400/30">
-                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                              <div class="mt-1.5 flex items-center space-x-1 px-2 py-1 bg-white/20 rounded text-xs">
+                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
-                                <span class="text-white text-xs font-bold tracking-wide">${table.customerName}</span>
+                                <span class="text-white font-semibold">${table.customerName}</span>
                               </div>
                             ` : ''}
                           </div>
@@ -684,28 +669,16 @@
                   return `
                   <div class="table-item ${table.status} ${table.shapeClass}" style="${table.style}">
                     <div class="w-full h-full flex flex-col items-center justify-center ${table.shapeClass === 'rounded-2xl' ? 'p-4' : 'p-3'}">
-                      <div class="text-white table-item-label ${isBar ? 'text-4xl font-bold' : table.name.length > 10 ? 'text-lg' : 'text-xl'} ${isBar ? '' : 'mb-1'}">${table.name}</div>
-                      ${!isBar ? `<div class="text-white table-item-capacity ${table.shapeClass === 'rounded-2xl' ? 'text-base' : ''}">${table.capacity} Plätze</div>` : ''}
+                      <div class="text-white table-item-label ${isBar ? 'text-4xl font-bold' : table.name.length > 10 ? 'text-lg' : 'text-xl'}">${table.name}</div>
+                      ${!isBar && table.capacity > 0 ? `<div class="text-white table-item-capacity text-xs mt-0.5">${table.capacity} Plätze</div>` : ''}
                       ${table.status === 'reserved' && !isBar && table.customerName ? `
-                        <div class="mt-2 flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/90 to-amber-600/90 backdrop-blur-sm rounded-lg shadow-lg border border-amber-400/30">
-                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <span class="text-white text-xs font-bold tracking-wide">${table.customerName}</span>
-                          </div>
-                        </div>
-                      ` : ''}
-                      ${table.status === 'reserved' && !isBar && !table.customerName ? '<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs">Reserviert</div>' : ''}
-                      ${table.status === 'not-bookable' && !isBar ? '<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs">Nicht buchbar</div>' : ''}
-                      ${table.icon && !isBar ? `
-                        <div class="mt-2 flex items-center space-x-2">
-                          <svg class="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="mt-1.5 flex items-center space-x-1 px-2 py-1 bg-white/20 rounded text-xs">
+                          <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                           </svg>
-                          <span class="text-white/70 text-sm">Stehtisch</span>
+                          <span class="text-white font-semibold">${table.customerName}</span>
                         </div>
                       ` : ''}
-                      ${(table.capacity >= 10 && !table.icon && table.status === 'available' && !isBar) ? '<div class="mt-2 w-12 h-0.5 bg-white/30"></div>' : ''}
                     </div>
                   </div>
                 `}).join('')}
