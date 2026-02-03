@@ -1650,6 +1650,11 @@
         document.getElementById('resTime').value = resEditReservation.reservation_time || '';
         document.getElementById('resSpecialRequests').value = resEditReservation.special_requests || '';
 
+        // Populate selected tables from the reservation
+        if (resEditReservation.reservation_tables && Array.isArray(resEditReservation.reservation_tables)) {
+          resSelectedTables = resEditReservation.reservation_tables.map(rt => rt.table_id);
+        }
+
         resBookingMethod = resEditReservation.booking_method || 'free';
         resPaidWithCash = resEditReservation.payment_method === 'cash';
 
@@ -1662,6 +1667,26 @@
           document.getElementById('paymentOptions').closest('.space-y-3').classList.add('hidden');
         } else {
           document.getElementById('paymentOptions').closest('.space-y-3').classList.remove('hidden');
+
+          // Set payment method buttons
+          if (resBookingMethod === 'free') {
+            document.getElementById('bookingMethodFree').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-blue-600 text-white min-h-[44px]';
+            document.getElementById('bookingMethodManual').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 min-h-[44px]';
+            document.getElementById('paymentOptions').classList.add('hidden');
+          } else {
+            document.getElementById('bookingMethodFree').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 min-h-[44px]';
+            document.getElementById('bookingMethodManual').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-blue-600 text-white min-h-[44px]';
+            document.getElementById('paymentOptions').classList.remove('hidden');
+          }
+
+          // Set cash payment state
+          document.getElementById('paidWithCash').checked = resPaidWithCash;
+          if (resPaidWithCash) {
+            document.getElementById('cashAmountSection').classList.remove('hidden');
+            document.getElementById('cashAmount').value = resEditReservation.payment_amount || 0;
+          } else {
+            document.getElementById('cashAmountSection').classList.add('hidden');
+          }
         }
       } else {
         // Reset for new reservation
@@ -1707,8 +1732,20 @@
       // Load all tables
       await loadAllTablesForReservation();
 
+      // If editing and has tables, set the room filter to the first table's room
+      if (resEditMode && resEditReservation && resSelectedTables.length > 0) {
+        const firstTable = state.tables.find(t => t.id === resSelectedTables[0]);
+        if (firstTable) {
+          resTableRoomFilter = firstTable.room_id;
+        }
+      }
+
       // Setup room filter buttons
       setupRoomFilterButtons();
+
+      // Update tables display to show selected tables
+      updateTablesDisplay();
+      updateSelectedTablesInfo();
 
       // Setup event listeners
       setupReservationEventListeners();
@@ -1838,8 +1875,8 @@
       document.getElementById('bookingMethodFree').onclick = () => {
         resBookingMethod = 'free';
         resPaidWithCash = false;
-        document.getElementById('bookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-        document.getElementById('bookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('bookingMethodFree').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-blue-600 text-white min-h-[44px]';
+        document.getElementById('bookingMethodManual').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 min-h-[44px]';
         document.getElementById('paymentOptions').classList.add('hidden');
         document.getElementById('paidWithCash').checked = false;
         document.getElementById('cashAmountSection').classList.add('hidden');
@@ -1847,8 +1884,8 @@
 
       document.getElementById('bookingMethodManual').onclick = () => {
         resBookingMethod = 'manual';
-        document.getElementById('bookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-        document.getElementById('bookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('bookingMethodFree').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700 min-h-[44px]';
+        document.getElementById('bookingMethodManual').className = 'px-3 py-3 rounded-lg text-sm font-medium transition bg-blue-600 text-white min-h-[44px]';
         document.getElementById('paymentOptions').classList.remove('hidden');
       };
 
@@ -2091,7 +2128,8 @@
       try {
         const updateData = {
           ...baseData,
-          reservation_id: reservationId
+          reservation_id: reservationId,
+          selected_tables: resSelectedTables
         };
 
         const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {

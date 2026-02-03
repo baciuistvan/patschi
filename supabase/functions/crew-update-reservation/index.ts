@@ -57,7 +57,8 @@ Deno.serve(async (req: Request) => {
       payment_status,
       payment_amount,
       payment_method,
-      booking_method
+      booking_method,
+      selected_tables
     } = await req.json();
 
     if (!reservation_id) {
@@ -108,6 +109,31 @@ Deno.serve(async (req: Request) => {
 
     if (error) {
       throw error;
+    }
+
+    // Handle table assignments if provided
+    if (selected_tables !== undefined && Array.isArray(selected_tables)) {
+      // First, remove all existing table assignments for this reservation
+      await supabase
+        .from("reservation_tables")
+        .delete()
+        .eq("reservation_id", reservation_id);
+
+      // Then add new table assignments
+      if (selected_tables.length > 0) {
+        const tableAssignments = selected_tables.map(tableId => ({
+          reservation_id: reservation_id,
+          table_id: tableId
+        }));
+
+        const { error: tableError } = await supabase
+          .from("reservation_tables")
+          .insert(tableAssignments);
+
+        if (tableError) {
+          console.error('Error updating table assignments:', tableError);
+        }
+      }
     }
 
     return new Response(
