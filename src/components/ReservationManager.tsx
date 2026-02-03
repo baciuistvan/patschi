@@ -143,6 +143,16 @@ export function ReservationManager() {
         reservation_tables: r.reservation_tables as any,
       }));
       setReservations(formatted);
+
+      if (filter === 'monthly' && formatted.length > 0) {
+        const monthKeys = new Set<string>();
+        formatted.forEach(reservation => {
+          const date = new Date(reservation.reservation_date);
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          monthKeys.add(monthKey);
+        });
+        setExpandedMonths(monthKeys);
+      }
     } else if (error) {
       console.error('Error loading reservations:', error);
     }
