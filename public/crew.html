@@ -659,7 +659,7 @@
                           '<span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-semibold">Bar bezahlt</span>' :
                           res.payment_status === 'paid' ?
                           '<span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs font-semibold">Online</span>' :
-                          '<span class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-xs font-semibold">Unbezahlt</span>';
+                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Frei</span>';
 
                         const tableNames = res.reservation_tables && res.reservation_tables.length > 0
                           ? res.reservation_tables.map(rt => {
