@@ -653,7 +653,9 @@
                   ` : `
                     <div class="space-y-3">
                       ${getFilteredReservations().map(res => {
-                        const paymentBadge = res.payment_method === 'cash' ?
+                        const paymentBadge = res.booking_method === 'free' ?
+                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Free</span>' :
+                          res.payment_method === 'cash' ?
                           '<span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-semibold">Bar bezahlt</span>' :
                           res.payment_status === 'paid' ?
                           '<span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs font-semibold">Online</span>' :
@@ -1019,7 +1021,26 @@
 
                 <!-- Payment Options -->
                 <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
-                  <div id="paymentOptions" class="space-y-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Buchungsart</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        id="bookingMethodFree"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white"
+                      >
+                        Kostenlos (Keine Zahlung)
+                      </button>
+                      <button
+                        type="button"
+                        id="bookingMethodManual"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      >
+                        Mit Zahlung
+                      </button>
+                    </div>
+                  </div>
+                  <div id="paymentOptions" class="hidden space-y-3">
                     <label class="flex items-center space-x-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -1503,8 +1524,23 @@
         }
       };
 
-      // Set default booking method to manual (with payment)
-      resBookingMethod = 'manual';
+      // Booking method buttons
+      document.getElementById('bookingMethodFree').onclick = () => {
+        resBookingMethod = 'free';
+        resPaidWithCash = false;
+        document.getElementById('bookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('bookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('paymentOptions').classList.add('hidden');
+        document.getElementById('paidWithCash').checked = false;
+        document.getElementById('cashAmountSection').classList.add('hidden');
+      };
+
+      document.getElementById('bookingMethodManual').onclick = () => {
+        resBookingMethod = 'manual';
+        document.getElementById('bookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('bookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('paymentOptions').classList.remove('hidden');
+      };
 
       // Cash payment checkbox
       document.getElementById('paidWithCash').onchange = (e) => {
@@ -1650,7 +1686,7 @@
         payment_status: resPaidWithCash ? 'paid' : 'unpaid',
         payment_amount: resPaidWithCash ? parseFloat(document.getElementById('cashAmount').value) : 0,
         payment_method: resPaidWithCash ? 'cash' : 'none',
-        booking_method: 'manual',
+        booking_method: resBookingMethod === 'free' ? 'free' : (resPaidWithCash ? 'manual' : 'free'),
         selected_tables: resSelectedTables
       };
 
