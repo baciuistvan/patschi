@@ -1170,11 +1170,12 @@
                     <span class="text-sm sm:text-base font-medium text-slate-300">Für mehrere Tage buchen</span>
                   </label>
                   <div id="daysSelector" class="hidden">
-                    <label class="block text-sm sm:text-base font-medium text-slate-300 mb-3">Zusätzliche Tage wählen</label>
+                    <label class="block text-sm sm:text-base font-medium text-slate-300 mb-2">Zusätzliche Tage wählen</label>
+                    <p class="text-xs text-slate-400 mb-3">Das oben gewählte Datum (grün markiert ●) wird automatisch gebucht.</p>
                     <div class="bg-slate-900 border border-slate-600 rounded-lg p-3 sm:p-4 overflow-x-auto">
                       <div id="daysGrid" class="grid grid-cols-7 gap-1.5 sm:gap-2 min-w-[280px] sm:min-w-[360px]"></div>
                       <div id="selectedDaysInfo" class="hidden mt-3 pt-3 border-t border-slate-700">
-                        <p class="text-xs text-slate-400"><span id="selectedDaysCount">0</span> Tage ausgewählt</p>
+                        <p class="text-xs text-slate-400"><span id="selectedDaysCount">0</span> zusätzliche Tage ausgewählt</p>
                       </div>
                     </div>
                   </div>
@@ -1398,11 +1399,12 @@
                     <span class="text-base font-medium text-slate-300">Für mehrere Tage buchen</span>
                   </label>
                   <div id="editDaysSelector" class="hidden">
-                    <label class="block text-base font-medium text-slate-300 mb-3">Zusätzliche Tage wählen</label>
+                    <label class="block text-base font-medium text-slate-300 mb-2">Zusätzliche Tage wählen</label>
+                    <p class="text-xs text-slate-400 mb-3">Das oben gewählte Datum wird automatisch gebucht.</p>
                     <div class="bg-slate-900 border border-slate-600 rounded-lg p-4 overflow-x-auto">
                       <div id="editDaysGrid" class="grid grid-cols-7 gap-2 min-w-[360px]"></div>
                       <div id="editSelectedDaysInfo" class="hidden mt-3 pt-3 border-t border-slate-700">
-                        <p class="text-xs text-slate-400"><span id="editSelectedDaysCount">0</span> Tage ausgewählt</p>
+                        <p class="text-xs text-slate-400"><span id="editSelectedDaysCount">0</span> zusätzliche Tage ausgewählt</p>
                       </div>
                     </div>
                   </div>
@@ -1963,7 +1965,9 @@
       const resDate = document.getElementById('resDate').value;
       if (!resDate) return;
 
-      const startDate = new Date(resDate);
+      // Parse date string as local date to avoid timezone issues
+      const [year, month, day] = resDate.split('-').map(Number);
+      const startDate = new Date(year, month - 1, day);
       const currentDate = new Date(startDate);
       currentDate.setDate(currentDate.getDate() - 7);
 
@@ -2279,21 +2283,25 @@
       const resDate = document.getElementById('editResDate').value;
       if (!resDate) return;
 
-      const startDate = new Date(resDate);
+      // Parse date string as local date to avoid timezone issues
+      const [year, month, day] = resDate.split('-').map(Number);
+      const startDate = new Date(year, month - 1, day);
       const currentDate = new Date(startDate);
       currentDate.setDate(currentDate.getDate() - 7);
 
       const days = [];
       for (let i = 0; i < 28; i++) {
         currentDate.setDate(currentDate.getDate() + 1);
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = formatDateLocal(currentDate);
         if (dateStr !== resDate) {
           days.push(dateStr);
         }
       }
 
       grid.innerHTML = days.map(day => {
-        const date = new Date(day);
+        // Parse date string as local date to avoid timezone issues
+        const [y, m, d] = day.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
         const isSelected = editResSelectedDays.includes(day);
         return `
           <button
@@ -2489,6 +2497,10 @@
 
       // Get dates to book
       const mainDate = document.getElementById('resDate').value;
+      console.log('Main date from picker:', mainDate);
+      console.log('Multiple days checked:', document.getElementById('multipleDays').checked);
+      console.log('Additional selected days:', resSelectedDays);
+
       const datesToBook = [mainDate];
       if (document.getElementById('multipleDays').checked) {
         resSelectedDays.forEach(day => {
@@ -2498,6 +2510,8 @@
         });
       }
       datesToBook.sort();
+
+      console.log('Final dates to book:', datesToBook);
 
       // Get form data
       const baseData = {
