@@ -119,7 +119,7 @@ export function ReservationManager() {
   const loadReservations = async () => {
     let query = supabase
       .from('reservations')
-      .select('*, reservation_tables(table_id, tables(*))')
+      .select('*, reservation_tables(*)')
       .order('reservation_date', { ascending: true })
       .order('reservation_time', { ascending: true });
 

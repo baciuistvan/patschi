@@ -146,7 +146,7 @@
       try {
         const today = new Date().toISOString().split('T')[0];
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${today}&select=*,reservation_tables(table_id)`,
+          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${today}&select=*,reservation_tables(*)`,
           {
             headers: {
               'apikey': SUPABASE_ANON_KEY,
