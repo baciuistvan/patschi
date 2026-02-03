@@ -18,6 +18,10 @@ export function ReservationManager() {
     return `${year}-${month}-${day}`;
   };
 
+  const isCrewMode = () => {
+    return !!localStorage.getItem('crew_token');
+  };
+
   const [reservations, setReservations] = useState<ReservationWithTable[]>([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly'>('monthly');
   const [selectedReservation, setSelectedReservation] = useState<ReservationWithTable | null>(null);

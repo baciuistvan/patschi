@@ -21,8 +21,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Skip authentication entirely for crew mode
-    if ((window as any).FORCE_CREW_MODE) {
+    const isCrewMode = !!(window as any).FORCE_CREW_MODE || !!localStorage.getItem('crew_token');
+    if (isCrewMode) {
       console.log('🚀 Crew mode detected - skipping auth');
+      // Load crew user data
+      const crewUserStr = localStorage.getItem('crew_user');
+      if (crewUserStr) {
+        try {
+          const crewUser = JSON.parse(crewUserStr);
+          // Mock admin user with crew data
+          setAdminUser({
+            id: crewUser.id,
+            email: crewUser.username,
+            full_name: crewUser.name,
+            role: 'staff',
+            created_at: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('Error loading crew user:', error);
+        }
+      }
       setLoading(false);
       return;
     }
@@ -114,6 +132,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Check if crew mode
+    if (localStorage.getItem('crew_token')) {
+      localStorage.removeItem('crew_token');
+      localStorage.removeItem('crew_user');
+      setAdminUser(null);
+      window.location.reload();
+      return;
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setAdminUser(null);
