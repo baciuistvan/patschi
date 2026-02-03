@@ -51,22 +51,22 @@
     /* iPad optimization */
     @media (min-width: 768px) and (max-width: 1024px) {
       .table-item {
-        transform: scale(0.85);
+        transform: scale(0.8);
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: translateY(-4px) scale(0.9);
+        transform: translateY(-4px) scale(0.85);
       }
     }
 
     /* Mobile phones */
     @media (max-width: 767px) {
       .table-item {
-        transform: scale(0.7);
+        transform: scale(0.65);
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: translateY(-4px) scale(0.75);
+        transform: translateY(-4px) scale(0.7);
       }
     }
 
@@ -118,20 +118,20 @@
     /* iPad text optimization */
     @media (min-width: 768px) and (max-width: 1024px) {
       .table-item-label {
-        font-size: 1em;
+        font-size: 0.95em;
       }
       .table-item-capacity {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
       }
     }
 
     /* Mobile text optimization */
     @media (max-width: 767px) {
       .table-item-label {
-        font-size: 1.2em;
+        font-size: 1.1em;
       }
       .table-item-capacity {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
       }
     }
 
@@ -146,27 +146,33 @@
 
     .floor-plan-inner {
       position: relative;
-      width: 1200px;
-      height: 800px;
-      min-width: 800px;
+      width: 1450px;
+      height: 820px;
+      min-width: 1000px;
       margin: 0 auto;
+      padding-left: 65px;
+      padding-top: 5px;
     }
 
     /* iPad and tablets */
     @media (min-width: 768px) and (max-width: 1024px) {
       .floor-plan-inner {
-        width: 900px;
-        height: 650px;
-        min-width: 700px;
+        width: 1150px;
+        height: 720px;
+        min-width: 950px;
+        padding-left: 50px;
+        padding-top: 5px;
       }
     }
 
     /* Mobile phones */
     @media (max-width: 767px) {
       .floor-plan-inner {
-        width: 700px;
-        height: 550px;
-        min-width: 600px;
+        width: 950px;
+        height: 620px;
+        min-width: 850px;
+        padding-left: 45px;
+        padding-top: 5px;
       }
     }
 
