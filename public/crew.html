@@ -40,10 +40,13 @@
       backdrop-filter: blur(10px);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --rotation: 0deg;
+      transform: rotate(var(--rotation));
+      transform-origin: center;
     }
 
     .table-item:hover {
-      transform: translateY(-4px) scale(1.05);
+      transform: translateY(-4px) scale(1.05) rotate(var(--rotation));
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
       z-index: 10;
     }
@@ -51,22 +54,22 @@
     /* iPad optimization */
     @media (min-width: 768px) and (max-width: 1024px) {
       .table-item {
-        transform: scale(0.8);
+        transform: scale(0.8) rotate(var(--rotation));
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: translateY(-4px) scale(0.85);
+        transform: translateY(-4px) scale(0.85) rotate(var(--rotation));
       }
     }
 
     /* Mobile phones */
     @media (max-width: 767px) {
       .table-item {
-        transform: scale(0.65);
+        transform: scale(0.65) rotate(var(--rotation));
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: translateY(-4px) scale(0.7);
+        transform: translateY(-4px) scale(0.7) rotate(var(--rotation));
       }
     }
 
@@ -380,8 +383,9 @@
         style += ' border-radius: 50%;';
       }
 
+      // Add rotation as CSS variable instead of transform to avoid overriding media query scales
       if (table.rotation && table.rotation !== 0) {
-        style += ` transform: rotate(${table.rotation}deg);`;
+        style += ` --rotation: ${table.rotation}deg;`;
       }
 
       const isStanding = table.table_number.toLowerCase().includes('stehend') ||
@@ -403,7 +407,8 @@
         shape: getShapeClass(table.shape),
         icon: isStanding,
         isBookable: table.is_bookable,
-        customerName: reservation ? reservation.customer_name : null
+        customerName: reservation ? reservation.customer_name : null,
+        rotation: table.rotation || 0
       };
     }
 
