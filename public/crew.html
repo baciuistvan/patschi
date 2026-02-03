@@ -298,7 +298,8 @@
         shape: getShapeClass(table.shape),
         icon: isStanding,
         isBookable: table.is_bookable,
-        customerName: reservation ? reservation.customer_name : null
+        customerName: reservation ? reservation.customer_name : null,
+        bookingCode: reservation ? reservation.booking_code : null
       };
     }
 
@@ -535,11 +536,18 @@
                       <div class="text-white table-item-label ${isBar ? 'text-4xl font-bold' : table.name.length > 10 ? 'text-lg' : 'text-xl'} ${isBar ? '' : 'mb-1'}">${table.name}</div>
                       ${!isBar ? `<div class="text-white table-item-capacity ${table.shape === 'rounded-2xl' ? 'text-base' : ''}">${table.capacity} Plätze</div>` : ''}
                       ${table.status === 'reserved' && !isBar && table.customerName ? `
-                        <div class="mt-2 flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/90 to-amber-600/90 backdrop-blur-sm rounded-lg shadow-lg border border-amber-400/30">
-                          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                          </svg>
-                          <span class="text-white text-xs font-bold tracking-wide">${table.customerName}</span>
+                        <div class="mt-2 flex flex-col items-center space-y-1.5">
+                          ${table.bookingCode ? `
+                            <div class="px-2.5 py-1 bg-gradient-to-r from-blue-500/95 to-blue-600/95 backdrop-blur-sm rounded-md shadow-md border border-blue-400/40">
+                              <span class="text-white text-xs font-mono font-bold tracking-wider">${table.bookingCode}</span>
+                            </div>
+                          ` : ''}
+                          <div class="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/90 to-amber-600/90 backdrop-blur-sm rounded-lg shadow-lg border border-amber-400/30">
+                            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span class="text-white text-xs font-bold tracking-wide">${table.customerName}</span>
+                          </div>
                         </div>
                       ` : ''}
                       ${table.status === 'reserved' && !isBar && !table.customerName ? '<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs">Reserviert</div>' : ''}
