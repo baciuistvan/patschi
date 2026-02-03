@@ -654,7 +654,7 @@
                     <div class="space-y-3">
                       ${getFilteredReservations().map(res => {
                         const paymentBadge = res.booking_method === 'free' ?
-                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Free</span>' :
+                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Frei</span>' :
                           res.payment_method === 'cash' ?
                           '<span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-semibold">Bar bezahlt</span>' :
                           res.payment_status === 'paid' ?
