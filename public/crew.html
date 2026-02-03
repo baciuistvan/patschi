@@ -102,10 +102,23 @@
         linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     }
 
+    .floor-plan-inner {
+      position: relative;
+      width: 1200px;
+      height: 800px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
     @media (max-width: 768px) {
       .floor-plan-container {
         overflow: auto;
         -webkit-overflow-scrolling: touch;
+      }
+
+      .floor-plan-inner {
+        width: 1000px;
+        height: 700px;
       }
     }
 
@@ -522,10 +535,10 @@
             </div>
           </nav>
 
-          <div class="flex flex-col md:flex-row h-[calc(100vh-80px)] sm:h-[calc(100vh-70px)] md:h-[calc(100vh-65px)] overflow-hidden">
+          <div class="flex flex-col md:flex-row h-[calc(100vh-80px)] sm:h-[calc(100vh-70px)] md:h-[calc(100vh-65px)] w-full overflow-hidden">
             <!-- Floor Plan -->
-            <div class="flex-1 p-2 sm:p-4 relative overflow-auto floor-plan-container min-w-0">
-              <div class="relative w-full h-full max-w-7xl mx-auto min-h-[400px] sm:min-h-[500px]">
+            <div class="flex-1 p-2 sm:p-4 overflow-auto floor-plan-container min-w-0">
+              <div class="floor-plan-inner">
                 <!-- Dynamic Tables from Database -->
                 ${getRoomTables().map(table => {
                   const isBar = table.name.toUpperCase() === 'BAR';
