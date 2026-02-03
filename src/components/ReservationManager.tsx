@@ -119,7 +119,7 @@ export function ReservationManager() {
   const loadReservations = async () => {
     let query = supabase
       .from('reservations')
-      .select('*, reservation_tables(*)')
+      .select('*, reservation_tables(*, tables(*))')
       .order('reservation_date', { ascending: true })
       .order('reservation_time', { ascending: true });
 
@@ -954,7 +954,7 @@ export function ReservationManager() {
                           <div className="text-sm text-slate-400 print:text-xs print:text-gray-700">
                             Tisch: <span className="text-blue-400 print:text-gray-900 print:font-semibold">
                               {reservation.reservation_tables && reservation.reservation_tables.length > 0
-                                ? reservation.reservation_tables.map((rt: any) => rt.tables.table_number).join(', ')
+                                ? reservation.reservation_tables.map((rt: any) => rt.tables?.table_number).filter(Boolean).join(', ')
                                 : reservation.table?.table_number || ''}
                             </span>
                           </div>
@@ -1119,7 +1119,7 @@ export function ReservationManager() {
                   <div className="text-sm text-slate-400 print:text-xs print:text-gray-700">
                     Tisch: <span className="text-blue-400 print:text-gray-900 print:font-semibold">
                       {reservation.reservation_tables && reservation.reservation_tables.length > 0
-                        ? reservation.reservation_tables.map((rt: any) => rt.tables.table_number).join(', ')
+                        ? reservation.reservation_tables.map((rt: any) => rt.tables?.table_number).filter(Boolean).join(', ')
                         : reservation.table?.table_number || ''}
                     </span>
                   </div>
