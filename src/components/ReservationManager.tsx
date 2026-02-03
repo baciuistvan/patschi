@@ -814,9 +814,6 @@ export function ReservationManager() {
                   >
                     <div className="text-left">
                       <h3 className="text-xl font-bold text-white capitalize">{monthGroup.monthName}</h3>
-                      <p className="text-sm text-slate-400 mt-1">
-                        {monthGroup.reservations.length} {monthGroup.reservations.length === 1 ? 'Reservierung' : 'Reservierungen'}
-                      </p>
                     </div>
                     <div className="ml-4">
                       {isExpanded ? (
