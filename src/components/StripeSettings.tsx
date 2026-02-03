@@ -11,11 +11,14 @@ export function StripeSettings() {
   const [stripeEnabled, setStripeEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [stripeMode, setStripeMode] = useState<'test' | 'live'>('test');
+  const [toggling, setToggling] = useState(false);
   const isTestMode = import.meta.env.VITE_STRIPE_TEST_MODE === 'true';
 
   useEffect(() => {
     checkStripeStatus();
     loadSettings();
+    loadStripeMode();
   }, []);
 
   const checkStripeStatus = async () => {
@@ -55,6 +58,52 @@ export function StripeSettings() {
 
     if (stripeEnabledData) {
       setStripeEnabled(stripeEnabledData.value === 'true');
+    }
+  };
+
+  const loadStripeMode = async () => {
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-stripe-mode`;
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStripeMode(data.mode);
+      }
+    } catch (error) {
+      console.error('Failed to load Stripe mode:', error);
+    }
+  };
+
+  const toggleStripeMode = async () => {
+    setToggling(true);
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-stripe-mode`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStripeMode(data.mode);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to toggle Stripe mode:', error);
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -172,6 +221,59 @@ export function StripeSettings() {
                     </a>
                   </div>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-4">Stripe API Mode</h3>
+          <p className="text-sm text-slate-400 mb-4">
+            Switch between test and live Stripe API keys. Make sure you have configured both sets of keys in your environment.
+          </p>
+
+          <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className={`px-4 py-2 rounded-lg font-semibold ${
+                  stripeMode === 'test'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500'
+                    : 'bg-slate-700 text-slate-400'
+                }`}>
+                  Test Mode
+                </div>
+                <div className={`px-4 py-2 rounded-lg font-semibold ${
+                  stripeMode === 'live'
+                    ? 'bg-green-500/20 text-green-300 border border-green-500'
+                    : 'bg-slate-700 text-slate-400'
+                }`}>
+                  Live Mode
+                </div>
+              </div>
+              <button
+                onClick={toggleStripeMode}
+                disabled={toggling}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 flex items-center space-x-2"
+              >
+                {toggling ? 'Switching...' : `Switch to ${stripeMode === 'test' ? 'Live' : 'Test'}`}
+              </button>
+            </div>
+
+            {stripeMode === 'test' && (
+              <div className="mt-4 bg-amber-900/20 border border-amber-700 rounded-lg p-3">
+                <p className="text-sm text-amber-300">
+                  <strong>Test Mode Active:</strong> Using test API keys. No real charges will be made. Use test card: 4242 4242 4242 4242
+                </p>
+              </div>
+            )}
+
+            {stripeMode === 'live' && (
+              <div className="mt-4 bg-green-900/20 border border-green-700 rounded-lg p-3">
+                <p className="text-sm text-green-300">
+                  <strong>Live Mode Active:</strong> Using live API keys. Real charges will be processed.
+                </p>
               </div>
             )}
           </div>
