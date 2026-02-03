@@ -52,7 +52,12 @@ Deno.serve(async (req: Request) => {
       customer_phone,
       party_size,
       reservation_time,
-      special_requests
+      reservation_date,
+      special_requests,
+      payment_status,
+      payment_amount,
+      payment_method,
+      booking_method
     } = await req.json();
 
     if (!reservation_id) {
@@ -87,7 +92,12 @@ Deno.serve(async (req: Request) => {
     if (customer_phone !== undefined) updateData.customer_phone = customer_phone;
     if (party_size !== undefined) updateData.party_size = party_size;
     if (reservation_time !== undefined) updateData.reservation_time = reservation_time;
+    if (reservation_date !== undefined) updateData.reservation_date = reservation_date;
     if (special_requests !== undefined) updateData.special_requests = special_requests;
+    if (payment_status !== undefined) updateData.payment_status = payment_status;
+    if (payment_amount !== undefined) updateData.payment_amount = payment_amount;
+    if (payment_method !== undefined) updateData.payment_method = payment_method;
+    if (booking_method !== undefined) updateData.booking_method = booking_method;
 
     const { data, error } = await supabase
       .from("reservations")

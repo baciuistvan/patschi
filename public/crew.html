@@ -1206,6 +1206,49 @@
                   </div>
                 </div>
 
+                <!-- Date and Time -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Datum *</label>
+                    <input
+                      type="date"
+                      id="editResDate"
+                      required
+                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Uhrzeit *</label>
+                    <input
+                      type="time"
+                      id="editResTime"
+                      required
+                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <!-- Multiple Days Booking -->
+                <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
+                  <label class="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="editMultipleDays"
+                      class="w-5 h-5 bg-slate-900 border-slate-600 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span class="text-base font-medium text-slate-300">Für mehrere Tage buchen</span>
+                  </label>
+                  <div id="editDaysSelector" class="hidden">
+                    <label class="block text-base font-medium text-slate-300 mb-3">Zusätzliche Tage wählen</label>
+                    <div class="bg-slate-900 border border-slate-600 rounded-lg p-4 overflow-x-auto">
+                      <div id="editDaysGrid" class="grid grid-cols-7 gap-2 min-w-[360px]"></div>
+                      <div id="editSelectedDaysInfo" class="hidden mt-3 pt-3 border-t border-slate-700">
+                        <p class="text-xs text-slate-400"><span id="editSelectedDaysCount">0</span> Tage ausgewählt</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Special Requests -->
                 <div>
                   <label class="block text-sm font-medium text-slate-300 mb-2">Besondere Wünsche</label>
@@ -1214,6 +1257,50 @@
                     rows="3"
                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   ></textarea>
+                </div>
+
+                <!-- Payment Options -->
+                <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Buchungsart</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        id="editBookingMethodFree"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white"
+                      >
+                        Kostenlos (Keine Zahlung)
+                      </button>
+                      <button
+                        type="button"
+                        id="editBookingMethodManual"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      >
+                        Mit Zahlung
+                      </button>
+                    </div>
+                  </div>
+                  <div id="editPaymentOptions" class="hidden space-y-3">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="editPaidWithCash"
+                        class="w-5 h-5 bg-slate-900 border-slate-600 rounded text-green-600 focus:ring-2 focus:ring-green-500"
+                      />
+                      <span class="text-base font-medium text-slate-300">Bar bezahlt</span>
+                    </label>
+                    <div id="editCashAmountSection" class="hidden">
+                      <label class="block text-sm font-medium text-slate-300 mb-2">Barbetrag (€)</label>
+                      <input
+                        type="number"
+                        id="editCashAmount"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Error Message -->
@@ -1503,6 +1590,11 @@
     let resSelectedDays = [];
     let resBookingMethod = 'free';
     let resPaidWithCash = false;
+
+    // Edit reservation state
+    let editResSelectedDays = [];
+    let editResBookingMethod = 'free';
+    let editResPaidWithCash = false;
     let resTableRoomFilter = null;
     let resAllTables = [];
 
@@ -1811,6 +1903,11 @@
       const reservation = state.reservations.find(r => r.id === reservationId);
       if (!reservation) return;
 
+      // Reset state
+      editResSelectedDays = [];
+      editResBookingMethod = reservation.booking_method || 'free';
+      editResPaidWithCash = reservation.payment_method === 'cash';
+
       // Populate form
       document.getElementById('editResId').value = reservation.id;
       document.getElementById('editResCustomerName').value = reservation.customer_name || '';
@@ -1818,6 +1915,34 @@
       document.getElementById('editResCustomerPhone').value = reservation.customer_phone || '';
       document.getElementById('editResPartySize').value = reservation.party_size || 2;
       document.getElementById('editResSpecialRequests').value = reservation.special_requests || '';
+
+      // Parse reservation date and time
+      const resDate = reservation.reservation_date || '';
+      const resTime = reservation.reservation_time || '';
+      document.getElementById('editResDate').value = resDate;
+      document.getElementById('editResTime').value = resTime;
+
+      // Set payment options
+      if (editResBookingMethod === 'free') {
+        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('editPaymentOptions').classList.add('hidden');
+      } else {
+        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('editPaymentOptions').classList.remove('hidden');
+      }
+
+      document.getElementById('editPaidWithCash').checked = editResPaidWithCash;
+      if (editResPaidWithCash) {
+        document.getElementById('editCashAmountSection').classList.remove('hidden');
+        document.getElementById('editCashAmount').value = reservation.payment_amount || 0;
+      } else {
+        document.getElementById('editCashAmountSection').classList.add('hidden');
+      }
+
+      // Setup event listeners if not already set
+      setupEditReservationEventListeners();
 
       // Show modal
       const modal = document.getElementById('editReservationModal');
@@ -1842,6 +1967,18 @@
       // Reset form
       document.getElementById('editReservationForm').reset();
 
+      // Reset state
+      editResSelectedDays = [];
+      editResBookingMethod = 'free';
+      editResPaidWithCash = false;
+
+      // Reset UI
+      document.getElementById('editMultipleDays').checked = false;
+      document.getElementById('editDaysSelector').classList.add('hidden');
+      document.getElementById('editPaidWithCash').checked = false;
+      document.getElementById('editCashAmountSection').classList.add('hidden');
+      document.getElementById('editPaymentOptions').classList.add('hidden');
+
       // Hide messages
       document.getElementById('editReservationError').classList.add('hidden');
       document.getElementById('editReservationSuccess').classList.add('hidden');
@@ -1853,21 +1990,148 @@
       formSections.forEach(section => section.classList.remove('hidden'));
     };
 
+    let editReservationListenersSetup = false;
+    function setupEditReservationEventListeners() {
+      if (editReservationListenersSetup) return;
+      editReservationListenersSetup = true;
+
+      // Multiple days checkbox
+      document.getElementById('editMultipleDays').onchange = (e) => {
+        const selector = document.getElementById('editDaysSelector');
+        if (e.target.checked) {
+          selector.classList.remove('hidden');
+          updateEditDaysGrid();
+        } else {
+          selector.classList.add('hidden');
+          editResSelectedDays = [];
+          updateEditSelectedDaysInfo();
+        }
+      };
+
+      // Date change - update days grid
+      document.getElementById('editResDate').onchange = () => {
+        if (document.getElementById('editMultipleDays').checked) {
+          updateEditDaysGrid();
+        }
+      };
+
+      // Booking method buttons
+      document.getElementById('editBookingMethodFree').onclick = () => {
+        editResBookingMethod = 'free';
+        editResPaidWithCash = false;
+        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('editPaymentOptions').classList.add('hidden');
+        document.getElementById('editPaidWithCash').checked = false;
+        document.getElementById('editCashAmountSection').classList.add('hidden');
+      };
+
+      document.getElementById('editBookingMethodManual').onclick = () => {
+        editResBookingMethod = 'manual';
+        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+        document.getElementById('editPaymentOptions').classList.remove('hidden');
+      };
+
+      // Cash payment checkbox
+      document.getElementById('editPaidWithCash').onchange = (e) => {
+        editResPaidWithCash = e.target.checked;
+        const section = document.getElementById('editCashAmountSection');
+        if (e.target.checked) {
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
+          document.getElementById('editCashAmount').value = '0';
+        }
+      };
+    }
+
+    function updateEditDaysGrid() {
+      const grid = document.getElementById('editDaysGrid');
+      const resDate = document.getElementById('editResDate').value;
+      if (!resDate) return;
+
+      const startDate = new Date(resDate);
+      const currentDate = new Date(startDate);
+      currentDate.setDate(currentDate.getDate() - 7);
+
+      const days = [];
+      for (let i = 0; i < 28; i++) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        if (dateStr !== resDate) {
+          days.push(dateStr);
+        }
+      }
+
+      grid.innerHTML = days.map(day => {
+        const date = new Date(day);
+        const isSelected = editResSelectedDays.includes(day);
+        return `
+          <button
+            type="button"
+            onclick="toggleEditDay('${day}')"
+            class="p-2 text-xs rounded ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'} transition"
+          >
+            ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+          </button>
+        `;
+      }).join('');
+    }
+
+    window.toggleEditDay = function(day) {
+      const idx = editResSelectedDays.indexOf(day);
+      if (idx > -1) {
+        editResSelectedDays.splice(idx, 1);
+      } else {
+        editResSelectedDays.push(day);
+      }
+      updateEditDaysGrid();
+      updateEditSelectedDaysInfo();
+    };
+
+    function updateEditSelectedDaysInfo() {
+      const info = document.getElementById('editSelectedDaysInfo');
+      const count = document.getElementById('editSelectedDaysCount');
+      if (editResSelectedDays.length > 0) {
+        info.classList.remove('hidden');
+        count.textContent = editResSelectedDays.length;
+      } else {
+        info.classList.add('hidden');
+      }
+    }
+
     async function handleEditReservationSubmit(e) {
       e.preventDefault();
 
+      // Get dates to update
+      const mainDate = document.getElementById('editResDate').value;
+      const datesToBook = [mainDate];
+      if (document.getElementById('editMultipleDays').checked) {
+        editResSelectedDays.forEach(day => {
+          if (!datesToBook.includes(day)) {
+            datesToBook.push(day);
+          }
+        });
+      }
+      datesToBook.sort();
+
       const reservationId = document.getElementById('editResId').value;
-      const updateData = {
-        reservation_id: reservationId,
+      const baseData = {
         customer_name: document.getElementById('editResCustomerName').value,
         customer_email: document.getElementById('editResCustomerEmail').value,
         customer_phone: document.getElementById('editResCustomerPhone').value,
         party_size: parseInt(document.getElementById('editResPartySize').value),
-        special_requests: document.getElementById('editResSpecialRequests').value
+        reservation_time: document.getElementById('editResTime').value,
+        special_requests: document.getElementById('editResSpecialRequests').value,
+        payment_status: editResPaidWithCash ? 'paid' : 'unpaid',
+        payment_amount: editResPaidWithCash ? parseFloat(document.getElementById('editCashAmount').value) : 0,
+        payment_method: editResPaidWithCash ? 'cash' : 'none',
+        booking_method: editResBookingMethod === 'free' ? 'free' : (editResPaidWithCash ? 'manual' : 'free')
       };
 
       // Validation
-      if (!updateData.customer_name || !updateData.customer_email || updateData.party_size < 1) {
+      if (!baseData.customer_name || !baseData.customer_email || baseData.party_size < 1 || !baseData.reservation_time) {
         document.getElementById('editReservationError').textContent = 'Bitte füllen Sie alle Pflichtfelder aus.';
         document.getElementById('editReservationError').classList.remove('hidden');
         return;
@@ -1881,18 +2145,71 @@
       document.getElementById('editReservationLoading').classList.remove('hidden');
 
       try {
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${state.crewToken}`
-          },
-          body: JSON.stringify(updateData)
-        });
+        // If multiple days selected, create additional reservations
+        if (datesToBook.length > 1) {
+          // Update main reservation
+          const updateData = {
+            ...baseData,
+            reservation_id: reservationId,
+            reservation_date: mainDate
+          };
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Update failed');
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.crewToken}`
+            },
+            body: JSON.stringify(updateData)
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Update failed');
+          }
+
+          // Create new reservations for additional days
+          for (let i = 1; i < datesToBook.length; i++) {
+            const additionalDate = datesToBook[i];
+            const createData = {
+              ...baseData,
+              reservation_date: additionalDate,
+              room_id: state.selectedRoom,
+              duration_minutes: 120,
+              status: 'confirmed',
+              selected_tables: []
+            };
+
+            await fetch(`${SUPABASE_URL}/functions/v1/create-reservation`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${ANON_KEY}`
+              },
+              body: JSON.stringify(createData)
+            });
+          }
+        } else {
+          // Single day update
+          const updateData = {
+            ...baseData,
+            reservation_id: reservationId,
+            reservation_date: mainDate
+          };
+
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.crewToken}`
+            },
+            body: JSON.stringify(updateData)
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Update failed');
+          }
         }
 
         // Hide loading, show success
