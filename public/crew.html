@@ -2132,6 +2132,9 @@
           selected_tables: resSelectedTables
         };
 
+        console.log('Sending update data:', updateData);
+        console.log('Selected tables:', resSelectedTables);
+
         const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
           method: 'POST',
           headers: {
@@ -2141,9 +2144,15 @@
           body: JSON.stringify(updateData)
         });
 
+        console.log('Response status:', response.status);
+
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Update failed');
+          console.error('Update error response:', error);
+          let errorMsg = error.error || 'Update failed';
+          if (error.details) errorMsg += ` (${error.details})`;
+          if (error.hint) errorMsg += ` Hint: ${error.hint}`;
+          throw new Error(errorMsg);
         }
 
         // Hide loading and form sections

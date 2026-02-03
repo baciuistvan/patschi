@@ -113,11 +113,19 @@ Deno.serve(async (req: Request) => {
 
     // Handle table assignments if provided
     if (selected_tables !== undefined && Array.isArray(selected_tables)) {
+      console.log('Updating table assignments for reservation:', reservation_id);
+      console.log('New tables:', selected_tables);
+
       // First, remove all existing table assignments for this reservation
-      await supabase
+      const { error: deleteError } = await supabase
         .from("reservation_tables")
         .delete()
         .eq("reservation_id", reservation_id);
+
+      if (deleteError) {
+        console.error('Error deleting table assignments:', deleteError);
+        throw new Error(`Failed to delete table assignments: ${deleteError.message}`);
+      }
 
       // Then add new table assignments
       if (selected_tables.length > 0) {
@@ -126,13 +134,18 @@ Deno.serve(async (req: Request) => {
           table_id: tableId
         }));
 
+        console.log('Inserting table assignments:', tableAssignments);
+
         const { error: tableError } = await supabase
           .from("reservation_tables")
           .insert(tableAssignments);
 
         if (tableError) {
-          console.error('Error updating table assignments:', tableError);
+          console.error('Error inserting table assignments:', tableError);
+          throw new Error(`Failed to insert table assignments: ${tableError.message}`);
         }
+
+        console.log('Successfully updated table assignments');
       }
     }
 
@@ -144,8 +157,13 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    console.error('Detailed error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: error.message || 'Unknown error occurred',
+        details: error.details || null,
+        hint: error.hint || null
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
