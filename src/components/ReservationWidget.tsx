@@ -3,20 +3,6 @@ import { supabase, Room } from '../lib/supabase';
 import { Calendar, Users, Mail, Phone, MessageSquare, CreditCard, Check } from 'lucide-react';
 import { loadStripe, Stripe, StripeElements } from '@stripe/stripe-js';
 
-// Initialize Stripe - with fallback
-let stripePromise: Promise<Stripe | null>;
-try {
-  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  if (key && key.length > 0) {
-    stripePromise = loadStripe(key);
-  } else {
-    stripePromise = Promise.resolve(null);
-  }
-} catch (err) {
-  console.error('Stripe initialization error:', err);
-  stripePromise = Promise.resolve(null);
-}
-
 const formatDateLocal = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -40,6 +26,7 @@ export function ReservationWidget() {
   const [clientSecret, setClientSecret] = useState('');
   const [stripeError, setStripeError] = useState('');
   const [stripeEnabled, setStripeEnabled] = useState(true);
+  const [stripeMode, setStripeMode] = useState<'test' | 'live'>('test');
 
   const [formData, setFormData] = useState({
     party_size: 2,
@@ -57,7 +44,7 @@ export function ReservationWidget() {
     loadRooms();
     loadDepositAmount();
     loadStripeSettings();
-    initializeStripe();
+    loadStripeModeAndInitialize();
   }, []);
 
   useEffect(() => {
@@ -67,9 +54,48 @@ export function ReservationWidget() {
     setError('');
   }, [formData.reservation_date, formData.party_size, formData.room_id]);
 
-  const initializeStripe = async () => {
+  const loadStripeModeAndInitialize = async () => {
     try {
-      const stripeInstance = await stripePromise;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-stripe-mode`;
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStripeMode(data.mode);
+        await initializeStripe(data.mode);
+      } else {
+        await initializeStripe('test');
+      }
+    } catch (error) {
+      console.error('Failed to load Stripe mode:', error);
+      await initializeStripe('test');
+    }
+  };
+
+  const initializeStripe = async (mode: 'test' | 'live') => {
+    try {
+      const keyEnvVar = mode === 'test'
+        ? 'VITE_STRIPE_PUBLISHABLE_KEY_TEST'
+        : 'VITE_STRIPE_PUBLISHABLE_KEY_LIVE';
+
+      let key = import.meta.env[keyEnvVar];
+
+      if (!key || key.length === 0) {
+        console.warn(`Stripe ${mode} key not configured. Using fallback key if available.`);
+        key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+        if (!key || key.length === 0) {
+          setStripeError('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
+          return;
+        }
+      }
+
+      const stripeInstance = await loadStripe(key);
       if (!stripeInstance) {
         setStripeError('Stripe konnte nicht geladen werden');
         return;
@@ -537,11 +563,10 @@ export function ReservationWidget() {
     );
   }
 
-  const isTestMode = import.meta.env.VITE_STRIPE_TEST_MODE === 'true';
 
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-8 px-safe bg-white rounded-3xl shadow-2xl ios-scroll">
-      {isTestMode && (
+      {stripeMode === 'test' && stripeEnabled && (
         <div className="mb-6 bg-amber-50 border-2 border-amber-400 rounded-xl p-4">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
