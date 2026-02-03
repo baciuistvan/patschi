@@ -283,7 +283,19 @@
     // Get reservations filtered by selected room
     function getFilteredReservations() {
       if (!state.selectedRoom) return state.reservations;
-      return state.reservations.filter(res => res.room_id === state.selectedRoom);
+
+      // Filter reservations that have tables in the selected room
+      return state.reservations.filter(res => {
+        if (!res.reservation_tables || res.reservation_tables.length === 0) {
+          return true; // Show reservations without tables assigned
+        }
+
+        // Check if any of the reservation's tables belong to the selected room
+        return res.reservation_tables.some(rt => {
+          const table = state.tables.find(t => t.id === rt.table_id);
+          return table && table.room_id === state.selectedRoom;
+        });
+      });
     }
 
     // Check for saved session
@@ -652,7 +664,7 @@
                         const tableNames = res.reservation_tables && res.reservation_tables.length > 0
                           ? res.reservation_tables.map(rt => {
                               const table = state.tables.find(t => t.id === rt.table_id);
-                              return table ? table.name : '';
+                              return table ? (table.custom_label || table.table_number) : '';
                             }).filter(name => name).join(', ')
                           : 'Keine Tische';
 
@@ -687,7 +699,15 @@
                                 <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                 </svg>
-                                <span>${getRoomName(res.room_id)}</span>
+                                <span>${(() => {
+                                  if (res.reservation_tables && res.reservation_tables.length > 0) {
+                                    const firstTable = state.tables.find(t => t.id === res.reservation_tables[0].table_id);
+                                    if (firstTable && firstTable.room_id) {
+                                      return getRoomName(firstTable.room_id);
+                                    }
+                                  }
+                                  return getRoomName(state.selectedRoom);
+                                })()}</span>
                               </div>
 
                               <div class="flex items-center text-slate-300">
@@ -1723,7 +1743,8 @@
         document.getElementById('reservationSuccess').classList.remove('hidden');
 
         // Refresh reservations
-        await loadReservations();
+        await fetchReservations();
+        await render();
       } catch (error) {
         console.error('Error creating reservation:', error);
         document.getElementById('reservationLoading').classList.add('hidden');
