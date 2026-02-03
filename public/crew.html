@@ -432,9 +432,23 @@
       return room ? room.name : '';
     }
 
-    // Get reservations (show all reservations regardless of room)
+    // Get reservations filtered by selected room
     function getFilteredReservations() {
-      return state.reservations;
+      if (!state.selectedRoom) {
+        return state.reservations;
+      }
+
+      return state.reservations.filter(reservation => {
+        if (!reservation.reservation_tables || reservation.reservation_tables.length === 0) {
+          return false;
+        }
+
+        // Check if any of the reservation's tables belong to the selected room
+        return reservation.reservation_tables.some(resTable => {
+          const table = state.tables.find(t => t.id === resTable.table_id);
+          return table && table.room_id === state.selectedRoom;
+        });
+      });
     }
 
     // Check for saved session
