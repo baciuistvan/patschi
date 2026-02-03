@@ -44,11 +44,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { reservation_id, status } = await req.json();
+    const {
+      reservation_id,
+      status,
+      customer_name,
+      customer_email,
+      customer_phone,
+      party_size,
+      reservation_time,
+      special_requests
+    } = await req.json();
 
-    if (!reservation_id || !status) {
+    if (!reservation_id) {
       return new Response(
-        JSON.stringify({ error: "Reservation ID and status required" }),
+        JSON.stringify({ error: "Reservation ID required" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -56,20 +65,33 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const validStatuses = ['pending', 'confirmed', 'seated', 'completed', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid status" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    // Build update object with only provided fields
+    const updateData: any = {};
+
+    if (status !== undefined) {
+      const validStatuses = ['pending', 'confirmed', 'seated', 'completed', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid status" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      updateData.status = status;
     }
+
+    if (customer_name !== undefined) updateData.customer_name = customer_name;
+    if (customer_email !== undefined) updateData.customer_email = customer_email;
+    if (customer_phone !== undefined) updateData.customer_phone = customer_phone;
+    if (party_size !== undefined) updateData.party_size = party_size;
+    if (reservation_time !== undefined) updateData.reservation_time = reservation_time;
+    if (special_requests !== undefined) updateData.special_requests = special_requests;
 
     const { data, error } = await supabase
       .from("reservations")
-      .update({ status })
+      .update(updateData)
       .eq("id", reservation_id)
       .select()
       .single();
