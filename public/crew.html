@@ -1259,46 +1259,49 @@
                   ></textarea>
                 </div>
 
-                <!-- Payment Options -->
-                <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Buchungsart</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        id="editBookingMethodFree"
-                        class="px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white"
-                      >
-                        Kostenlos (Keine Zahlung)
-                      </button>
-                      <button
-                        type="button"
-                        id="editBookingMethodManual"
-                        class="px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      >
-                        Mit Zahlung
-                      </button>
+                <!-- Payment Options Container -->
+                <div id="editPaymentOptionsContainer">
+                  <!-- Payment Options -->
+                  <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
+                    <div>
+                      <label class="block text-sm font-medium text-slate-300 mb-2">Buchungsart</label>
+                      <div class="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          id="editBookingMethodFree"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white"
+                        >
+                          Kostenlos (Keine Zahlung)
+                        </button>
+                        <button
+                          type="button"
+                          id="editBookingMethodManual"
+                          class="px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        >
+                          Mit Zahlung
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div id="editPaymentOptions" class="hidden space-y-3">
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        id="editPaidWithCash"
-                        class="w-5 h-5 bg-slate-900 border-slate-600 rounded text-green-600 focus:ring-2 focus:ring-green-500"
-                      />
-                      <span class="text-base font-medium text-slate-300">Bar bezahlt</span>
-                    </label>
-                    <div id="editCashAmountSection" class="hidden">
-                      <label class="block text-sm font-medium text-slate-300 mb-2">Barbetrag (€)</label>
-                      <input
-                        type="number"
-                        id="editCashAmount"
-                        min="0"
-                        step="0.01"
-                        value="0"
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
+                    <div id="editPaymentOptions" class="hidden space-y-3">
+                      <label class="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          id="editPaidWithCash"
+                          class="w-5 h-5 bg-slate-900 border-slate-600 rounded text-green-600 focus:ring-2 focus:ring-green-500"
+                        />
+                        <span class="text-base font-medium text-slate-300">Bar bezahlt</span>
+                      </label>
+                      <div id="editCashAmountSection" class="hidden">
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Barbetrag (€)</label>
+                        <input
+                          type="number"
+                          id="editCashAmount"
+                          min="0"
+                          step="0.01"
+                          value="0"
+                          class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1908,6 +1911,11 @@
       editResBookingMethod = reservation.booking_method || 'free';
       editResPaidWithCash = reservation.payment_method === 'cash';
 
+      // Check if this is an online booking (cannot be edited)
+      const isOnlineBooking = reservation.booking_method === 'stripe' ||
+                             reservation.payment_method === 'stripe' ||
+                             reservation.stripe_payment_intent_id;
+
       // Populate form
       document.getElementById('editResId').value = reservation.id;
       document.getElementById('editResCustomerName').value = reservation.customer_name || '';
@@ -1922,23 +1930,32 @@
       document.getElementById('editResDate').value = resDate;
       document.getElementById('editResTime').value = resTime;
 
-      // Set payment options
-      if (editResBookingMethod === 'free') {
-        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-        document.getElementById('editPaymentOptions').classList.add('hidden');
+      // Handle payment options section
+      const paymentSection = document.getElementById('editPaymentOptionsContainer');
+      if (isOnlineBooking) {
+        // Hide payment options for online bookings - they can't be changed
+        paymentSection.classList.add('hidden');
       } else {
-        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-        document.getElementById('editPaymentOptions').classList.remove('hidden');
-      }
+        // Show and set payment options for manual/free bookings
+        paymentSection.classList.remove('hidden');
 
-      document.getElementById('editPaidWithCash').checked = editResPaidWithCash;
-      if (editResPaidWithCash) {
-        document.getElementById('editCashAmountSection').classList.remove('hidden');
-        document.getElementById('editCashAmount').value = reservation.payment_amount || 0;
-      } else {
-        document.getElementById('editCashAmountSection').classList.add('hidden');
+        if (editResBookingMethod === 'free') {
+          document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+          document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+          document.getElementById('editPaymentOptions').classList.add('hidden');
+        } else {
+          document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
+          document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
+          document.getElementById('editPaymentOptions').classList.remove('hidden');
+        }
+
+        document.getElementById('editPaidWithCash').checked = editResPaidWithCash;
+        if (editResPaidWithCash) {
+          document.getElementById('editCashAmountSection').classList.remove('hidden');
+          document.getElementById('editCashAmount').value = reservation.payment_amount || 0;
+        } else {
+          document.getElementById('editCashAmountSection').classList.add('hidden');
+        }
       }
 
       // Setup event listeners if not already set
@@ -2117,18 +2134,31 @@
       datesToBook.sort();
 
       const reservationId = document.getElementById('editResId').value;
+
+      // Get current reservation to check if it's online booking
+      const currentReservation = state.reservations.find(r => r.id === reservationId);
+      const isOnlineBooking = currentReservation && (
+        currentReservation.booking_method === 'stripe' ||
+        currentReservation.payment_method === 'stripe' ||
+        currentReservation.stripe_payment_intent_id
+      );
+
       const baseData = {
         customer_name: document.getElementById('editResCustomerName').value,
         customer_email: document.getElementById('editResCustomerEmail').value,
         customer_phone: document.getElementById('editResCustomerPhone').value,
         party_size: parseInt(document.getElementById('editResPartySize').value),
         reservation_time: document.getElementById('editResTime').value,
-        special_requests: document.getElementById('editResSpecialRequests').value,
-        payment_status: editResPaidWithCash ? 'paid' : 'unpaid',
-        payment_amount: editResPaidWithCash ? parseFloat(document.getElementById('editCashAmount').value) : 0,
-        payment_method: editResPaidWithCash ? 'cash' : 'none',
-        booking_method: editResBookingMethod === 'free' ? 'free' : (editResPaidWithCash ? 'manual' : 'free')
+        special_requests: document.getElementById('editResSpecialRequests').value
       };
+
+      // Only include payment data if it's not an online booking
+      if (!isOnlineBooking) {
+        baseData.payment_status = editResPaidWithCash ? 'paid' : 'unpaid';
+        baseData.payment_amount = editResPaidWithCash ? parseFloat(document.getElementById('editCashAmount').value) : 0;
+        baseData.payment_method = editResPaidWithCash ? 'cash' : 'none';
+        baseData.booking_method = editResBookingMethod === 'free' ? 'free' : (editResPaidWithCash ? 'manual' : 'free');
+      }
 
       // Validation
       if (!baseData.customer_name || !baseData.customer_email || baseData.party_size < 1 || !baseData.reservation_time) {
