@@ -40,33 +40,33 @@
       transition: background-color 0.2s ease;
       border: 2px solid #000;
       --rotation: 0deg;
-      transform: scale(0.8) rotate(var(--rotation));
-      transform-origin: top left;
+      transform: rotate(var(--rotation));
+      transform-origin: center;
     }
 
     .table-item:hover {
-      transform: scale(0.8) rotate(var(--rotation));
+      transform: rotate(var(--rotation));
     }
 
     /* iPad optimization */
     @media (min-width: 768px) and (max-width: 1024px) {
       .table-item {
-        transform: scale(0.64) rotate(var(--rotation));
+        transform: scale(0.8) rotate(var(--rotation));
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: scale(0.64) rotate(var(--rotation));
+        transform: scale(0.8) rotate(var(--rotation));
       }
     }
 
     /* Mobile phones */
     @media (max-width: 767px) {
       .table-item {
-        transform: scale(0.52) rotate(var(--rotation));
+        transform: scale(0.65) rotate(var(--rotation));
         transform-origin: top left;
       }
       .table-item:hover {
-        transform: scale(0.52) rotate(var(--rotation));
+        transform: scale(0.65) rotate(var(--rotation));
       }
     }
 
