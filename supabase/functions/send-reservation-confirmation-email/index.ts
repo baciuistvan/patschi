@@ -110,14 +110,14 @@ Best regards,
 The Patschi Team`;
 
     emailBody = emailBody
-      .replace(/{{customer_name}}/g, customer_name)
-      .replace(/{{booking_code}}/g, booking_code)
-      .replace(/{{reservation_date}}/g, formatDate(reservation_date))
-      .replace(/{{reservation_time}}/g, reservation_time)
-      .replace(/{{party_size}}/g, party_size.toString())
-      .replace(/{{table_number}}/g, table_number)
+      .replace(/{{customer_name}}/g, customer_name || '')
+      .replace(/{{booking_code}}/g, booking_code || '')
+      .replace(/{{reservation_date}}/g, reservation_date ? formatDate(reservation_date) : '')
+      .replace(/{{reservation_time}}/g, reservation_time || '')
+      .replace(/{{party_size}}/g, party_size?.toString() || '0')
+      .replace(/{{table_number}}/g, table_number || 'To be assigned')
       .replace(/{{special_requests}}/g, special_requests || 'None')
-      .replace(/{{deposit_amount}}/g, payment_amount.toFixed(2));
+      .replace(/{{deposit_amount}}/g, (payment_amount || 0).toFixed(2));
 
     let emailSubject = settingsMap.email_subject || 'Reservation Confirmation - {{customer_name}}';
     emailSubject = emailSubject.replace(/{{customer_name}}/g, customer_name);
