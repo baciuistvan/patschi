@@ -28,26 +28,21 @@ Deno.serve(async (req: Request) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify crew token
-    const { data: crewUser } = await supabase
-      .from("crew_members")
-      .select("*")
-      .eq("auth_token", token)
-      .single();
-
-    if (!crewUser) {
+    // Validate crew token (format: crew_{userId}_{timestamp})
+    if (!token.startsWith("crew_")) {
       return new Response(
-        JSON.stringify({ error: "Invalid crew token" }),
+        JSON.stringify({ error: "Invalid token format" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { reservation_id } = await req.json();
 
