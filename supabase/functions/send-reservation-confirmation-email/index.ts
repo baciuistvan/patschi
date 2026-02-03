@@ -148,64 +148,111 @@ The Patschi Team`;
       `--${boundary}--`
     ].join('\r\n');
 
-    const smtpResponse = await fetch(`https://api.smtp2go.com/v3/email/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        api_key: 'api-key-placeholder',
-        to: [customer_email],
-        sender: settingsMap.smtp_from_email,
-        subject: emailSubject,
-        text_body: emailBody,
-        custom_headers: [
-          {
-            header: 'Reply-To',
-            value: settingsMap.smtp_from_email
-          }
-        ]
-      })
-    });
+    console.log('[EMAIL] Attempting to send email to:', customer_email);
+    console.log('[EMAIL] SMTP Host:', settingsMap.smtp_host);
+    console.log('[EMAIL] SMTP Port:', smtpPort);
+    console.log('[EMAIL] SMTP User:', settingsMap.smtp_user);
 
-    const tc = await Deno.connect({
-      hostname: settingsMap.smtp_host,
-      port: smtpPort,
-    });
+    let conn;
+    try {
+      conn = await Deno.connect({
+        hostname: settingsMap.smtp_host,
+        port: smtpPort,
+      });
 
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
 
-    const readResponse = async () => {
-      const buffer = new Uint8Array(1024);
-      const n = await tc.read(buffer);
-      return decoder.decode(buffer.subarray(0, n || 0));
-    };
+      const readResponse = async () => {
+        const buffer = new Uint8Array(4096);
+        const n = await conn!.read(buffer);
+        const response = decoder.decode(buffer.subarray(0, n || 0));
+        console.log('[SMTP Response]:', response.trim());
+        return response;
+      };
 
-    const sendCommand = async (command: string) => {
-      await tc.write(encoder.encode(command + '\r\n'));
-      return await readResponse();
-    };
+      const sendCommand = async (command: string, logCommand: boolean = true) => {
+        if (logCommand) {
+          console.log('[SMTP Command]:', command.startsWith('AUTH PLAIN') || command.length > 100 ? command.substring(0, 20) + '...' : command);
+        }
+        await conn!.write(encoder.encode(command + '\r\n'));
+        return await readResponse();
+      };
 
-    await readResponse();
-    await sendCommand(`EHLO ${settingsMap.smtp_host}`);
+      const greeting = await readResponse();
+      if (!greeting.startsWith('220')) {
+        throw new Error(`SMTP connection failed: ${greeting}`);
+      }
 
-    if (!smtpSecure && smtpPort === 587) {
-      await sendCommand('STARTTLS');
+      const ehloResponse = await sendCommand(`EHLO ${settingsMap.smtp_host}`);
+      if (!ehloResponse.includes('250')) {
+        throw new Error(`EHLO failed: ${ehloResponse}`);
+      }
+
+      if (!smtpSecure && smtpPort === 587) {
+        const starttlsResponse = await sendCommand('STARTTLS');
+        if (!starttlsResponse.startsWith('220')) {
+          throw new Error(`STARTTLS failed: ${starttlsResponse}`);
+        }
+
+        const tlsConn = await Deno.startTls(conn, {
+          hostname: settingsMap.smtp_host,
+        });
+        conn = tlsConn as any;
+
+        await sendCommand(`EHLO ${settingsMap.smtp_host}`);
+      }
+
+      const authResponse = await sendCommand('AUTH LOGIN');
+      if (!authResponse.startsWith('334')) {
+        throw new Error(`AUTH LOGIN failed: ${authResponse}`);
+      }
+
+      const userResponse = await sendCommand(btoa(settingsMap.smtp_user), false);
+      if (!userResponse.startsWith('334')) {
+        throw new Error(`Username authentication failed: ${userResponse}`);
+      }
+
+      const passResponse = await sendCommand(btoa(settingsMap.smtp_password), false);
+      if (!passResponse.startsWith('235')) {
+        throw new Error(`Password authentication failed: ${passResponse}`);
+      }
+
+      console.log('[EMAIL] Authentication successful');
+
+      const mailFromResponse = await sendCommand(`MAIL FROM:<${settingsMap.smtp_from_email}>`);
+      if (!mailFromResponse.startsWith('250')) {
+        throw new Error(`MAIL FROM failed: ${mailFromResponse}`);
+      }
+
+      const rcptToResponse = await sendCommand(`RCPT TO:<${customer_email}>`);
+      if (!rcptToResponse.startsWith('250')) {
+        throw new Error(`RCPT TO failed: ${rcptToResponse}`);
+      }
+
+      const dataResponse = await sendCommand('DATA');
+      if (!dataResponse.startsWith('354')) {
+        throw new Error(`DATA command failed: ${dataResponse}`);
+      }
+
+      await conn.write(encoder.encode(emailContent + '\r\n.\r\n'));
+      const sendResponse = await readResponse();
+      if (!sendResponse.startsWith('250')) {
+        throw new Error(`Email send failed: ${sendResponse}`);
+      }
+
+      console.log('[EMAIL] Email sent successfully');
+
+      await sendCommand('QUIT');
+    } finally {
+      if (conn) {
+        try {
+          conn.close();
+        } catch (e) {
+          console.error('[EMAIL] Error closing connection:', e);
+        }
+      }
     }
-
-    await sendCommand('AUTH LOGIN');
-    await sendCommand(btoa(settingsMap.smtp_user));
-    await sendCommand(btoa(settingsMap.smtp_password));
-
-    await sendCommand(`MAIL FROM:<${settingsMap.smtp_from_email}>`);
-    await sendCommand(`RCPT TO:<${customer_email}>`);
-    await sendCommand('DATA');
-    await tc.write(encoder.encode(emailContent + '\r\n.\r\n'));
-    await readResponse();
-
-    await sendCommand('QUIT');
-    tc.close();
 
     return new Response(
       JSON.stringify({
