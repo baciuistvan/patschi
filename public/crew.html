@@ -1095,11 +1095,11 @@
             <div class="bg-slate-800 rounded-none md:rounded-2xl max-w-3xl w-full md:my-8 border-0 md:border border-slate-700 min-h-screen md:min-h-0 md:max-h-[98vh] overflow-y-auto" onclick="event.stopPropagation()">
               <div class="sticky top-0 bg-slate-800 z-10 pb-2 border-b border-slate-700 p-4 sm:p-6">
                 <div class="flex items-center justify-between">
-                  <h2 class="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <h2 id="reservationModalTitle" class="text-lg sm:text-xl font-bold text-white flex items-center">
+                    <svg id="reservationModalIcon" class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
-                    Neue Reservierung
+                    <span id="reservationModalTitleText">Neue Reservierung</span>
                   </h2>
                   <button onclick="closeReservationModal()" class="text-white hover:text-slate-400 transition p-1">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1110,6 +1110,7 @@
               </div>
 
               <form id="reservationForm" class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <input type="hidden" id="resId" />
                 <!-- Customer Info -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                   <div>
@@ -1282,15 +1283,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                       </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-green-300 mb-2">Reservierung erstellt!</h3>
+                    <h3 id="resSuccessTitle" class="text-xl font-bold text-green-300 mb-2">Reservierung erstellt!</h3>
                     <p class="text-green-200 mb-4" id="resSuccessMessage">Die Reservierung wurde erfolgreich angelegt.</p>
-                    <div class="bg-slate-900 rounded-lg p-4 mb-4">
+                    <div id="resBookingCodeSection" class="bg-slate-900 rounded-lg p-4 mb-4">
                       <div class="text-sm text-slate-400 mb-1">Buchungscode</div>
                       <div class="text-2xl font-bold text-white" id="resBookingCode"></div>
                     </div>
                     <button
                       type="button"
                       onclick="resetReservationModal()"
+                      id="resSuccessButton"
                       class="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition"
                     >
                       Neue Reservierung
@@ -1301,7 +1303,7 @@
                 <!-- Loading -->
                 <div id="reservationLoading" class="hidden text-center py-8">
                   <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-600 border-t-blue-500"></div>
-                  <p class="text-slate-400 mt-4">Wird erstellt...</p>
+                  <p id="reservationLoadingText" class="text-slate-400 mt-4">Wird erstellt...</p>
                 </div>
 
                 <!-- Buttons -->
@@ -1315,6 +1317,14 @@
                   </button>
                   <button
                     type="button"
+                    id="deleteReservationBtn"
+                    onclick="deleteCurrentReservation()"
+                    class="hidden px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition min-h-[44px]"
+                  >
+                    Löschen
+                  </button>
+                  <button
+                    type="button"
                     onclick="closeReservationModal()"
                     class="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition min-h-[44px]"
                   >
@@ -1325,219 +1335,6 @@
             </div>
           </div>
 
-          <!-- Edit Reservation Modal -->
-          <div id="editReservationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-start justify-center md:p-4 z-50 overflow-y-auto" onclick="closeEditReservationModalOnBackdrop(event)">
-            <div class="bg-slate-800 rounded-none md:rounded-2xl max-w-2xl w-full md:my-8 border-0 md:border border-slate-700 min-h-screen md:min-h-0 md:max-h-[98vh] overflow-y-auto" onclick="event.stopPropagation()">
-              <div class="sticky top-0 bg-slate-800 z-10 pb-2 border-b border-slate-700 p-4 sm:p-6">
-                <div class="flex items-center justify-between">
-                  <h2 class="text-xl font-bold text-white flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Reservierung bearbeiten
-                  </h2>
-                  <button onclick="closeEditReservationModal()" class="text-white hover:text-slate-400 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <form id="editReservationForm" class="p-6 space-y-6">
-                <input type="hidden" id="editResId" />
-                <input type="hidden" id="editResRoomId" />
-
-                <!-- Customer Info -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Name *</label>
-                    <input
-                      type="text"
-                      id="editResCustomerName"
-                      required
-                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">E-Mail *</label>
-                    <input
-                      type="email"
-                      id="editResCustomerEmail"
-                      required
-                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Telefon</label>
-                    <input
-                      type="tel"
-                      id="editResCustomerPhone"
-                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Anzahl Personen *</label>
-                    <input
-                      type="number"
-                      id="editResPartySize"
-                      min="1"
-                      required
-                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <!-- Date and Time -->
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Datum *</label>
-                    <input
-                      type="date"
-                      id="editResDate"
-                      required
-                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Uhrzeit *</label>
-                    <input
-                      type="time"
-                      id="editResTime"
-                      required
-                      class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <!-- Multiple Days Booking -->
-                <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
-                  <label class="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      id="editMultipleDays"
-                      class="w-5 h-5 bg-slate-900 border-slate-600 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span class="text-base font-medium text-slate-300">Für mehrere Tage buchen</span>
-                  </label>
-                  <div id="editDaysSelector" class="hidden">
-                    <label class="block text-base font-medium text-slate-300 mb-2">Zusätzliche Tage wählen</label>
-                    <p class="text-xs text-slate-400 mb-3">Das oben gewählte Datum wird automatisch gebucht.</p>
-                    <div class="bg-slate-900 border border-slate-600 rounded-lg p-4 overflow-x-auto">
-                      <div id="editDaysGrid" class="grid grid-cols-7 gap-2 min-w-[360px]"></div>
-                      <div id="editSelectedDaysInfo" class="hidden mt-3 pt-3 border-t border-slate-700">
-                        <p class="text-xs text-slate-400"><span id="editSelectedDaysCount">0</span> zusätzliche Tage ausgewählt</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Special Requests -->
-                <div>
-                  <label class="block text-sm font-medium text-slate-300 mb-2">Besondere Wünsche</label>
-                  <textarea
-                    id="editResSpecialRequests"
-                    rows="3"
-                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  ></textarea>
-                </div>
-
-                <!-- Payment Options Container -->
-                <div id="editPaymentOptionsContainer">
-                  <!-- Payment Options -->
-                  <div class="space-y-3 bg-slate-900/30 p-4 rounded-lg">
-                    <div>
-                      <label class="block text-sm font-medium text-slate-300 mb-2">Buchungsart</label>
-                      <div class="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          id="editBookingMethodFree"
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white"
-                        >
-                          Kostenlos (Keine Zahlung)
-                        </button>
-                        <button
-                          type="button"
-                          id="editBookingMethodManual"
-                          class="px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700"
-                        >
-                          Mit Zahlung
-                        </button>
-                      </div>
-                    </div>
-                    <div id="editPaymentOptions" class="hidden space-y-3">
-                      <label class="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          id="editPaidWithCash"
-                          class="w-5 h-5 bg-slate-900 border-slate-600 rounded text-green-600 focus:ring-2 focus:ring-green-500"
-                        />
-                        <span class="text-base font-medium text-slate-300">Bar bezahlt</span>
-                      </label>
-                      <div id="editCashAmountSection" class="hidden">
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Barbetrag (€)</label>
-                        <input
-                          type="number"
-                          id="editCashAmount"
-                          min="0"
-                          step="0.01"
-                          value="0"
-                          class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Error Message -->
-                <div id="editReservationError" class="hidden bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded-lg text-sm"></div>
-
-                <!-- Success Message -->
-                <div id="editReservationSuccess" class="hidden">
-                  <div class="bg-green-900/30 border border-green-500 rounded-lg p-6 text-center">
-                    <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-green-300 mb-2">Gespeichert!</h3>
-                    <p class="text-green-200 mb-4">Die Änderungen wurden erfolgreich gespeichert.</p>
-                    <button
-                      type="button"
-                      onclick="closeEditReservationModal(); renderApp();"
-                      class="px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition"
-                    >
-                      Schließen
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Loading -->
-                <div id="editReservationLoading" class="hidden text-center py-8">
-                  <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-slate-600 border-t-blue-500"></div>
-                  <p class="text-slate-400 mt-4">Wird aktualisiert...</p>
-                </div>
-
-                <!-- Buttons -->
-                <div id="editReservationButtons" class="flex space-x-3 pt-4 sticky bottom-0 bg-slate-800 pb-2 border-t border-slate-700 mt-4">
-                  <button
-                    type="submit"
-                    id="submitEditReservationBtn"
-                    class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-                  >
-                    Änderungen speichern
-                  </button>
-                  <button
-                    type="button"
-                    onclick="closeEditReservationModal()"
-                    class="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition"
-                  >
-                    Abbrechen
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
       `;
     }
@@ -1791,13 +1588,10 @@
     let resSelectedDays = [];
     let resBookingMethod = 'free';
     let resPaidWithCash = false;
-
-    // Edit reservation state
-    let editResSelectedDays = [];
-    let editResBookingMethod = 'free';
-    let editResPaidWithCash = false;
     let resTableRoomFilter = null;
     let resAllTables = [];
+    let resEditMode = false;
+    let resEditReservation = null;
 
     function formatDateLocal(date) {
       const year = date.getFullYear();
@@ -1806,22 +1600,88 @@
       return `${year}-${month}-${day}`;
     }
 
-    window.openReservationModal = async function() {
+    window.openReservationModal = async function(reservationId = null) {
       const modal = document.getElementById('reservationModal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
-      // Reset state
+      // Determine if we're editing or creating
+      resEditMode = !!reservationId;
+      resEditReservation = reservationId ? state.reservations.find(r => r.id === reservationId) : null;
+
+      // Update modal UI based on mode
+      if (resEditMode && resEditReservation) {
+        // Edit mode
+        document.getElementById('reservationModalTitleText').textContent = 'Reservierung bearbeiten';
+        document.getElementById('reservationModalIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>';
+        document.getElementById('submitReservationBtn').textContent = 'Änderungen speichern';
+        document.getElementById('submitReservationBtn').className = 'flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition min-h-[44px]';
+
+        // Show delete button for non-online bookings
+        const isOnlineBooking = resEditReservation.booking_method === 'stripe' ||
+                               resEditReservation.payment_method === 'stripe' ||
+                               resEditReservation.stripe_payment_intent_id;
+        if (!isOnlineBooking) {
+          document.getElementById('deleteReservationBtn').classList.remove('hidden');
+        } else {
+          document.getElementById('deleteReservationBtn').classList.add('hidden');
+        }
+      } else {
+        // Create mode
+        document.getElementById('reservationModalTitleText').textContent = 'Neue Reservierung';
+        document.getElementById('reservationModalIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>';
+        document.getElementById('submitReservationBtn').textContent = 'Reservierung erstellen';
+        document.getElementById('submitReservationBtn').className = 'flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition min-h-[44px]';
+        document.getElementById('deleteReservationBtn').classList.add('hidden');
+      }
+
+      // Reset or populate state
       resSelectedTables = [];
       resSelectedDays = [];
-      resBookingMethod = 'free';
-      resPaidWithCash = false;
 
-      // Set today's date as minimum
-      const today = formatDateLocal(new Date());
-      document.getElementById('resDate').min = today;
-      document.getElementById('resDate').value = today;
-      document.getElementById('resTime').value = '15:45';
+      if (resEditMode && resEditReservation) {
+        // Populate form with existing data
+        document.getElementById('resId').value = resEditReservation.id;
+        document.getElementById('resCustomerName').value = resEditReservation.customer_name || '';
+        document.getElementById('resCustomerEmail').value = resEditReservation.customer_email || '';
+        document.getElementById('resCustomerPhone').value = resEditReservation.customer_phone || '';
+        document.getElementById('resPartySize').value = resEditReservation.party_size || 2;
+        document.getElementById('resDate').value = resEditReservation.reservation_date || '';
+        document.getElementById('resTime').value = resEditReservation.reservation_time || '';
+        document.getElementById('resSpecialRequests').value = resEditReservation.special_requests || '';
+
+        resBookingMethod = resEditReservation.booking_method || 'free';
+        resPaidWithCash = resEditReservation.payment_method === 'cash';
+
+        // Handle payment options section
+        const isOnlineBooking = resEditReservation.booking_method === 'stripe' ||
+                               resEditReservation.payment_method === 'stripe' ||
+                               resEditReservation.stripe_payment_intent_id;
+
+        if (isOnlineBooking) {
+          document.getElementById('paymentOptions').closest('.space-y-3').classList.add('hidden');
+        } else {
+          document.getElementById('paymentOptions').closest('.space-y-3').classList.remove('hidden');
+        }
+      } else {
+        // Reset for new reservation
+        document.getElementById('resId').value = '';
+        document.getElementById('resCustomerName').value = '';
+        document.getElementById('resCustomerEmail').value = '';
+        document.getElementById('resCustomerPhone').value = '';
+        document.getElementById('resPartySize').value = '2';
+        document.getElementById('resSpecialRequests').value = '';
+        resBookingMethod = 'free';
+        resPaidWithCash = false;
+
+        // Set today's date as minimum and default
+        const today = formatDateLocal(new Date());
+        document.getElementById('resDate').min = today;
+        document.getElementById('resDate').value = today;
+        document.getElementById('resTime').value = '15:45';
+
+        document.getElementById('paymentOptions').closest('.space-y-3').classList.remove('hidden');
+      }
 
       // Load rooms into dropdown
       const roomSelect = document.getElementById('resRoom');
@@ -1830,7 +1690,15 @@
         const option = document.createElement('option');
         option.value = room.id;
         option.textContent = room.name;
-        if (room.id === state.selectedRoom) {
+        if (resEditMode && resEditReservation) {
+          // For edit mode, select the room of the reservation
+          if (resEditReservation.reservation_tables && resEditReservation.reservation_tables.length > 0) {
+            const firstTable = state.tables.find(t => t.id === resEditReservation.reservation_tables[0].table_id);
+            if (firstTable && firstTable.room_id === room.id) {
+              option.selected = true;
+            }
+          }
+        } else if (room.id === state.selectedRoom) {
           option.selected = true;
         }
         roomSelect.appendChild(option);
@@ -2076,12 +1944,30 @@
     window.resetReservationModal = function() {
       // Reset form
       document.getElementById('reservationForm').reset();
+      document.getElementById('resId').value = '';
       document.getElementById('resTime').value = '15:45';
       document.getElementById('resPartySize').value = '2';
       resSelectedTables = [];
       resSelectedDays = [];
       resBookingMethod = 'free';
       resPaidWithCash = false;
+      resEditMode = false;
+      resEditReservation = null;
+
+      // Reset modal UI to create mode
+      document.getElementById('reservationModalTitleText').textContent = 'Neue Reservierung';
+      document.getElementById('reservationModalIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>';
+      document.getElementById('submitReservationBtn').textContent = 'Reservierung erstellen';
+      document.getElementById('submitReservationBtn').className = 'flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition min-h-[44px]';
+      document.getElementById('deleteReservationBtn').classList.add('hidden');
+      document.getElementById('reservationLoadingText').textContent = 'Wird erstellt...';
+
+      // Reset success message to defaults
+      document.getElementById('resSuccessTitle').textContent = 'Reservierung erstellt!';
+      document.getElementById('resSuccessMessage').textContent = 'Die Reservierung wurde erfolgreich angelegt.';
+      document.getElementById('resBookingCodeSection').classList.remove('hidden');
+      document.getElementById('resSuccessButton').textContent = 'Neue Reservierung';
+      document.getElementById('resSuccessButton').onclick = () => resetReservationModal();
 
       // Reset UI
       document.getElementById('multipleDays').checked = false;
@@ -2101,84 +1987,10 @@
       formSections.forEach(section => section.classList.remove('hidden'));
     };
 
-    // Edit Reservation Modal Functions
+    // Edit Reservation Modal Functions (now uses unified modal)
     window.openEditReservationModal = async function(reservationId) {
-      const reservation = state.reservations.find(r => r.id === reservationId);
-      if (!reservation) return;
-
-      // Reset state
-      editResSelectedDays = [];
-      editResBookingMethod = reservation.booking_method || 'free';
-      editResPaidWithCash = reservation.payment_method === 'cash';
-
-      // Check if this is an online booking (cannot be edited)
-      const isOnlineBooking = reservation.booking_method === 'stripe' ||
-                             reservation.payment_method === 'stripe' ||
-                             reservation.stripe_payment_intent_id;
-
-      // Populate form
-      document.getElementById('editResId').value = reservation.id;
-      document.getElementById('editResRoomId').value = state.selectedRoom || '';
-      document.getElementById('editResCustomerName').value = reservation.customer_name || '';
-      document.getElementById('editResCustomerEmail').value = reservation.customer_email || '';
-      document.getElementById('editResCustomerPhone').value = reservation.customer_phone || '';
-      document.getElementById('editResPartySize').value = reservation.party_size || 2;
-      document.getElementById('editResSpecialRequests').value = reservation.special_requests || '';
-
-      // Parse reservation date and time
-      const resDate = reservation.reservation_date || '';
-      const resTime = reservation.reservation_time || '';
-      document.getElementById('editResDate').value = resDate;
-      document.getElementById('editResTime').value = resTime;
-
-      // Handle payment options section
-      const paymentSection = document.getElementById('editPaymentOptionsContainer');
-      if (isOnlineBooking) {
-        // Hide payment options for online bookings - they can't be changed
-        paymentSection.classList.add('hidden');
-      } else {
-        // Show and set payment options for manual/free bookings
-        paymentSection.classList.remove('hidden');
-
-        if (editResBookingMethod === 'free') {
-          document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-          document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-          document.getElementById('editPaymentOptions').classList.add('hidden');
-        } else {
-          document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-          document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-          document.getElementById('editPaymentOptions').classList.remove('hidden');
-        }
-
-        document.getElementById('editPaidWithCash').checked = editResPaidWithCash;
-        if (editResPaidWithCash) {
-          document.getElementById('editCashAmountSection').classList.remove('hidden');
-          document.getElementById('editCashAmount').value = reservation.payment_amount || 0;
-        } else {
-          document.getElementById('editCashAmountSection').classList.add('hidden');
-        }
-      }
-
-      // Setup event listeners if not already set
-      setupEditReservationEventListeners();
-
-      // Show modal
-      const modal = document.getElementById('editReservationModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    };
-
-    window.closeEditReservationModal = function() {
-      const modal = document.getElementById('editReservationModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      resetEditReservationModal();
-    };
-
-    window.closeEditReservationModalOnBackdrop = function(event) {
-      if (event.target.id === 'editReservationModal') {
-        closeEditReservationModal();
-      }
+      // Just call the unified modal with the reservation ID
+      await openReservationModal(reservationId);
     };
 
     window.deleteReservation = async function(reservationId) {
@@ -2232,167 +2044,13 @@
       }
     };
 
-    window.resetEditReservationModal = function() {
-      // Reset form
-      document.getElementById('editReservationForm').reset();
 
-      // Reset state
-      editResSelectedDays = [];
-      editResBookingMethod = 'free';
-      editResPaidWithCash = false;
-
-      // Reset UI
-      document.getElementById('editMultipleDays').checked = false;
-      document.getElementById('editDaysSelector').classList.add('hidden');
-      document.getElementById('editPaidWithCash').checked = false;
-      document.getElementById('editCashAmountSection').classList.add('hidden');
-      document.getElementById('editPaymentOptions').classList.add('hidden');
-
-      // Hide messages
-      document.getElementById('editReservationError').classList.add('hidden');
-      document.getElementById('editReservationSuccess').classList.add('hidden');
-      document.getElementById('editReservationLoading').classList.add('hidden');
-      document.getElementById('editReservationButtons').classList.remove('hidden');
-
-      // Show form sections
-      const formSections = document.querySelectorAll('#editReservationForm > div:not(#editReservationSuccess):not(#editReservationLoading)');
-      formSections.forEach(section => section.classList.remove('hidden'));
-    };
-
-    let editReservationListenersSetup = false;
-    function setupEditReservationEventListeners() {
-      if (editReservationListenersSetup) return;
-      editReservationListenersSetup = true;
-
-      // Multiple days checkbox
-      document.getElementById('editMultipleDays').onchange = (e) => {
-        const selector = document.getElementById('editDaysSelector');
-        if (e.target.checked) {
-          selector.classList.remove('hidden');
-          updateEditDaysGrid();
-        } else {
-          selector.classList.add('hidden');
-          editResSelectedDays = [];
-          updateEditSelectedDaysInfo();
-        }
-      };
-
-      // Date change - update days grid
-      document.getElementById('editResDate').onchange = () => {
-        if (document.getElementById('editMultipleDays').checked) {
-          updateEditDaysGrid();
-        }
-      };
-
-      // Booking method buttons
-      document.getElementById('editBookingMethodFree').onclick = () => {
-        editResBookingMethod = 'free';
-        editResPaidWithCash = false;
-        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-        document.getElementById('editPaymentOptions').classList.add('hidden');
-        document.getElementById('editPaidWithCash').checked = false;
-        document.getElementById('editCashAmountSection').classList.add('hidden');
-      };
-
-      document.getElementById('editBookingMethodManual').onclick = () => {
-        editResBookingMethod = 'manual';
-        document.getElementById('editBookingMethodFree').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-slate-800 text-slate-300 hover:bg-slate-700';
-        document.getElementById('editBookingMethodManual').className = 'px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-600 text-white';
-        document.getElementById('editPaymentOptions').classList.remove('hidden');
-      };
-
-      // Cash payment checkbox
-      document.getElementById('editPaidWithCash').onchange = (e) => {
-        editResPaidWithCash = e.target.checked;
-        const section = document.getElementById('editCashAmountSection');
-        if (e.target.checked) {
-          section.classList.remove('hidden');
-        } else {
-          section.classList.add('hidden');
-          document.getElementById('editCashAmount').value = '0';
-        }
-      };
-    }
-
-    function updateEditDaysGrid() {
-      const grid = document.getElementById('editDaysGrid');
-      const resDate = document.getElementById('editResDate').value;
-      if (!resDate) return;
-
-      // Parse date string as local date to avoid timezone issues
-      const [year, month, day] = resDate.split('-').map(Number);
-      const startDate = new Date(year, month - 1, day);
-      const currentDate = new Date(startDate);
-      currentDate.setDate(currentDate.getDate() - 7);
-
-      const days = [];
-      for (let i = 0; i < 28; i++) {
-        currentDate.setDate(currentDate.getDate() + 1);
-        const dateStr = formatDateLocal(currentDate);
-        if (dateStr !== resDate) {
-          days.push(dateStr);
-        }
-      }
-
-      grid.innerHTML = days.map(day => {
-        // Parse date string as local date to avoid timezone issues
-        const [y, m, d] = day.split('-').map(Number);
-        const date = new Date(y, m - 1, d);
-        const isSelected = editResSelectedDays.includes(day);
-        return `
-          <button
-            type="button"
-            onclick="toggleEditDay('${day}')"
-            class="p-2 text-xs rounded ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'} transition"
-          >
-            ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-          </button>
-        `;
-      }).join('');
-    }
-
-    window.toggleEditDay = function(day) {
-      const idx = editResSelectedDays.indexOf(day);
-      if (idx > -1) {
-        editResSelectedDays.splice(idx, 1);
-      } else {
-        editResSelectedDays.push(day);
-      }
-      updateEditDaysGrid();
-      updateEditSelectedDaysInfo();
-    };
-
-    function updateEditSelectedDaysInfo() {
-      const info = document.getElementById('editSelectedDaysInfo');
-      const count = document.getElementById('editSelectedDaysCount');
-      if (editResSelectedDays.length > 0) {
-        info.classList.remove('hidden');
-        count.textContent = editResSelectedDays.length;
-      } else {
-        info.classList.add('hidden');
-      }
-    }
-
-    async function handleEditReservationSubmit(e) {
-      e.preventDefault();
-
-      // Get dates to update
-      const mainDate = document.getElementById('editResDate').value;
-      const datesToBook = [mainDate];
-      if (document.getElementById('editMultipleDays').checked) {
-        editResSelectedDays.forEach(day => {
-          if (!datesToBook.includes(day)) {
-            datesToBook.push(day);
-          }
-        });
-      }
-      datesToBook.sort();
-
-      const reservationId = document.getElementById('editResId').value;
+    async function handleEditReservation() {
+      const mainDate = document.getElementById('resDate').value;
+      const reservationId = document.getElementById('resId').value;
 
       // Get current reservation to check if it's online booking
-      const currentReservation = state.reservations.find(r => r.id === reservationId);
+      const currentReservation = resEditReservation;
       const isOnlineBooking = currentReservation && (
         currentReservation.booking_method === 'stripe' ||
         currentReservation.payment_method === 'stripe' ||
@@ -2400,137 +2058,145 @@
       );
 
       const baseData = {
-        customer_name: document.getElementById('editResCustomerName').value,
-        customer_email: document.getElementById('editResCustomerEmail').value,
-        customer_phone: document.getElementById('editResCustomerPhone').value,
-        party_size: parseInt(document.getElementById('editResPartySize').value),
-        reservation_time: document.getElementById('editResTime').value,
-        special_requests: document.getElementById('editResSpecialRequests').value
+        customer_name: document.getElementById('resCustomerName').value,
+        customer_email: document.getElementById('resCustomerEmail').value,
+        customer_phone: document.getElementById('resCustomerPhone').value,
+        party_size: parseInt(document.getElementById('resPartySize').value),
+        reservation_time: document.getElementById('resTime').value,
+        special_requests: document.getElementById('resSpecialRequests').value,
+        reservation_date: mainDate
       };
 
       // Only include payment data if it's not an online booking
       if (!isOnlineBooking) {
-        baseData.payment_status = editResPaidWithCash ? 'paid' : 'unpaid';
-        baseData.payment_amount = editResPaidWithCash ? parseFloat(document.getElementById('editCashAmount').value) : 0;
-        baseData.payment_method = editResPaidWithCash ? 'cash' : 'none';
-        baseData.booking_method = editResBookingMethod === 'free' ? 'free' : (editResPaidWithCash ? 'manual' : 'free');
+        baseData.payment_status = resPaidWithCash ? 'paid' : 'unpaid';
+        baseData.payment_amount = resPaidWithCash ? parseFloat(document.getElementById('cashAmount').value) : 0;
+        baseData.payment_method = resPaidWithCash ? 'cash' : 'none';
+        baseData.booking_method = resBookingMethod === 'free' ? 'free' : (resPaidWithCash ? 'manual' : 'free');
       }
 
       // Validation
       if (!baseData.customer_name || !baseData.customer_email || baseData.party_size < 1 || !baseData.reservation_time) {
-        document.getElementById('editReservationError').textContent = 'Bitte füllen Sie alle Pflichtfelder aus.';
-        document.getElementById('editReservationError').classList.remove('hidden');
+        document.getElementById('reservationError').textContent = 'Bitte füllen Sie alle Pflichtfelder aus.';
+        document.getElementById('reservationError').classList.remove('hidden');
         return;
       }
 
       // Show loading
-      document.getElementById('editReservationError').classList.add('hidden');
-      document.getElementById('editReservationButtons').classList.add('hidden');
-      const formSections = document.querySelectorAll('#editReservationForm > div:not(#editReservationSuccess):not(#editReservationLoading):not(#editReservationButtons)');
-      formSections.forEach(section => section.classList.add('hidden'));
-      document.getElementById('editReservationLoading').classList.remove('hidden');
+      document.getElementById('reservationError').classList.add('hidden');
+      document.getElementById('reservationButtons').classList.add('hidden');
+      document.getElementById('reservationLoading').classList.remove('hidden');
+      document.getElementById('reservationLoadingText').textContent = 'Wird aktualisiert...';
 
       try {
-        // If multiple days selected, create additional reservations
-        if (datesToBook.length > 1) {
-          // Update main reservation
-          const updateData = {
-            ...baseData,
-            reservation_id: reservationId,
-            reservation_date: mainDate
-          };
+        const updateData = {
+          ...baseData,
+          reservation_id: reservationId
+        };
 
-          const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${state.crewToken}`
-            },
-            body: JSON.stringify(updateData)
-          });
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${state.crewToken}`
+          },
+          body: JSON.stringify(updateData)
+        });
 
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Update failed');
-          }
-
-          // Create new reservations for additional days
-          const roomId = document.getElementById('editResRoomId').value;
-          for (let i = 1; i < datesToBook.length; i++) {
-            const additionalDate = datesToBook[i];
-            const createData = {
-              ...baseData,
-              reservation_date: additionalDate,
-              room_id: roomId || state.selectedRoom,
-              duration_minutes: 120,
-              status: 'confirmed',
-              selected_tables: []
-            };
-
-            const createResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-reservation`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-              },
-              body: JSON.stringify(createData)
-            });
-
-            if (!createResponse.ok) {
-              const error = await createResponse.json();
-              throw new Error(error.error || 'Failed to create additional reservation');
-            }
-          }
-        } else {
-          // Single day update
-          const updateData = {
-            ...baseData,
-            reservation_id: reservationId,
-            reservation_date: mainDate
-          };
-
-          const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${state.crewToken}`
-            },
-            body: JSON.stringify(updateData)
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Update failed');
-          }
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Update failed');
         }
 
-        // Hide loading, show success
-        document.getElementById('editReservationLoading').classList.add('hidden');
-        document.getElementById('editReservationSuccess').classList.remove('hidden');
+        // Hide loading and form sections
+        document.getElementById('reservationLoading').classList.add('hidden');
+        const formSections = document.querySelectorAll('#reservationForm > div:not(#reservationSuccess):not(#reservationError):not(#reservationLoading):not(#reservationButtons)');
+        formSections.forEach(section => section.classList.add('hidden'));
+
+        // Show success
+        document.getElementById('resSuccessTitle').textContent = 'Gespeichert!';
+        document.getElementById('resSuccessMessage').textContent = 'Die Änderungen wurden erfolgreich gespeichert.';
+        document.getElementById('resBookingCodeSection').classList.add('hidden');
+        document.getElementById('resSuccessButton').textContent = 'Schließen';
+        document.getElementById('resSuccessButton').onclick = () => {
+          closeReservationModal();
+          renderApp();
+        };
+        document.getElementById('reservationSuccess').classList.remove('hidden');
 
         // Reload reservations
         await fetchReservations();
         await render();
       } catch (error) {
         console.error('Error updating reservation:', error);
-        document.getElementById('editReservationError').textContent = error.message || 'Fehler beim Aktualisieren der Reservierung.';
-        document.getElementById('editReservationError').classList.remove('hidden');
-        document.getElementById('editReservationLoading').classList.add('hidden');
-        document.getElementById('editReservationButtons').classList.remove('hidden');
-        formSections.forEach(section => section.classList.remove('hidden'));
+        document.getElementById('reservationError').textContent = error.message || 'Fehler beim Aktualisieren der Reservierung.';
+        document.getElementById('reservationError').classList.remove('hidden');
+        document.getElementById('reservationLoading').classList.add('hidden');
+        document.getElementById('reservationButtons').classList.remove('hidden');
       }
     }
 
-    // Attach edit form handler
-    document.addEventListener('DOMContentLoaded', () => {
-      const editForm = document.getElementById('editReservationForm');
-      if (editForm) {
-        editForm.addEventListener('submit', handleEditReservationSubmit);
+    window.deleteCurrentReservation = async function() {
+      const reservationId = document.getElementById('resId').value;
+      if (!reservationId || !resEditReservation) return;
+
+      // Check if it's an online paid reservation
+      const isOnlineBooking = resEditReservation.booking_method === 'stripe' ||
+                             resEditReservation.payment_method === 'stripe' ||
+                             resEditReservation.stripe_payment_intent_id;
+
+      if (isOnlineBooking) {
+        alert('Online bezahlte Reservierungen können nicht gelöscht werden.');
+        return;
       }
-    });
+
+      // Confirm deletion
+      const confirmDelete = confirm(`Reservierung für ${resEditReservation.customer_name} am ${resEditReservation.reservation_date} um ${resEditReservation.reservation_time} wirklich löschen?`);
+      if (!confirmDelete) return;
+
+      try {
+        const token = localStorage.getItem('crew_token');
+        if (!token) throw new Error('Not authenticated');
+
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-delete-reservation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ reservation_id: reservationId })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete reservation');
+        }
+
+        // Remove from state
+        state.reservations = state.reservations.filter(r => r.id !== reservationId);
+
+        // Close modal and refresh
+        closeReservationModal();
+        await fetchReservations();
+        await render();
+
+        // Show success message
+        alert('Reservierung erfolgreich gelöscht.');
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Fehler beim Löschen der Reservierung: ' + error.message);
+      }
+    };
 
     async function handleReservationSubmit(e) {
       e.preventDefault();
+
+      // Check if we're in edit mode
+      if (resEditMode && resEditReservation) {
+        await handleEditReservation();
+        return;
+      }
 
       // Get dates to book
       const mainDate = document.getElementById('resDate').value;
