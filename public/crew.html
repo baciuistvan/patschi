@@ -2135,11 +2135,16 @@
         console.log('Sending update data:', updateData);
         console.log('Selected tables:', resSelectedTables);
 
+        const token = localStorage.getItem('crew_token');
+        if (!token) {
+          throw new Error('Nicht angemeldet. Bitte melden Sie sich erneut an.');
+        }
+
         const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-update-reservation`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${state.crewToken}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(updateData)
         });

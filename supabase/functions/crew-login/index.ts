@@ -60,6 +60,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const sessionToken = `crew_${crewUser.id}_${Date.now()}`;
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const { error: sessionError } = await supabase
+      .from("crew_sessions")
+      .insert({
+        crew_user_id: crewUser.id,
+        token: sessionToken,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (sessionError) {
+      console.error('Session creation error:', sessionError);
+    }
 
     return new Response(
       JSON.stringify({

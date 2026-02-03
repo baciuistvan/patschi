@@ -32,11 +32,27 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Validate crew session token
+    const { data: session, error: sessionError } = await supabase
+      .from("crew_sessions")
+      .select("crew_user_id, expires_at")
+      .eq("token", token)
+      .maybeSingle();
 
-    if (userError || !user) {
+    if (sessionError || !session) {
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Check if session has expired
+    if (new Date(session.expires_at) < new Date()) {
+      return new Response(
+        JSON.stringify({ error: "Session expired. Please login again." }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
