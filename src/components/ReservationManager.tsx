@@ -801,17 +801,6 @@ export function ReservationManager() {
         )}
       </div>
 
-      <div className="mb-4 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg">
-        <p className="text-sm text-slate-300">
-          <span className="font-semibold text-white">{getFilteredReservations().length}</span> {getFilteredReservations().length === 1 ? 'Reservierung' : 'Reservierungen'} angezeigt
-          {searchQuery && (
-            <span className="ml-2 text-orange-400">
-              (gefiltert von {reservations.length})
-            </span>
-          )}
-        </p>
-      </div>
-
       <div className="grid gap-4 printable-reservations">
         {filter === 'monthly' ? (
           <>
