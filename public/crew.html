@@ -280,7 +280,10 @@
     // Fetch reservations for selected date
     async function fetchReservations() {
       try {
-        const dateStr = state.selectedDate.toISOString().split('T')[0];
+        const year = state.selectedDate.getFullYear();
+        const month = String(state.selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(state.selectedDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         const response = await fetch(
           `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${dateStr}&select=*,reservation_tables(*)`,
           {
@@ -303,8 +306,18 @@
         const startDate = new Date(state.calendarYear, state.calendarMonth, 1);
         const endDate = new Date(state.calendarYear, state.calendarMonth + 1, 0);
 
+        const startYear = startDate.getFullYear();
+        const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+        const startDay = String(startDate.getDate()).padStart(2, '0');
+        const startDateStr = `${startYear}-${startMonth}-${startDay}`;
+
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        const endDay = String(endDate.getDate()).padStart(2, '0');
+        const endDateStr = `${endYear}-${endMonth}-${endDay}`;
+
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=gte.${startDate.toISOString().split('T')[0]}&reservation_date=lte.${endDate.toISOString().split('T')[0]}&select=reservation_date`,
+          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=gte.${startDateStr}&reservation_date=lte.${endDateStr}&select=reservation_date`,
           {
             headers: {
               'apikey': SUPABASE_ANON_KEY,
@@ -1768,7 +1781,7 @@
       resPaidWithCash = false;
 
       // Set today's date as minimum
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatDateLocal(new Date());
       document.getElementById('resDate').min = today;
       document.getElementById('resDate').value = today;
       document.getElementById('resTime').value = '15:45';
