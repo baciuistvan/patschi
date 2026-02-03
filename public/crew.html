@@ -2159,15 +2159,23 @@
       if (!confirmDelete) return;
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
+        const token = localStorage.getItem('crew_token');
+        if (!token) throw new Error('Not authenticated');
 
-        const { error } = await supabase
-          .from('reservations')
-          .delete()
-          .eq('id', reservationId);
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-delete-reservation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ reservation_id: reservationId })
+        });
 
-        if (error) throw error;
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete reservation');
+        }
 
         // Remove from state
         state.reservations = state.reservations.filter(r => r.id !== reservationId);
