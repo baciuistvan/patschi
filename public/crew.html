@@ -70,12 +70,17 @@
       }
     }
 
+    .table-item.cursor-pointer {
+      cursor: pointer;
+    }
+
     .table-item.available {
       background: #10b981;
     }
 
     .table-item.available:hover {
       background: #059669;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
     }
 
     .table-item.reserved {
@@ -84,10 +89,12 @@
 
     .table-item.reserved:hover {
       background: #b91c1c;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
     }
 
     .table-item.not-bookable {
       background: #64748b;
+      cursor: default;
     }
 
     .table-item.not-bookable:hover {
@@ -414,6 +421,7 @@
         icon: isStanding,
         isBookable: table.is_bookable,
         customerName: reservation ? reservation.customer_name : null,
+        reservationId: reservation ? reservation.id : null,
         rotation: table.rotation || 0
       };
     }
@@ -652,7 +660,7 @@
                     const fillColor = table.status === 'available' ? '#10b981' :
                                      table.status === 'reserved' ? '#dc2626' : '#64748b';
                     return `
-                    <div class="table-item" style="${table.style} background: transparent; border: none;">
+                    <div class="table-item ${table.isBookable ? 'cursor-pointer' : ''}" style="${table.style} background: transparent; border: none;" onclick="handleTableClick('${table.id}', ${table.reservationId ? `'${table.reservationId}'` : 'null'}, ${table.isBookable})">
                       <div class="relative w-full h-full overflow-hidden">
                         <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                           <path
@@ -681,7 +689,7 @@
                   }
 
                   return `
-                  <div class="table-item ${table.status} ${table.shapeClass}" style="${table.style}">
+                  <div class="table-item ${table.status} ${table.shapeClass} ${table.isBookable ? 'cursor-pointer' : ''}" style="${table.style}" onclick="handleTableClick('${table.id}', ${table.reservationId ? `'${table.reservationId}'` : 'null'}, ${table.isBookable})">
                     <div class="w-full h-full flex flex-col items-center justify-center ${table.shapeClass === 'rounded-2xl' ? 'p-4' : 'p-3'}">
                       <div class="text-white table-item-label ${isBar ? 'text-4xl font-bold' : table.name.length > 10 ? 'text-lg' : 'text-xl'}">${table.name}</div>
                       ${!isBar && table.capacity > 0 ? `<div class="text-white table-item-capacity text-xs mt-0.5">${table.capacity} Plätze</div>` : ''}
@@ -1558,6 +1566,21 @@
 
     window.handleRoomSwitch = async function(roomId) {
       await switchRoom(roomId);
+    };
+
+    // Handle table click
+    window.handleTableClick = function(tableId, reservationId, isBookable) {
+      if (!isBookable) {
+        return; // Don't open modal for non-bookable tables
+      }
+
+      if (reservationId) {
+        // Table is reserved, open edit modal
+        openEditReservationModal(reservationId);
+      } else {
+        // Table is available, open reservation modal
+        openReservationModal();
+      }
     };
 
     // Calendar functions
