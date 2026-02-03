@@ -192,6 +192,12 @@ export function ReservationManager() {
         return;
       }
 
+      if (data && data.error) {
+        console.error('Error deleting reservation:', data.error);
+        alert(data.error);
+        return;
+      }
+
       loadReservations();
       setSelectedReservation(null);
     } catch (error) {
