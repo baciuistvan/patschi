@@ -281,6 +281,7 @@
     async function fetchReservations() {
       try {
         const dateStr = state.selectedDate.toISOString().split('T')[0];
+        console.log('Fetching reservations for date:', dateStr);
         const response = await fetch(
           `${SUPABASE_URL}/rest/v1/reservations?reservation_date=eq.${dateStr}&select=*,reservation_tables(*)`,
           {
@@ -291,6 +292,14 @@
           }
         );
         const reservations = await response.json();
+        console.log('Fetched reservations:', reservations);
+        console.log('Total reservations:', reservations.length);
+        console.log('Booking methods:', reservations.map(r => ({
+          id: r.id,
+          booking_method: r.booking_method,
+          customer_name: r.customer_name,
+          has_tables: r.reservation_tables?.length > 0
+        })));
         state.reservations = reservations;
       } catch (error) {
         console.error('Error fetching reservations:', error);
@@ -421,20 +430,31 @@
 
     // Get reservations filtered by selected room
     function getFilteredReservations() {
+      console.log('getFilteredReservations called');
+      console.log('Selected room:', state.selectedRoom);
+      console.log('Total reservations before filter:', state.reservations.length);
+
       if (!state.selectedRoom) return state.reservations;
 
       // Filter reservations that have tables in the selected room
-      return state.reservations.filter(res => {
+      const filtered = state.reservations.filter(res => {
         if (!res.reservation_tables || res.reservation_tables.length === 0) {
+          console.log('Reservation', res.id, 'has no tables - including it');
           return true; // Show reservations without tables assigned
         }
 
         // Check if any of the reservation's tables belong to the selected room
-        return res.reservation_tables.some(rt => {
+        const hasMatchingTable = res.reservation_tables.some(rt => {
           const table = state.tables.find(t => t.id === rt.table_id);
           return table && table.room_id === state.selectedRoom;
         });
+
+        console.log('Reservation', res.id, 'has tables:', res.reservation_tables.map(rt => rt.table_id), 'matches room?', hasMatchingTable);
+        return hasMatchingTable;
       });
+
+      console.log('Filtered reservations:', filtered.length);
+      return filtered;
     }
 
     // Check for saved session
