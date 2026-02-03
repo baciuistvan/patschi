@@ -230,9 +230,10 @@
 
     // Convert database table to render format
     function convertTableToRender(table) {
-      const isReserved = state.reservations.some(res =>
+      const reservation = state.reservations.find(res =>
         res.reservation_tables && res.reservation_tables.some(rt => rt.table_id === table.id)
       );
+      const isReserved = !!reservation;
 
       let style = `left: ${table.position_x}px; top: ${table.position_y}px; width: ${table.width}px; height: ${table.height}px;`;
 
@@ -262,7 +263,8 @@
         style: style,
         shape: getShapeClass(table.shape),
         icon: isStanding,
-        isBookable: table.is_bookable
+        isBookable: table.is_bookable,
+        customerName: reservation ? reservation.customer_name : null
       };
     }
 
@@ -509,7 +511,8 @@
                     <div class="w-full h-full flex flex-col items-center justify-center ${table.shape === 'rounded-2xl' ? 'p-4' : 'p-3'}">
                       <div class="text-white table-item-label ${isBar ? 'text-4xl font-bold' : table.name.length > 10 ? 'text-lg' : 'text-xl'} ${isBar ? '' : 'mb-2'}">${table.name}</div>
                       ${!isBar ? `<div class="text-white table-item-capacity ${table.shape === 'rounded-2xl' ? 'text-base' : ''}">${table.capacity} Plätze</div>` : ''}
-                      ${table.status === 'reserved' && !isBar ? '<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs">Reserviert</div>' : ''}
+                      ${table.status === 'reserved' && !isBar && table.customerName ? `<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs font-semibold">${table.customerName}</div>` : ''}
+                      ${table.status === 'reserved' && !isBar && !table.customerName ? '<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs">Reserviert</div>' : ''}
                       ${table.status === 'not-bookable' && !isBar ? '<div class="mt-2 px-2 py-1 bg-white/20 rounded text-xs">Nicht buchbar</div>' : ''}
                       ${table.icon && !isBar ? `
                         <div class="mt-2 flex items-center space-x-2">
