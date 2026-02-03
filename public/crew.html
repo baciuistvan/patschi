@@ -1198,6 +1198,7 @@
 
               <form id="editReservationForm" class="p-6 space-y-6">
                 <input type="hidden" id="editResId" />
+                <input type="hidden" id="editResRoomId" />
 
                 <!-- Customer Info -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1951,6 +1952,7 @@
 
       // Populate form
       document.getElementById('editResId').value = reservation.id;
+      document.getElementById('editResRoomId').value = state.selectedRoom || '';
       document.getElementById('editResCustomerName').value = reservation.customer_name || '';
       document.getElementById('editResCustomerEmail').value = reservation.customer_email || '';
       document.getElementById('editResCustomerPhone').value = reservation.customer_phone || '';
@@ -2275,25 +2277,31 @@
           }
 
           // Create new reservations for additional days
+          const roomId = document.getElementById('editResRoomId').value;
           for (let i = 1; i < datesToBook.length; i++) {
             const additionalDate = datesToBook[i];
             const createData = {
               ...baseData,
               reservation_date: additionalDate,
-              room_id: state.selectedRoom,
+              room_id: roomId || state.selectedRoom,
               duration_minutes: 120,
               status: 'confirmed',
               selected_tables: []
             };
 
-            await fetch(`${SUPABASE_URL}/functions/v1/create-reservation`, {
+            const createResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-reservation`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
               },
               body: JSON.stringify(createData)
             });
+
+            if (!createResponse.ok) {
+              const error = await createResponse.json();
+              throw new Error(error.error || 'Failed to create additional reservation');
+            }
           }
         } else {
           // Single day update
@@ -2323,7 +2331,8 @@
         document.getElementById('editReservationSuccess').classList.remove('hidden');
 
         // Reload reservations
-        await loadReservations();
+        await fetchReservations();
+        await render();
       } catch (error) {
         console.error('Error updating reservation:', error);
         document.getElementById('editReservationError').textContent = error.message || 'Fehler beim Aktualisieren der Reservierung.';
