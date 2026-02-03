@@ -103,6 +103,35 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Send confirmation email
+    try {
+      const emailApiUrl = `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`;
+      const emailResponse = await fetch(emailApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_name,
+          customer_email,
+          reservation_date,
+          reservation_time,
+          party_size,
+          special_requests: special_requests || '',
+          payment_amount: payment_amount || 0,
+          booking_code
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        console.error('Failed to send confirmation email:', await emailResponse.text());
+      }
+    } catch (emailError) {
+      console.error('Error sending confirmation email:', emailError);
+      // Don't throw - reservation is already created
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
