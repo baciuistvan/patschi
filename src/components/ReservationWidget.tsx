@@ -43,7 +43,6 @@ export function ReservationWidget() {
   useEffect(() => {
     loadRooms();
     loadDepositAmount();
-    loadStripeSettings();
     loadStripeModeAndInitialize();
   }, []);
 
@@ -56,24 +55,38 @@ export function ReservationWidget() {
 
   const loadStripeModeAndInitialize = async () => {
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-stripe-mode`;
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Fetch both stripe_enabled and stripe_mode from settings
+      const { data: settings, error } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['stripe_enabled', 'stripe_mode']);
 
-      if (response.ok) {
-        const data = await response.json();
-        setStripeMode(data.mode);
-        await initializeStripe(data.mode);
-      } else {
+      if (error) {
+        console.error('Failed to load Stripe settings:', error);
         await initializeStripe('test');
+        return;
+      }
+
+      // Parse settings
+      const stripeEnabledSetting = settings?.find(s => s.key === 'stripe_enabled');
+      const stripeModeSetting = settings?.find(s => s.key === 'stripe_mode');
+
+      const enabled = stripeEnabledSetting?.value === 'true';
+      const mode = (stripeModeSetting?.value || 'test') as 'test' | 'live';
+
+      console.log('[Stripe Settings] Enabled:', enabled, 'Mode:', mode);
+
+      setStripeEnabled(enabled);
+      setStripeMode(mode);
+
+      if (enabled) {
+        await initializeStripe(mode);
+      } else {
+        console.log('[Stripe] Stripe is disabled, skipping initialization');
       }
     } catch (error) {
-      console.error('Failed to load Stripe mode:', error);
+      console.error('Failed to load Stripe settings:', error);
+      setStripeEnabled(true); // Default to enabled for backwards compatibility
       await initializeStripe('test');
     }
   };
@@ -187,17 +200,6 @@ export function ReservationWidget() {
     }
   };
 
-  const loadStripeSettings = async () => {
-    const { data: stripeData } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'stripe_enabled')
-      .maybeSingle();
-
-    if (stripeData) {
-      setStripeEnabled(stripeData.value === 'true');
-    }
-  };
 
   useEffect(() => {
     if (step === 3) {
@@ -595,7 +597,7 @@ export function ReservationWidget() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-8 px-safe bg-white rounded-3xl shadow-2xl ios-scroll">
-      {stripeMode === 'test' && stripeEnabled && (
+      {stripeEnabled && stripeMode === 'test' && (
         <div className="mb-6 bg-amber-50 border-2 border-amber-400 rounded-xl p-4">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
@@ -604,9 +606,25 @@ export function ReservationWidget() {
               </svg>
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-amber-900">Test Mode</h4>
+              <h4 className="text-sm font-semibold text-amber-900">Test-Modus aktiv</h4>
               <p className="text-xs text-amber-800 mt-1">
-                This is test mode - no real charges will be made. Use test card: 4242 4242 4242 4242
+                Es werden keine echten Zahlungen verarbeitet. Testkarte: 4242 4242 4242 4242
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stripeEnabled && stripeMode === 'live' && (
+        <div className="mb-6 bg-green-50 border-2 border-green-400 rounded-xl p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <Check className="w-5 h-5 text-green-600 mt-0.5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-green-900">Live-Modus aktiv</h4>
+              <p className="text-xs text-green-800 mt-1">
+                Echte Zahlungen werden verarbeitet. Ihre Zahlung ist sicher.
               </p>
             </div>
           </div>
@@ -820,12 +838,6 @@ export function ReservationWidget() {
       {step === 3 && stripeEnabled && (
         <div className="space-y-6">
           <h3 className="text-xl font-bold text-slate-900 mb-6">Zahlung & Bestätigung</h3>
-
-          <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-4">
-            <p className="text-sm text-green-900">
-              Debug: Step 3 is rendering. Stripe loaded: {stripe ? 'Yes' : 'No'}, Card element: {cardElement ? 'Yes' : 'No'}
-            </p>
-          </div>
 
           {stripeError && (
             <div className="bg-red-50 border-2 border-red-300 rounded-xl p-5 mb-4">
