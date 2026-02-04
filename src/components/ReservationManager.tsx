@@ -202,24 +202,18 @@ export function ReservationManager() {
     try {
       console.log('Deleting reservation:', reservationId);
 
-      const { data, error } = await supabase.functions.invoke('crew-delete-reservation', {
-        body: { reservation_id: reservationId }
-      });
+      const { error: deleteError } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', reservationId);
 
-      console.log('Delete response:', { data, error });
-
-      if (error) {
-        console.error('Error deleting reservation:', error);
-        alert('Fehler beim Löschen der Reservierung: ' + error.message);
+      if (deleteError) {
+        console.error('Error deleting reservation:', deleteError);
+        alert('Fehler beim Löschen der Reservierung: ' + deleteError.message);
         return;
       }
 
-      if (data && data.error) {
-        console.error('Error deleting reservation:', data.error);
-        alert('Fehler beim Löschen: ' + data.error);
-        return;
-      }
-
+      console.log('Reservation deleted successfully');
       await loadReservations();
       setSelectedReservation(null);
       alert('Reservierung erfolgreich gelöscht.');
