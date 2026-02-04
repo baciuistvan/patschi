@@ -857,17 +857,16 @@ export function ReservationManager() {
                             <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
                               (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
                                 ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
-                                : (reservation as any).booking_method === 'manual'
-                                ? 'bg-amber-900/30 text-amber-400 border border-amber-500/50'
-                                : 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/50'
+                                : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
+                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                                : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                             } print:bg-transparent print:border-0 print:text-gray-800`}>
-                              {(reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe') ? 'Online' : (reservation as any).booking_method === 'manual' ? 'Bar bezahlt' : 'Frei'}
+                              {(reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
+                                ? 'Online'
+                                : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
+                                ? `Anzahlung: €${reservation.payment_amount}`
+                                : 'Kostenlos'}
                             </span>
-                            {reservation.payment_amount > 0 && (
-                              <span className="text-sm font-bold text-green-400 px-3 py-1.5 rounded-lg print:text-xs print:text-gray-900">
-                                €{reservation.payment_amount}
-                              </span>
-                            )}
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
                                 reservation.status
@@ -1022,17 +1021,16 @@ export function ReservationManager() {
                     <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
                       (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
                         ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
-                        : (reservation as any).booking_method === 'manual'
-                        ? 'bg-amber-900/30 text-amber-400 border border-amber-500/50'
-                        : 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/50'
+                        : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
+                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                        : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                     } print:bg-transparent print:border-0 print:text-gray-800`}>
-                      {(reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe') ? 'Online' : (reservation as any).booking_method === 'manual' ? 'Bar bezahlt' : 'Frei'}
+                      {(reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
+                        ? 'Online'
+                        : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
+                        ? `Anzahlung: €${reservation.payment_amount}`
+                        : 'Kostenlos'}
                     </span>
-                    {reservation.payment_amount > 0 && (
-                      <span className="text-sm font-bold text-green-400 px-3 py-1.5 rounded-lg print:text-xs print:text-gray-900">
-                        €{reservation.payment_amount}
-                      </span>
-                    )}
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
                         reservation.status
