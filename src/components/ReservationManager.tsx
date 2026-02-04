@@ -177,32 +177,57 @@ export function ReservationManager() {
   };
 
   const handleDeleteReservation = async (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+
+    if (!reservation) {
+      alert('Reservierung nicht gefunden.');
+      return;
+    }
+
+    const isOnlineBooking = (reservation as any).booking_method === 'stripe' ||
+                           (reservation as any).payment_method === 'stripe' ||
+                           (reservation as any).stripe_payment_intent_id;
+
+    if (isOnlineBooking) {
+      alert('Online bezahlte Reservierungen können nicht gelöscht werden. Diese können nur storniert werden.');
+      return;
+    }
+
     if (!confirm(t('reservations.confirm_delete'))) {
       return;
     }
 
+    setIsUpdating(true);
+
     try {
+      console.log('Deleting reservation:', reservationId);
+
       const { data, error } = await supabase.functions.invoke('crew-delete-reservation', {
         body: { reservation_id: reservationId }
       });
 
+      console.log('Delete response:', { data, error });
+
       if (error) {
         console.error('Error deleting reservation:', error);
-        alert('Failed to delete reservation: ' + error.message);
+        alert('Fehler beim Löschen der Reservierung: ' + error.message);
         return;
       }
 
       if (data && data.error) {
         console.error('Error deleting reservation:', data.error);
-        alert(data.error);
+        alert('Fehler beim Löschen: ' + data.error);
         return;
       }
 
-      loadReservations();
+      await loadReservations();
       setSelectedReservation(null);
-    } catch (error) {
+      alert('Reservierung erfolgreich gelöscht.');
+    } catch (error: any) {
       console.error('Error deleting reservation:', error);
-      alert('Failed to delete reservation. Please try again.');
+      alert('Fehler beim Löschen der Reservierung: ' + (error.message || 'Bitte versuchen Sie es erneut.'));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -988,7 +1013,8 @@ export function ReservationManager() {
                             e.stopPropagation();
                             handleDeleteReservation(reservation.id);
                           }}
-                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                          disabled={isUpdating}
+                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Delete"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -1152,7 +1178,8 @@ export function ReservationManager() {
                     e.stopPropagation();
                     handleDeleteReservation(reservation.id);
                   }}
-                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                  disabled={isUpdating}
+                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Delete"
                 >
                   <Trash2 className="w-5 h-5" />
@@ -1959,10 +1986,11 @@ export function ReservationManager() {
               </button>
               <button
                 onClick={() => handleDeleteReservation(selectedReservation.id)}
-                className="w-full px-4 py-3 bg-red-800 hover:bg-red-900 text-white rounded-lg flex items-center justify-center space-x-2 transition"
+                disabled={isUpdating}
+                className="w-full px-4 py-3 bg-red-800 hover:bg-red-900 text-white rounded-lg flex items-center justify-center space-x-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="w-5 h-5" />
-                <span>{t('reservations.delete')}</span>
+                <span>{isUpdating ? 'Wird gelöscht...' : t('reservations.delete')}</span>
               </button>
               <button
                 onClick={() => setSelectedReservation(null)}
