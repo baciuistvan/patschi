@@ -19,7 +19,7 @@
 
   <script type="module">
     const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI1NTc3MzYsImV4cCI6MjA0ODEzMzczNn0.Rw3_fsPBZZ9VWEYAw4ysNrwNLd9GKh5jVMKlaSvZNiY';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
 
     function log(message, type = 'info') {
       const results = document.getElementById('results');
@@ -43,30 +43,8 @@
       log('🔍 Testing Stripe Configuration...', 'info');
 
       try {
-        // Test 1: Check Stripe settings
-        log('\n📋 Step 1: Checking Stripe settings in database...', 'info');
-        const settingsResponse = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=in.(stripe_enabled,stripe_mode)&select=*`, {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        });
-
-        const settings = await settingsResponse.json();
-        log(`Settings: ${JSON.stringify(settings, null, 2)}`, 'success');
-
-        const stripeEnabled = settings.find(s => s.key === 'stripe_enabled')?.value === 'true';
-        const stripeMode = settings.find(s => s.key === 'stripe_mode')?.value || 'test';
-
-        if (!stripeEnabled) {
-          log('⚠️ Stripe is disabled in settings', 'warning');
-          return;
-        }
-
-        log(`✅ Stripe is enabled in ${stripeMode} mode`, 'success');
-
-        // Test 2: Try to create a payment intent
-        log('\n💳 Step 2: Testing payment intent creation...', 'info');
+        // Test: Try to create a payment intent directly
+        log('\n💳 Testing payment intent creation...', 'info');
         log(`Calling: ${SUPABASE_URL}/functions/v1/create-payment-intent`, 'info');
 
         const paymentResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
