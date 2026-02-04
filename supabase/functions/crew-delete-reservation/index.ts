@@ -18,6 +18,7 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         {
@@ -39,9 +40,21 @@ Deno.serve(async (req: Request) => {
       .eq("token", token)
       .maybeSingle();
 
-    if (sessionError || !session) {
+    if (sessionError) {
+      console.error("Session validation error:", sessionError);
       return new Response(
-        JSON.stringify({ error: "Invalid token" }),
+        JSON.stringify({ error: "Session validation failed: " + sessionError.message }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!session) {
+      console.error("No session found for token");
+      return new Response(
+        JSON.stringify({ error: "Invalid token - no active session found" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -51,6 +64,7 @@ Deno.serve(async (req: Request) => {
 
     // Check if session has expired
     if (new Date(session.expires_at) < new Date()) {
+      console.error("Session expired");
       return new Response(
         JSON.stringify({ error: "Session expired. Please login again." }),
         {
@@ -63,6 +77,7 @@ Deno.serve(async (req: Request) => {
     const { reservation_id } = await req.json();
 
     if (!reservation_id) {
+      console.error("No reservation ID provided");
       return new Response(
         JSON.stringify({ error: "Reservation ID required" }),
         {
@@ -72,6 +87,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log("Attempting to delete reservation:", reservation_id);
+
     // Check if reservation exists and is not a paid Stripe reservation
     const { data: reservation, error: fetchError } = await supabase
       .from("reservations")
@@ -79,7 +96,19 @@ Deno.serve(async (req: Request) => {
       .eq("id", reservation_id)
       .single();
 
-    if (fetchError || !reservation) {
+    if (fetchError) {
+      console.error("Error fetching reservation:", fetchError);
+      return new Response(
+        JSON.stringify({ error: "Error fetching reservation: " + fetchError.message }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!reservation) {
+      console.error("Reservation not found:", reservation_id);
       return new Response(
         JSON.stringify({ error: "Reservation not found" }),
         {
@@ -89,12 +118,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log("Found reservation:", {
+      id: reservation.id,
+      booking_method: reservation.booking_method,
+      payment_method: reservation.payment_method,
+      stripe_payment_intent_id: reservation.stripe_payment_intent_id
+    });
+
     // Prevent deletion of Stripe paid reservations
     if (
       reservation.booking_method === "stripe" ||
       reservation.payment_method === "stripe" ||
       reservation.stripe_payment_intent_id
     ) {
+      console.error("Attempted to delete paid online reservation");
       return new Response(
         JSON.stringify({ error: "Cannot delete paid online reservations" }),
         {
@@ -105,15 +142,18 @@ Deno.serve(async (req: Request) => {
     }
 
     // Delete the reservation
+    console.log("Deleting reservation from database");
     const { error: deleteError } = await supabase
       .from("reservations")
       .delete()
       .eq("id", reservation_id);
 
     if (deleteError) {
+      console.error("Delete error:", deleteError);
       throw deleteError;
     }
 
+    console.log("Reservation deleted successfully");
     return new Response(
       JSON.stringify({ success: true, message: "Reservation deleted" }),
       {
@@ -122,8 +162,9 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    console.error("Unhandled error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Internal server error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

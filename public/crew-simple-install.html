@@ -2328,7 +2328,16 @@
 
     window.deleteCurrentReservation = async function() {
       const reservationId = document.getElementById('resId').value;
-      if (!reservationId || !resEditReservation) return;
+
+      if (!reservationId) {
+        alert('Keine Reservierungs-ID gefunden.');
+        return;
+      }
+
+      if (!resEditReservation) {
+        alert('Reservierungsdaten nicht gefunden.');
+        return;
+      }
 
       // Check if it's an online paid reservation
       const isOnlineBooking = resEditReservation.booking_method === 'stripe' ||
@@ -2344,9 +2353,18 @@
       const confirmDelete = confirm(`Reservierung für ${resEditReservation.customer_name} am ${resEditReservation.reservation_date} um ${resEditReservation.reservation_time} wirklich löschen?`);
       if (!confirmDelete) return;
 
+      // Show loading state
+      document.getElementById('reservationButtons').classList.add('hidden');
+      document.getElementById('reservationLoading').classList.remove('hidden');
+      document.getElementById('reservationLoadingText').textContent = 'Wird gelöscht...';
+
       try {
         const token = localStorage.getItem('crew_token');
-        if (!token) throw new Error('Not authenticated');
+        if (!token) {
+          throw new Error('Nicht angemeldet. Bitte melden Sie sich erneut an.');
+        }
+
+        console.log('Deleting reservation:', reservationId);
 
         const response = await fetch(`${SUPABASE_URL}/functions/v1/crew-delete-reservation`, {
           method: 'POST',
@@ -2358,9 +2376,11 @@
         });
 
         const data = await response.json();
+        console.log('Delete response:', data);
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to delete reservation');
+          console.error('Delete error response:', data);
+          throw new Error(data.error || 'Fehler beim Löschen der Reservierung');
         }
 
         // Remove from state
@@ -2375,6 +2395,15 @@
         alert('Reservierung erfolgreich gelöscht.');
       } catch (error) {
         console.error('Delete error:', error);
+
+        // Hide loading and show buttons again
+        document.getElementById('reservationLoading').classList.add('hidden');
+        document.getElementById('reservationButtons').classList.remove('hidden');
+
+        // Show error in the modal
+        document.getElementById('reservationError').textContent = `Fehler: ${error.message}`;
+        document.getElementById('reservationError').classList.remove('hidden');
+
         alert('Fehler beim Löschen der Reservierung: ' + error.message);
       }
     };
