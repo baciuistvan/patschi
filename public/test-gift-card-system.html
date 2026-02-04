@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card System Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .test-section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .test-section h2 {
+            font-size: 24px;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status.loading {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .test-item {
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .test-item strong {
+            color: #1e293b;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .test-item pre {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            color: #334155;
+            white-space: pre-wrap;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .metric {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 Gift Card System Test</h1>
+            <p>Comprehensive diagnostic test for the Patschi gift card system</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 System Status</h2>
+            <div id="system-status">
+                <span class="status loading">⏳ Loading...</span>
+            </div>
+            <div id="system-info"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>💳 Stripe Configuration</h2>
+            <div id="stripe-status">
+                <span class="status loading">⏳ Checking...</span>
+            </div>
+            <div id="stripe-info"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📧 Email Configuration</h2>
+            <div id="email-status">
+                <span class="status loading">⏳ Checking...</span>
+            </div>
+            <div id="email-info"></div>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="sendTestEmail()">Send Test Email</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Edge Functions</h2>
+            <div id="functions-status">
+                <span class="status loading">⏳ Checking...</span>
+            </div>
+            <div id="functions-list"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📈 Recent Transactions</h2>
+            <div id="transactions-status">
+                <span class="status loading">⏳ Loading...</span>
+            </div>
+            <div class="grid" id="metrics"></div>
+            <div id="recent-cards"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Widget Test</h2>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="window.open('gift-card-widget.html', '_blank')">Open Gift Card Widget</button>
+                <button class="btn btn-secondary" onclick="testPurchaseFlow()">Test Purchase Flow</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function checkSystemStatus() {
+            try {
+                // Check database connection
+                const { data, error } = await supabase.from('settings').select('key').limit(1);
+
+                if (error) throw error;
+
+                document.getElementById('system-status').innerHTML = '<span class="status success">✅ System Online</span>';
+                document.getElementById('system-info').innerHTML = `
+                    <div class="test-item">
+                        <strong>Database Connection:</strong>
+                        <pre>✅ Connected to Supabase
+URL: ${SUPABASE_URL}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('system-status').innerHTML = '<span class="status error">❌ System Error</span>';
+                document.getElementById('system-info').innerHTML = `
+                    <div class="test-item">
+                        <strong>Error:</strong>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkStripeConfig() {
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('key, value')
+                    .in('key', ['stripe_enabled', 'stripe_mode']);
+
+                if (error) throw error;
+
+                const settings = data.reduce((acc, { key, value }) => {
+                    acc[key] = value;
+                    return acc;
+                }, {});
+
+                const isEnabled = settings.stripe_enabled === 'true';
+                const mode = settings.stripe_mode || 'test';
+
+                document.getElementById('stripe-status').innerHTML = `
+                    <span class="status ${isEnabled ? 'success' : 'error'}">
+                        ${isEnabled ? '✅ Stripe Enabled' : '❌ Stripe Disabled'}
+                    </span>
+                `;
+
+                document.getElementById('stripe-info').innerHTML = `
+                    <div class="test-item">
+                        <strong>Configuration:</strong>
+                        <pre>Status: ${isEnabled ? 'Enabled' : 'Disabled'}
+Mode: ${mode.toUpperCase()}
+${mode === 'test' ? '⚠️ Currently in test mode - no real charges will be made' : '🔴 LIVE MODE - Real charges will be processed'}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('stripe-status').innerHTML = '<span class="status error">❌ Error</span>';
+                document.getElementById('stripe-info').innerHTML = `
+                    <div class="test-item">
+                        <strong>Error:</strong>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkEmailConfig() {
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('key, value')
+                    .in('key', ['smtp_host', 'smtp_user', 'smtp_from_email', 'smtp_from_name']);
+
+                if (error) throw error;
+
+                const settings = data.reduce((acc, { key, value }) => {
+                    acc[key] = value;
+                    return acc;
+                }, {});
+
+                const isConfigured = settings.smtp_host && settings.smtp_user;
+
+                document.getElementById('email-status').innerHTML = `
+                    <span class="status ${isConfigured ? 'success' : 'error'}">
+                        ${isConfigured ? '✅ Email Configured' : '❌ Email Not Configured'}
+                    </span>
+                `;
+
+                document.getElementById('email-info').innerHTML = `
+                    <div class="test-item">
+                        <strong>SMTP Configuration:</strong>
+                        <pre>Host: ${settings.smtp_host || 'Not set'}
+User: ${settings.smtp_user || 'Not set'}
+From: ${settings.smtp_from_name || 'Not set'} &lt;${settings.smtp_from_email || 'Not set'}&gt;</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('email-status').innerHTML = '<span class="status error">❌ Error</span>';
+                document.getElementById('email-info').innerHTML = `
+                    <div class="test-item">
+                        <strong>Error:</strong>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkEdgeFunctions() {
+            const requiredFunctions = [
+                'purchase-gift-card',
+                'verify-gift-card',
+                'send-gift-card-email',
+                'create-payment-intent'
+            ];
+
+            document.getElementById('functions-status').innerHTML = '<span class="status success">✅ Checking Functions</span>';
+
+            let html = '<div class="test-item"><strong>Required Functions:</strong><ul style="margin-top: 10px;">';
+
+            for (const func of requiredFunctions) {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/functions/v1/${func}`, {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    });
+
+                    const status = response.ok || response.status === 204 ? '✅' : '❌';
+                    html += `<li style="padding: 5px 0;">${status} ${func}</li>`;
+                } catch (error) {
+                    html += `<li style="padding: 5px 0;">❌ ${func} (Error: ${error.message})</li>`;
+                }
+            }
+
+            html += '</ul></div>';
+            document.getElementById('functions-list').innerHTML = html;
+        }
+
+        async function checkRecentTransactions() {
+            try {
+                const { data: cards, error } = await supabase
+                    .from('gift_cards')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                // Calculate metrics
+                const totalCards = cards.length;
+                const paidCards = cards.filter(c => c.payment_status === 'paid').length;
+                const totalValue = cards.reduce((sum, c) => sum + parseFloat(c.original_amount || 0), 0);
+
+                document.getElementById('transactions-status').innerHTML = '<span class="status success">✅ Loaded</span>';
+
+                document.getElementById('metrics').innerHTML = `
+                    <div class="metric">
+                        <div class="metric-value">${totalCards}</div>
+                        <div class="metric-label">Total Gift Cards</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${paidCards}</div>
+                        <div class="metric-label">Paid</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">€${totalValue.toFixed(2)}</div>
+                        <div class="metric-label">Total Value</div>
+                    </div>
+                `;
+
+                let cardsHtml = '<div style="margin-top: 20px;"><strong>Recent Gift Cards:</strong></div>';
+                cards.forEach(card => {
+                    const statusColor = card.payment_status === 'paid' ? '#10b981' : '#f59e0b';
+                    cardsHtml += `
+                        <div class="test-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>${card.code}</strong>
+                                    <div style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                                        ${card.recipient_name} - €${parseFloat(card.original_amount).toFixed(2)}
+                                    </div>
+                                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">
+                                        ${new Date(card.created_at).toLocaleString('de-DE')}
+                                    </div>
+                                </div>
+                                <div style="padding: 6px 12px; background: ${statusColor}; color: white; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                    ${card.payment_status.toUpperCase()}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('recent-cards').innerHTML = cardsHtml;
+            } catch (error) {
+                document.getElementById('transactions-status').innerHTML = '<span class="status error">❌ Error</span>';
+                document.getElementById('recent-cards').innerHTML = `
+                    <div class="test-item">
+                        <strong>Error:</strong>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function sendTestEmail() {
+            const email = prompt('Enter email address to send test to:', 'baciujob@icloud.com');
+            if (!email) return;
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/send-test-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Test email sent successfully to ' + email);
+                } else {
+                    alert('❌ Failed to send test email: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function testPurchaseFlow() {
+            alert('🧪 This will open the purchase flow in test mode. The widget will connect to your Stripe account and create a test payment link.');
+            window.open('gift-card-widget.html', '_blank');
+        }
+
+        // Run all checks on page load
+        async function runAllTests() {
+            await checkSystemStatus();
+            await checkStripeConfig();
+            await checkEmailConfig();
+            await checkEdgeFunctions();
+            await checkRecentTransactions();
+        }
+
+        // Initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runAllTests);
+        } else {
+            runAllTests();
+        }
+    </script>
+</body>
+</html>
