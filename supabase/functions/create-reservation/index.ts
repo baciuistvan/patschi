@@ -42,8 +42,10 @@ Deno.serve(async (req: Request) => {
       payment_status,
       payment_amount,
       payment_method,
+      stripe_payment_intent_id,
       booking_method,
-      selected_tables
+      selected_tables,
+      room_id
     } = await req.json();
 
     // Validation
@@ -61,24 +63,34 @@ Deno.serve(async (req: Request) => {
     const booking_code = generateBookingCode();
 
     // Create reservation
+    const reservationData: any = {
+      customer_name,
+      customer_email,
+      customer_phone: customer_phone || '',
+      party_size,
+      reservation_date,
+      reservation_time,
+      duration_minutes: duration_minutes || 120,
+      status: status || 'confirmed',
+      special_requests: special_requests || '',
+      payment_status: payment_status || 'unpaid',
+      payment_amount: payment_amount || 0,
+      payment_method: payment_method || 'none',
+      booking_method: booking_method || 'manual',
+      booking_code
+    };
+
+    // Add optional fields if provided
+    if (stripe_payment_intent_id) {
+      reservationData.stripe_payment_intent_id = stripe_payment_intent_id;
+    }
+    if (room_id) {
+      reservationData.room_id = room_id;
+    }
+
     const { data: reservation, error: reservationError } = await supabase
       .from("reservations")
-      .insert({
-        customer_name,
-        customer_email,
-        customer_phone: customer_phone || '',
-        party_size,
-        reservation_date,
-        reservation_time,
-        duration_minutes: duration_minutes || 120,
-        status: status || 'confirmed',
-        special_requests: special_requests || '',
-        payment_status: payment_status || 'unpaid',
-        payment_amount: payment_amount || 0,
-        payment_method: payment_method || 'none',
-        booking_method: booking_method || 'manual',
-        booking_code
-      })
+      .insert(reservationData)
       .select()
       .single();
 
