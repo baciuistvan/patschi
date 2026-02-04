@@ -3,25 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="./crew-manifest.json">
+
+  <!-- iOS Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Crew">
+
+  <!-- Theme Colors -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="msapplication-TileColor" content="#0f172a">
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="./crew-icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./crew-icon-180.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./crew-icon-512.png">
+  <link rel="icon" type="image/png" href="./crew-icon.png">
+
   <title>Patschi Crew Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    html {
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      overflow: hidden;
+    }
+
     body {
       margin: 0;
       padding: 0;
       font-family: system-ui, -apple-system, sans-serif;
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
+      height: 100vh;
+      height: -webkit-fill-available;
+      width: 100%;
+      position: fixed;
+      overflow: hidden;
     }
 
-    /* Safe area support for iOS/iPad */
+    /* Safe area support for iOS/iPad - include top and bottom for notch */
     @supports (padding: max(0px)) {
       body {
         padding-left: max(0px, env(safe-area-inset-left));
         padding-right: max(0px, env(safe-area-inset-right));
+        padding-top: max(0px, env(safe-area-inset-top));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
       }
+    }
+
+    /* Prevent zoom on input focus for iOS */
+    input, select, textarea {
+      font-size: 16px !important;
     }
 
     .loading { animation: spin 1s linear infinite; }
@@ -2349,8 +2385,59 @@
       }
     }
 
+    // iOS-specific enhancements
+    function setupIOSWebApp() {
+      // Prevent pull-to-refresh
+      document.body.addEventListener('touchmove', function(e) {
+        if (e.target.closest('.overflow-auto, .floor-plan-container')) {
+          return; // Allow scrolling in specific areas
+        }
+        e.preventDefault();
+      }, { passive: false });
+
+      // Prevent double-tap zoom
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+
+      // Fix iOS viewport height issue
+      function setViewportHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      }
+      setViewportHeight();
+      window.addEventListener('resize', setViewportHeight);
+      window.addEventListener('orientationchange', setViewportHeight);
+
+      // Register service worker for offline support and better installability
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        navigator.serviceWorker.register('./sw.js').catch(() => {
+          // Silent fail if sw.js doesn't exist
+        });
+      }
+
+      // Detect if running as standalone app
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          window.navigator.standalone === true;
+      if (isStandalone) {
+        document.body.classList.add('standalone-mode');
+      }
+    }
+
     // Initial render
     render();
+
+    // Setup iOS enhancements when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupIOSWebApp);
+    } else {
+      setupIOSWebApp();
+    }
   </script>
 </body>
 </html>
