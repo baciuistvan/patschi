@@ -104,14 +104,23 @@ export function ReservationWidget() {
       console.log('[Stripe Init] Key found:', key ? `${key.substring(0, 10)}...` : 'NONE');
 
       if (!key || key.length === 0) {
-        console.warn(`Stripe ${mode} key not configured. Using fallback key if available.`);
-        key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-        console.log('[Stripe Init] Fallback key found:', key ? `${key.substring(0, 10)}...` : 'NONE');
-        if (!key || key.length === 0) {
-          setStripeError('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
-          console.error('[Stripe Init] No Stripe keys found in environment');
-          return;
-        }
+        console.error(`[Stripe Init] ${mode} key not found`);
+        setStripeError(`Stripe ${mode === 'test' ? 'Test' : 'Live'}-Modus ist nicht konfiguriert. Bitte laden Sie die Seite neu oder kontaktieren Sie den Administrator.`);
+        setStripe(null);
+        setCardElement(null);
+        return;
+      }
+
+      // Validate key format matches the mode
+      const keyPrefix = key.substring(0, 7);
+      const expectedPrefix = mode === 'test' ? 'pk_test' : 'pk_live';
+
+      if (!keyPrefix.startsWith(expectedPrefix)) {
+        console.error(`[Stripe Init] Key mismatch! Expected ${expectedPrefix} but got ${keyPrefix}`);
+        setStripeError(`Stripe-Konfigurationsfehler: Der Schlüssel passt nicht zum ${mode === 'test' ? 'Test' : 'Live'}-Modus. Bitte kontaktieren Sie den Administrator.`);
+        setStripe(null);
+        setCardElement(null);
+        return;
       }
 
       console.log('[Stripe Init] Loading Stripe with key:', key.substring(0, 10) + '...');
@@ -119,6 +128,8 @@ export function ReservationWidget() {
       if (!stripeInstance) {
         setStripeError('Stripe konnte nicht geladen werden');
         console.error('[Stripe Init] Failed to load Stripe instance');
+        setStripe(null);
+        setCardElement(null);
         return;
       }
 
@@ -146,6 +157,8 @@ export function ReservationWidget() {
     } catch (err: any) {
       console.error('Stripe initialization error:', err);
       setStripeError(err.message || 'Fehler beim Laden von Stripe');
+      setStripe(null);
+      setCardElement(null);
     }
   };
 
@@ -385,6 +398,38 @@ export function ReservationWidget() {
   };
 
   const createPaymentIntent = async () => {
+    // First, re-check the current mode from database to ensure it hasn't changed
+    const { data: settings, error: settingsError } = await supabase
+      .from('settings')
+      .select('key, value')
+      .in('key', ['stripe_enabled', 'stripe_mode']);
+
+    if (settingsError) {
+      console.error('[Payment Intent] Failed to fetch current settings:', settingsError);
+      throw new Error('Fehler beim Laden der Einstellungen');
+    }
+
+    const currentMode = (settings?.find(s => s.key === 'stripe_mode')?.value || 'test') as 'test' | 'live';
+    const currentEnabled = settings?.find(s => s.key === 'stripe_enabled')?.value === 'true';
+
+    console.log('[Payment Intent] Current DB mode:', currentMode, 'Frontend mode:', stripeMode);
+    console.log('[Payment Intent] Current DB enabled:', currentEnabled, 'Frontend enabled:', stripeEnabled);
+
+    // Check if mode changed since page load
+    if (currentMode !== stripeMode) {
+      console.error('[Payment Intent] MODE CHANGED! DB:', currentMode, 'Frontend:', stripeMode);
+      throw new Error(`Die Stripe-Konfiguration wurde geändert. Bitte laden Sie die Seite neu und versuchen Sie es erneut.`);
+    }
+
+    if (!currentEnabled) {
+      throw new Error('Stripe wurde deaktiviert. Bitte laden Sie die Seite neu.');
+    }
+
+    // Verify we have the correct Stripe instance loaded
+    if (!stripe) {
+      throw new Error('Stripe ist nicht geladen. Bitte laden Sie die Seite neu.');
+    }
+
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`;
     console.log('[Payment Intent] Creating payment intent for amount:', formData.payment_amount);
     const response = await fetch(apiUrl, {
@@ -416,9 +461,10 @@ export function ReservationWidget() {
     console.log('[Payment Intent] Backend returned mode:', data.mode);
     console.log('[Payment Intent] Frontend is using mode:', stripeMode);
 
+    // Double-check mode matches
     if (data.mode !== stripeMode) {
       console.error('[Payment Intent] MODE MISMATCH! Backend:', data.mode, 'Frontend:', stripeMode);
-      throw new Error(`Stripe mode mismatch: Backend is in ${data.mode} mode but frontend is in ${stripeMode} mode. Please reload the page.`);
+      throw new Error(`Stripe-Modus stimmt nicht überein. Backend: ${data.mode}, Frontend: ${stripeMode}. Bitte laden Sie die Seite neu.`);
     }
 
     return data.clientSecret;
@@ -426,7 +472,7 @@ export function ReservationWidget() {
 
   const handleSubmit = async () => {
     if (!stripe || !cardElement) {
-      setError('Stripe ist noch nicht geladen. Bitte versuchen Sie es erneut.');
+      setError('Stripe ist noch nicht geladen. Bitte laden Sie die Seite neu.');
       return;
     }
 
@@ -441,6 +487,8 @@ export function ReservationWidget() {
 
       console.log('[Payment] Confirming card payment...');
       console.log('[Payment] Current Stripe mode:', stripeMode);
+      console.log('[Payment] Using Stripe instance initialized with:', stripeMode === 'test' ? 'TEST' : 'LIVE', 'keys');
+
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
         payment_method: {
           card: cardElement,
@@ -454,7 +502,15 @@ export function ReservationWidget() {
 
       if (stripeError) {
         console.error('[Payment] Stripe error:', stripeError);
-        throw new Error(stripeError.message);
+        console.error('[Payment] Error code:', stripeError.code);
+        console.error('[Payment] Error type:', stripeError.type);
+
+        // Check for specific error about payment intent not found
+        if (stripeError.code === 'resource_missing' || stripeError.message?.includes('No such payment_intent')) {
+          throw new Error('Zahlungs-Konfigurationsfehler: Die Zahlung konnte nicht gefunden werden. Dies kann passieren, wenn die Stripe-Einstellungen während des Buchungsprozesses geändert wurden. Bitte laden Sie die Seite neu und versuchen Sie es erneut.');
+        }
+
+        throw new Error(stripeError.message || 'Zahlung fehlgeschlagen');
       }
 
       if (paymentIntent.status !== 'succeeded') {
@@ -841,8 +897,19 @@ export function ReservationWidget() {
 
           {stripeError && (
             <div className="bg-red-50 border-2 border-red-300 rounded-xl p-5 mb-4">
-              <p className="text-sm text-red-900">
-                <strong>Fehler:</strong> {stripeError}. Bitte laden Sie die Seite neu oder kontaktieren Sie uns direkt.
+              <p className="text-sm text-red-900 mb-2">
+                <strong>Fehler:</strong> {stripeError}
+              </p>
+              <p className="text-xs text-red-800">
+                Bitte laden Sie die Seite neu und versuchen Sie es erneut. Wenn das Problem weiterhin besteht, kontaktieren Sie uns direkt.
+              </p>
+            </div>
+          )}
+
+          {!stripe && !stripeError && (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 mb-4">
+              <p className="text-sm text-amber-900">
+                <strong>Hinweis:</strong> Stripe wird geladen... Wenn dieser Hinweis nicht verschwindet, laden Sie bitte die Seite neu.
               </p>
             </div>
           )}
