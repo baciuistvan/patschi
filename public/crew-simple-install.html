@@ -60,8 +60,38 @@
       font-size: 16px !important;
     }
 
+    /* Use CSS variables for viewport height */
+    :root {
+      --vh: 1vh;
+    }
+
     .loading { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive layout improvements */
+    .main-container {
+      height: calc(var(--vh, 1vh) * 100 - 70px);
+    }
+
+    @media (max-width: 767px) {
+      .main-container {
+        height: calc(var(--vh, 1vh) * 100 - 120px);
+        flex-direction: column-reverse;
+      }
+
+      .sidebar-mobile {
+        max-height: 45vh;
+        min-height: 200px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .floor-plan-mobile {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+      }
+    }
 
     /* Touch-friendly interactions */
     @media (hover: none) and (pointer: coarse) {
@@ -258,6 +288,79 @@
 
     .animate-pulse {
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Mobile-specific improvements */
+    @media (max-width: 767px) {
+      /* Navigation improvements */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+
+      /* Modal improvements for mobile */
+      .modal-content {
+        max-height: calc(var(--vh, 1vh) * 90);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0;
+        width: 100%;
+        max-width: 100vw;
+        border-radius: 1rem 1rem 0 0;
+      }
+
+      /* Make buttons more touch-friendly */
+      button {
+        min-height: 44px;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+
+      /* Improve text readability */
+      body {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      /* Better spacing for mobile */
+      .p-4 {
+        padding: 0.75rem !important;
+      }
+
+      .p-6 {
+        padding: 1rem !important;
+      }
+    }
+
+    /* Landscape orientation on mobile */
+    @media (max-width: 767px) and (orientation: landscape) {
+      .sidebar-mobile {
+        max-height: 35vh;
+        min-height: 150px;
+      }
+
+      .main-container {
+        height: calc(var(--vh, 1vh) * 100 - 80px);
+      }
+    }
+
+    /* iPad portrait */
+    @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+      .main-container {
+        flex-direction: column-reverse;
+      }
+
+      .sidebar-mobile {
+        max-height: 40vh;
+        min-height: 250px;
+      }
+    }
+
+    /* Standalone mode specific styles */
+    .standalone-mode {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
   </style>
 </head>
@@ -683,9 +786,9 @@
             </div>
           </nav>
 
-          <div class="flex flex-col md:flex-row h-[calc(100vh-80px)] sm:h-[calc(100vh-70px)] md:h-[calc(100vh-60px)] w-full overflow-hidden">
+          <div class="flex flex-col md:flex-row main-container w-full overflow-hidden">
             <!-- Floor Plan -->
-            <div class="flex-1 p-2 sm:p-4 overflow-auto floor-plan-container min-w-0 order-2 md:order-1">
+            <div class="flex-1 p-2 sm:p-4 overflow-auto floor-plan-container floor-plan-mobile min-w-0 order-2 md:order-1">
               <div class="floor-plan-inner">
                 <!-- Dynamic Tables from Database -->
                 ${getRoomTables().map(table => {
@@ -744,7 +847,7 @@
             </div>
 
             <!-- Right Sidebar - Reservations and Calendar -->
-            <div class="w-full md:w-64 lg:w-72 xl:w-80 md:flex-shrink-0 bg-gradient-to-b from-slate-800 to-slate-900 border-t md:border-t-0 md:border-l border-slate-700 flex flex-col shadow-2xl max-h-[50vh] md:max-h-none order-1 md:order-2">
+            <div class="w-full md:w-64 lg:w-72 xl:w-80 md:flex-shrink-0 bg-gradient-to-b from-slate-800 to-slate-900 border-t md:border-t-0 md:border-l border-slate-700 flex flex-col shadow-2xl sidebar-mobile order-1 md:order-2">
               <div class="p-2 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
                 <div class="flex items-center justify-between">
                   <div>
@@ -2387,12 +2490,23 @@
 
     // iOS-specific enhancements
     function setupIOSWebApp() {
-      // Prevent pull-to-refresh
+      // Prevent pull-to-refresh on iOS
+      let startY = 0;
+      document.body.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].pageY;
+      }, { passive: true });
+
       document.body.addEventListener('touchmove', function(e) {
-        if (e.target.closest('.overflow-auto, .floor-plan-container')) {
-          return; // Allow scrolling in specific areas
+        // Allow scrolling in scrollable areas
+        if (e.target.closest('.overflow-auto, .floor-plan-container, .sidebar-mobile, [class*="overflow-y"]')) {
+          return;
         }
-        e.preventDefault();
+
+        // Prevent bounce/pull-to-refresh on body
+        const currentY = e.touches[0].pageY;
+        if (window.scrollY === 0 && currentY > startY) {
+          e.preventDefault();
+        }
       }, { passive: false });
 
       // Prevent double-tap zoom
@@ -2411,8 +2525,32 @@
         document.documentElement.style.setProperty('--vh', `${vh}px`);
       }
       setViewportHeight();
-      window.addEventListener('resize', setViewportHeight);
-      window.addEventListener('orientationchange', setViewportHeight);
+
+      // Update on resize with debounce
+      let resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(setViewportHeight, 100);
+      });
+
+      window.addEventListener('orientationchange', function() {
+        setTimeout(setViewportHeight, 200);
+      });
+
+      // Prevent iOS keyboard from pushing content
+      const viewport = document.querySelector('meta[name="viewport"]');
+      const originalContent = viewport.getAttribute('content');
+
+      window.addEventListener('focusin', function() {
+        if (window.innerWidth < 768) {
+          viewport.setAttribute('content', originalContent + ', height=' + window.innerHeight);
+        }
+      });
+
+      window.addEventListener('focusout', function() {
+        viewport.setAttribute('content', originalContent);
+        setTimeout(setViewportHeight, 100);
+      });
 
       // Register service worker for offline support and better installability
       if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
@@ -2427,6 +2565,12 @@
       if (isStandalone) {
         document.body.classList.add('standalone-mode');
       }
+
+      // Improve touch scrolling on iOS
+      const scrollableElements = document.querySelectorAll('.overflow-auto, .overflow-y-auto');
+      scrollableElements.forEach(el => {
+        el.style.webkitOverflowScrolling = 'touch';
+      });
     }
 
     // Initial render
