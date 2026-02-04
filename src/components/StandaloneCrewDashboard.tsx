@@ -25,7 +25,7 @@ export function StandaloneCrewDashboard() {
     }
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (user: { id: string; username: string; name: string; token: string }) => {
     setIsAuthenticated(true);
   };
 
@@ -38,7 +38,7 @@ export function StandaloneCrewDashboard() {
   }
 
   if (!isAuthenticated) {
-    return <CrewLogin onLoginSuccess={handleLoginSuccess} />;
+    return <CrewLogin onLogin={handleLoginSuccess} />;
   }
 
   return (
