@@ -188,19 +188,42 @@ export function ReservationManager() {
                            (reservation as any).payment_method === 'stripe' ||
                            (reservation as any).stripe_payment_intent_id;
 
+    // Different confirmation messages for online vs regular bookings
+    let confirmMessage = t('reservations.confirm_delete');
+
     if (isOnlineBooking) {
-      alert('Online bezahlte Reservierungen können nicht gelöscht werden. Diese können nur storniert werden.');
+      const amount = (reservation as any).deposit_amount || 0;
+      confirmMessage = `⚠️ WARNUNG: Dies ist eine BEZAHLTE Online-Reservierung!\n\n` +
+                      `Betrag: €${amount.toFixed(2)}\n` +
+                      `Stripe Payment ID: ${(reservation as any).stripe_payment_intent_id || 'N/A'}\n\n` +
+                      `Das Löschen dieser Reservierung:\n` +
+                      `• Entfernt die Reservierung aus dem System\n` +
+                      `• Erstattet NICHT automatisch die Zahlung bei Stripe\n` +
+                      `• Sie müssen die Erstattung manuell in Stripe vornehmen\n\n` +
+                      `Sind Sie sicher, dass Sie diese Reservierung löschen möchten?`;
+    }
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
-    if (!confirm(t('reservations.confirm_delete'))) {
-      return;
+    // Extra confirmation for paid reservations
+    if (isOnlineBooking) {
+      const finalConfirm = confirm(
+        'LETZTE BESTÄTIGUNG:\n\n' +
+        'Haben Sie die Zahlung bereits in Stripe erstattet oder werden Sie dies manuell tun?\n\n' +
+        'Klicken Sie OK um fortzufahren oder Abbrechen um abzubrechen.'
+      );
+
+      if (!finalConfirm) {
+        return;
+      }
     }
 
     setIsUpdating(true);
 
     try {
-      console.log('Deleting reservation:', reservationId);
+      console.log('Deleting reservation:', reservationId, isOnlineBooking ? '(PAID ONLINE BOOKING)' : '(regular booking)');
 
       const { error: deleteError } = await supabase
         .from('reservations')
@@ -214,9 +237,16 @@ export function ReservationManager() {
       }
 
       console.log('Reservation deleted successfully');
+
+      // Show different success messages
+      if (isOnlineBooking) {
+        alert('✓ Reservierung wurde gelöscht.\n\nBitte denken Sie daran, die Zahlung manuell in Stripe zu erstatten, falls noch nicht geschehen.');
+      } else {
+        alert('Reservierung erfolgreich gelöscht.');
+      }
+
       await loadReservations();
       setSelectedReservation(null);
-      alert('Reservierung erfolgreich gelöscht.');
     } catch (error: any) {
       console.error('Error deleting reservation:', error);
       alert('Fehler beim Löschen der Reservierung: ' + (error.message || 'Bitte versuchen Sie es erneut.'));
