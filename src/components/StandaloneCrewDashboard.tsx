@@ -26,7 +26,15 @@ export function StandaloneCrewDashboard() {
   };
 
   const handleLoginSuccess = (user: { id: string; username: string; name: string; token: string }) => {
+    localStorage.setItem('crew_token', user.token);
+    localStorage.setItem('crew_user', JSON.stringify(user));
     setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('crew_token');
+    localStorage.removeItem('crew_user');
+    setIsAuthenticated(false);
   };
 
   if (loading) {
@@ -45,7 +53,7 @@ export function StandaloneCrewDashboard() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <Dashboard />
+          <Dashboard onSwitchSystem={() => {}} />
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>

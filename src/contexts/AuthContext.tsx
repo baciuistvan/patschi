@@ -23,6 +23,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Skip authentication entirely for crew mode
     if ((window as any).FORCE_CREW_MODE) {
       console.log('🚀 Crew mode detected - skipping auth');
+
+      // Check for crew user in localStorage
+      const crewUserStr = localStorage.getItem('crew_user');
+      if (crewUserStr) {
+        try {
+          const crewUser = JSON.parse(crewUserStr);
+          // Create mock admin user for crew mode
+          setAdminUser({
+            id: crewUser.id,
+            email: crewUser.username,
+            full_name: crewUser.name,
+            role: 'crew',
+            created_at: new Date().toISOString()
+          });
+          // Create mock Supabase user
+          setUser({
+            id: crewUser.id,
+            email: crewUser.username,
+            app_metadata: {},
+            user_metadata: { full_name: crewUser.name },
+            aud: 'authenticated',
+            created_at: new Date().toISOString()
+          } as User);
+        } catch (e) {
+          console.error('Failed to parse crew user:', e);
+        }
+      }
+
       setLoading(false);
       return;
     }
@@ -114,6 +142,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Handle crew mode logout
+    if ((window as any).FORCE_CREW_MODE) {
+      localStorage.removeItem('crew_token');
+      localStorage.removeItem('crew_user');
+      setUser(null);
+      setAdminUser(null);
+      window.location.reload();
+      return;
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setAdminUser(null);
