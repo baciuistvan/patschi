@@ -1594,6 +1594,16 @@
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
+      // Ensure form is visible and messages are hidden
+      document.getElementById('reservationSuccess').classList.add('hidden');
+      document.getElementById('reservationError').classList.add('hidden');
+      document.getElementById('reservationLoading').classList.add('hidden');
+      document.getElementById('reservationButtons').classList.remove('hidden');
+
+      // Show all form sections
+      const formSections = document.querySelectorAll('#reservationForm > div');
+      formSections.forEach(section => section.classList.remove('hidden'));
+
       // Determine if we're editing or creating
       resEditMode = !!reservationId;
       resEditReservation = reservationId ? state.reservations.find(r => r.id === reservationId) : null;
