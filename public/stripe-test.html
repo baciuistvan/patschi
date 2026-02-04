@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe Configuration Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Stripe Configuration Test</h1>
+
+    <div id="results" class="space-y-4"></div>
+
+    <button onclick="testStripe()" class="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">
+      Run Test
+    </button>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI1NTc3MzYsImV4cCI6MjA0ODEzMzczNn0.Rw3_fsPBZZ9VWEYAw4ysNrwNLd9GKh5jVMKlaSvZNiY';
+
+    function log(message, type = 'info') {
+      const results = document.getElementById('results');
+      const colors = {
+        info: 'bg-blue-50 border-blue-200 text-blue-800',
+        success: 'bg-green-50 border-green-200 text-green-800',
+        error: 'bg-red-50 border-red-200 text-red-800',
+        warning: 'bg-yellow-50 border-yellow-200 text-yellow-800'
+      };
+
+      const div = document.createElement('div');
+      div.className = `p-4 rounded-lg border-2 ${colors[type]}`;
+      div.innerHTML = `<pre class="whitespace-pre-wrap font-mono text-sm">${message}</pre>`;
+      results.appendChild(div);
+    }
+
+    window.testStripe = async function() {
+      const results = document.getElementById('results');
+      results.innerHTML = '';
+
+      log('🔍 Testing Stripe Configuration...', 'info');
+
+      try {
+        // Test 1: Check Stripe settings
+        log('\n📋 Step 1: Checking Stripe settings in database...', 'info');
+        const settingsResponse = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=in.(stripe_enabled,stripe_mode)&select=*`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+
+        const settings = await settingsResponse.json();
+        log(`Settings: ${JSON.stringify(settings, null, 2)}`, 'success');
+
+        const stripeEnabled = settings.find(s => s.key === 'stripe_enabled')?.value === 'true';
+        const stripeMode = settings.find(s => s.key === 'stripe_mode')?.value || 'test';
+
+        if (!stripeEnabled) {
+          log('⚠️ Stripe is disabled in settings', 'warning');
+          return;
+        }
+
+        log(`✅ Stripe is enabled in ${stripeMode} mode`, 'success');
+
+        // Test 2: Try to create a payment intent
+        log('\n💳 Step 2: Testing payment intent creation...', 'info');
+        log(`Calling: ${SUPABASE_URL}/functions/v1/create-payment-intent`, 'info');
+
+        const paymentResponse = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: 35000,
+            currency: 'eur',
+            metadata: {
+              test: 'true'
+            }
+          })
+        });
+
+        log(`Response Status: ${paymentResponse.status}`, paymentResponse.ok ? 'success' : 'error');
+
+        const paymentData = await paymentResponse.json();
+        log(`Response: ${JSON.stringify(paymentData, null, 2)}`, paymentResponse.ok ? 'success' : 'error');
+
+        if (!paymentResponse.ok) {
+          if (paymentData.error && paymentData.error.includes('not configured')) {
+            log('\n❌ PROBLEM FOUND: Stripe secret key is not configured!', 'error');
+            log('\n🔧 TO FIX:', 'warning');
+            log(`1. Go to: https://dashboard.supabase.com/project/qwwerwkekvmaswusvgxy/settings/functions`, 'warning');
+            log(`2. Click "Add secret"`, 'warning');
+            log(`3. Add secret name: STRIPE_SECRET_KEY_TEST`, 'warning');
+            log(`4. Get your test secret key from: https://dashboard.stripe.com/test/apikeys`, 'warning');
+            log(`5. Paste the key value (starts with sk_test_...)`, 'warning');
+            log(`6. Click "Save"`, 'warning');
+          } else {
+            log('❌ Payment intent creation failed', 'error');
+          }
+        } else {
+          log('✅ Payment intent created successfully!', 'success');
+          log('🎉 Stripe is fully configured and working!', 'success');
+        }
+
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+        log(`Stack: ${error.stack}`, 'error');
+      }
+    };
+  </script>
+</body>
+</html>
