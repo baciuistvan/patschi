@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CrewLogin } from './CrewLogin';
 import { Dashboard } from './Dashboard';
-import { supabase } from '../lib/supabase';
 import { AuthProvider } from '../contexts/AuthContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { LanguageProvider } from '../contexts/LanguageContext';
@@ -16,8 +15,9 @@ export function StandaloneCrewDashboard() {
 
   const checkAuth = async () => {
     try {
-      const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
+      const crewToken = localStorage.getItem('crew_token');
+      const crewUser = localStorage.getItem('crew_user');
+      setIsAuthenticated(!!(crewToken && crewUser));
     } catch (error) {
       console.error('Auth check error:', error);
     } finally {
