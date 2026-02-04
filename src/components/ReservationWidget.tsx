@@ -86,21 +86,30 @@ export function ReservationWidget() {
 
       let key = import.meta.env[keyEnvVar];
 
+      console.log('[Stripe Init] Mode:', mode);
+      console.log('[Stripe Init] Looking for env var:', keyEnvVar);
+      console.log('[Stripe Init] Key found:', key ? `${key.substring(0, 10)}...` : 'NONE');
+
       if (!key || key.length === 0) {
         console.warn(`Stripe ${mode} key not configured. Using fallback key if available.`);
         key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+        console.log('[Stripe Init] Fallback key found:', key ? `${key.substring(0, 10)}...` : 'NONE');
         if (!key || key.length === 0) {
           setStripeError('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
+          console.error('[Stripe Init] No Stripe keys found in environment');
           return;
         }
       }
 
+      console.log('[Stripe Init] Loading Stripe with key:', key.substring(0, 10) + '...');
       const stripeInstance = await loadStripe(key);
       if (!stripeInstance) {
         setStripeError('Stripe konnte nicht geladen werden');
+        console.error('[Stripe Init] Failed to load Stripe instance');
         return;
       }
 
+      console.log('[Stripe Init] Stripe loaded successfully');
       setStripe(stripeInstance);
 
       const elements = stripeInstance.elements();
@@ -120,6 +129,7 @@ export function ReservationWidget() {
         },
       });
       setCardElement(card);
+      console.log('[Stripe Init] Card element created');
     } catch (err: any) {
       console.error('Stripe initialization error:', err);
       setStripeError(err.message || 'Fehler beim Laden von Stripe');
@@ -374,6 +384,7 @@ export function ReservationWidget() {
 
   const createPaymentIntent = async () => {
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`;
+    console.log('[Payment Intent] Creating payment intent for amount:', formData.payment_amount);
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -394,10 +405,20 @@ export function ReservationWidget() {
     });
 
     if (!response.ok) {
-      throw new Error('Fehler beim Erstellen der Zahlung');
+      const errorData = await response.json();
+      console.error('[Payment Intent] Error response:', errorData);
+      throw new Error(errorData.error || 'Fehler beim Erstellen der Zahlung');
     }
 
     const data = await response.json();
+    console.log('[Payment Intent] Backend returned mode:', data.mode);
+    console.log('[Payment Intent] Frontend is using mode:', stripeMode);
+
+    if (data.mode !== stripeMode) {
+      console.error('[Payment Intent] MODE MISMATCH! Backend:', data.mode, 'Frontend:', stripeMode);
+      throw new Error(`Stripe mode mismatch: Backend is in ${data.mode} mode but frontend is in ${stripeMode} mode. Please reload the page.`);
+    }
+
     return data.clientSecret;
   };
 
@@ -411,9 +432,13 @@ export function ReservationWidget() {
     setError('');
 
     try {
+      console.log('[Payment] Creating payment intent...');
       const secret = await createPaymentIntent();
+      console.log('[Payment] Payment intent created, client secret:', secret.substring(0, 20) + '...');
       setClientSecret(secret);
 
+      console.log('[Payment] Confirming card payment...');
+      console.log('[Payment] Current Stripe mode:', stripeMode);
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
         payment_method: {
           card: cardElement,
@@ -426,12 +451,16 @@ export function ReservationWidget() {
       });
 
       if (stripeError) {
+        console.error('[Payment] Stripe error:', stripeError);
         throw new Error(stripeError.message);
       }
 
       if (paymentIntent.status !== 'succeeded') {
+        console.error('[Payment] Payment intent status:', paymentIntent.status);
         throw new Error('Zahlung fehlgeschlagen');
       }
+
+      console.log('[Payment] Payment successful, intent ID:', paymentIntent.id);
 
       const reservationData = {
         customer_name: formData.customer_name,
