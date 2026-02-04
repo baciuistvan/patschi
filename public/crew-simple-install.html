@@ -88,20 +88,23 @@
 
     @media (max-width: 767px) {
       .main-container {
-        height: calc(var(--vh, 1vh) * 100 - 120px);
+        height: calc(var(--vh, 1vh) * 100 - 60px);
         flex-direction: column-reverse;
       }
 
       .sidebar-mobile {
-        max-height: 45vh;
-        min-height: 200px;
+        max-height: 70vh;
+        min-height: 400px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        display: flex;
+        flex-direction: column;
       }
 
       .floor-plan-mobile {
         flex: 1;
         min-height: 0;
+        max-height: 30vh;
         overflow: auto;
       }
     }
@@ -394,6 +397,47 @@
       .p-6 {
         padding: 1rem !important;
       }
+
+      /* Collapsible calendar on mobile */
+      .calendar-grid-collapsed {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+      }
+
+      .calendar-grid-expanded {
+        max-height: 400px;
+        opacity: 1;
+        transition: max-height 0.3s ease-in, opacity 0.2s ease-in;
+      }
+
+      /* Rotate toggle button */
+      #calendarToggleBtn svg {
+        transition: transform 0.3s ease;
+      }
+
+      #calendarToggleBtn.expanded svg {
+        transform: rotate(180deg);
+      }
+
+      /* Compact calendar when expanded */
+      .sidebar-mobile .grid.grid-cols-7 > div,
+      .sidebar-mobile .grid.grid-cols-7 > button {
+        padding: 0.15rem !important;
+        min-height: 24px !important;
+        font-size: 10px !important;
+      }
+    }
+
+    /* On desktop, always show calendar */
+    @media (min-width: 768px) {
+      .calendar-grid-collapsed,
+      .calendar-grid-expanded {
+        max-height: none !important;
+        overflow: visible !important;
+        opacity: 1 !important;
+      }
     }
 
     /* Extra small iPhone improvements (iPhone SE, etc.) */
@@ -599,6 +643,22 @@
       state.selectedDate = new Date(year, month, day);
       await fetchReservations();
       await render();
+    }
+
+    // Toggle calendar visibility on mobile
+    function toggleCalendar() {
+      const calendarGrid = document.getElementById('calendarGrid');
+      const toggleBtn = document.getElementById('calendarToggleBtn');
+
+      if (calendarGrid.classList.contains('calendar-grid-collapsed')) {
+        calendarGrid.classList.remove('calendar-grid-collapsed');
+        calendarGrid.classList.add('calendar-grid-expanded');
+        toggleBtn.classList.add('expanded');
+      } else {
+        calendarGrid.classList.remove('calendar-grid-expanded');
+        calendarGrid.classList.add('calendar-grid-collapsed');
+        toggleBtn.classList.remove('expanded');
+      }
     }
 
     // Get shape class based on database shape
@@ -957,29 +1017,37 @@
               <!-- Calendar -->
               <div class="p-2 sm:p-3 border-b border-slate-700/50">
                 <div class="bg-slate-900/50 rounded-xl p-2 sm:p-3 backdrop-blur-sm shadow-inner">
+                  <!-- Calendar Toggle Header (Mobile) / Always Visible (Desktop) -->
                   <div class="flex items-center justify-between mb-1.5 sm:mb-2">
-                    <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1 sm:p-1.5 transition">
+                    <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1 sm:p-1.5 transition calendar-nav-btn">
                       <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                       </svg>
                     </button>
-                    <h3 class="text-white font-bold text-xs sm:text-sm">${new Date(state.calendarYear, state.calendarMonth).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h3>
-                    <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1 sm:p-1.5 transition">
+                    <h3 class="text-white font-bold text-xs sm:text-sm flex-1 text-center">${new Date(state.calendarYear, state.calendarMonth).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h3>
+                    <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1 sm:p-1.5 transition calendar-nav-btn">
                       <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                       </svg>
                     </button>
+                    <button onclick="toggleCalendar()" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1 ml-2 transition md:hidden" id="calendarToggleBtn">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </button>
                   </div>
 
-                  <div class="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[9px] sm:text-[10px] mb-1">
-                    <div class="text-slate-500 font-semibold py-0.5">MO</div>
-                    <div class="text-slate-500 font-semibold py-0.5">DI</div>
-                    <div class="text-slate-500 font-semibold py-0.5">MI</div>
-                    <div class="text-slate-500 font-semibold py-0.5">DO</div>
-                    <div class="text-slate-500 font-semibold py-0.5">FR</div>
-                    <div class="text-slate-500 font-semibold py-0.5">SA</div>
-                    <div class="text-slate-500 font-semibold py-0.5">SO</div>
-                  </div>
+                  <!-- Collapsible Calendar Grid -->
+                  <div id="calendarGrid" class="calendar-grid-collapsed">
+                    <div class="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[9px] sm:text-[10px] mb-1">
+                      <div class="text-slate-500 font-semibold py-0.5">MO</div>
+                      <div class="text-slate-500 font-semibold py-0.5">DI</div>
+                      <div class="text-slate-500 font-semibold py-0.5">MI</div>
+                      <div class="text-slate-500 font-semibold py-0.5">DO</div>
+                      <div class="text-slate-500 font-semibold py-0.5">FR</div>
+                      <div class="text-slate-500 font-semibold py-0.5">SA</div>
+                      <div class="text-slate-500 font-semibold py-0.5">SO</div>
+                    </div>
 
                   <div class="grid grid-cols-7 gap-0.5 sm:gap-1 text-center">
                     ${(() => {
@@ -1028,6 +1096,7 @@
 
                       return cells.join('');
                     })()}
+                  </div>
                   </div>
                 </div>
               </div>
