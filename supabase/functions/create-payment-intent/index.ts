@@ -49,7 +49,18 @@ Deno.serve(async (req: Request) => {
       : Deno.env.get("STRIPE_SECRET_KEY_TEST");
 
     if (!stripeSecretKey) {
-      throw new Error(`Stripe ${stripeMode} mode secret key not configured`);
+      console.error(`[Stripe] Missing secret key for ${stripeMode} mode`);
+      console.error(`[Stripe] Available env vars:`, Object.keys(Deno.env.toObject()).filter(k => k.includes('STRIPE')));
+      return new Response(
+        JSON.stringify({
+          error: `Stripe ${stripeMode} mode is not configured. Please set up your Stripe secret key in Supabase dashboard under Edge Functions > Secrets.`,
+          details: `Missing: STRIPE_SECRET_KEY_${stripeMode.toUpperCase()}`
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Parse request body

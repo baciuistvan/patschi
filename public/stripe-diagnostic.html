@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe Configuration Diagnostic</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Stripe Configuration Diagnostic</h1>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Frontend Configuration</h2>
+      <div class="space-y-2 font-mono text-sm">
+        <div class="flex items-start">
+          <span class="text-gray-600 w-48">Supabase URL:</span>
+          <span id="supabase-url" class="text-green-600"></span>
+        </div>
+        <div class="flex items-start">
+          <span class="text-gray-600 w-48">Test Publishable Key:</span>
+          <span id="test-key" class="text-green-600"></span>
+        </div>
+        <div class="flex items-start">
+          <span class="text-gray-600 w-48">Live Publishable Key:</span>
+          <span id="live-key" class="text-gray-600"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Backend Configuration</h2>
+      <button
+        onclick="checkBackend()"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
+      >
+        Check Backend Settings
+      </button>
+      <div id="backend-result" class="space-y-2 font-mono text-sm"></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold mb-4">Test Payment Intent Creation</h2>
+      <button
+        onclick="testPaymentIntent()"
+        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4"
+      >
+        Test Create Payment Intent
+      </button>
+      <div id="test-result" class="space-y-2 font-mono text-sm"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || localStorage.getItem('supabase_url');
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabase_anon_key');
+    const TEST_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY_TEST;
+    const LIVE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY_LIVE;
+
+    document.getElementById('supabase-url').textContent = SUPABASE_URL || 'NOT SET';
+    document.getElementById('test-key').textContent = TEST_KEY ? TEST_KEY.substring(0, 20) + '...' : 'NOT SET';
+    document.getElementById('live-key').textContent = LIVE_KEY ? LIVE_KEY.substring(0, 20) + '...' : 'NOT SET';
+
+    window.checkBackend = async () => {
+      const resultDiv = document.getElementById('backend-result');
+      resultDiv.innerHTML = '<div class="text-blue-600">Checking...</div>';
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/toggle-stripe-mode`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+        resultDiv.innerHTML = `
+          <div class="text-green-600">✓ Backend reachable</div>
+          <div>Stripe Mode: <span class="font-bold">${data.mode || 'UNKNOWN'}</span></div>
+          <div>Stripe Enabled: <span class="font-bold">${data.enabled ? 'YES' : 'NO'}</span></div>
+        `;
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="text-red-600">✗ Error: ${err.message}</div>`;
+      }
+    };
+
+    window.testPaymentIntent = async () => {
+      const resultDiv = document.getElementById('test-result');
+      resultDiv.innerHTML = '<div class="text-blue-600">Creating test payment intent...</div>';
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: 10000,
+            currency: 'eur',
+            metadata: {
+              test: 'diagnostic'
+            }
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.innerHTML = `
+            <div class="text-green-600">✓ Payment intent created successfully!</div>
+            <div>Mode: <span class="font-bold">${data.mode}</span></div>
+            <div>Payment Intent ID: <span class="font-bold">${data.paymentIntentId}</span></div>
+            <div>Client Secret: <span class="text-xs">${data.clientSecret.substring(0, 30)}...</span></div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="text-red-600">✗ Failed to create payment intent</div>
+            <div class="text-red-600">Error: ${data.error}</div>
+            ${data.details ? `<div class="text-orange-600">Details: ${data.details}</div>` : ''}
+          `;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="text-red-600">✗ Error: ${err.message}</div>`;
+      }
+    };
+  </script>
+</body>
+</html>
