@@ -1600,8 +1600,8 @@
       document.getElementById('reservationLoading').classList.add('hidden');
       document.getElementById('reservationButtons').classList.remove('hidden');
 
-      // Show all form sections
-      const formSections = document.querySelectorAll('#reservationForm > div');
+      // Show all form sections except message areas
+      const formSections = document.querySelectorAll('#reservationForm > div:not(#reservationSuccess):not(#reservationError):not(#reservationLoading):not(#reservationButtons)');
       formSections.forEach(section => section.classList.remove('hidden'));
 
       // Determine if we're editing or creating
