@@ -94,7 +94,7 @@
       }
 
       .sidebar-mobile {
-        height: calc(var(--vh, 1vh) * 100 - 60px - 30vh);
+        height: calc(var(--vh, 1vh) * 100 - 60px);
         max-height: none;
         min-height: 0;
         overflow: hidden;
@@ -102,29 +102,43 @@
         flex-direction: column;
       }
 
-      /* All sections fit without scrolling */
-      .sidebar-mobile > div {
-        flex-shrink: 1;
+      /* Fixed header - no scroll */
+      .sidebar-mobile > div:first-child {
+        flex-shrink: 0;
       }
 
-      /* Make calendar more compact */
-      .sidebar-mobile > div:nth-child(1) {
-        padding: 0.5rem !important;
+      /* Fixed calendar - no scroll */
+      .sidebar-mobile > div:nth-child(2) {
+        flex-shrink: 0;
       }
 
-      /* Reservations list - no scroll */
+      /* Reservations list should scroll */
       .sidebar-mobile > div:last-child {
-        overflow: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         flex: 1 1 auto;
         min-height: 0;
-        display: flex;
-        flex-direction: column;
+        max-height: 100%;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
       }
 
-      /* Compact date badge */
-      .sidebar-mobile .inline-flex.items-center {
-        padding: 0.25rem 0.75rem !important;
-        margin-bottom: 0.5rem !important;
+      /* Better scrollbar for mobile */
+      .sidebar-mobile > div:last-child::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .sidebar-mobile > div:last-child::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .sidebar-mobile > div:last-child::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.5);
+        border-radius: 2px;
+      }
+
+      .sidebar-mobile > div:last-child::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.7);
       }
 
       .floor-plan-mobile {
@@ -470,17 +484,12 @@
     /* Landscape orientation on mobile */
     @media (max-width: 767px) and (orientation: landscape) {
       .sidebar-mobile {
-        height: calc(var(--vh, 1vh) * 100 - 60px - 25vh);
+        height: calc(var(--vh, 1vh) * 100 - 60px);
       }
 
       .sidebar-mobile > div:last-child {
-        overflow: hidden;
-      }
-
-      .floor-plan-mobile {
-        height: 25vh;
-        max-height: 25vh;
-        min-height: 200px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
       .main-container {
@@ -962,7 +971,7 @@
 
           <div class="flex flex-col md:flex-row main-container w-full overflow-hidden">
             <!-- Floor Plan -->
-            <div class="flex-1 p-2 sm:p-4 overflow-auto floor-plan-container floor-plan-mobile min-w-0 order-2 md:order-1">
+            <div class="hidden md:block flex-1 p-2 sm:p-4 overflow-auto floor-plan-container floor-plan-mobile min-w-0 order-2 md:order-1">
               <div class="floor-plan-inner">
                 <!-- Dynamic Tables from Database -->
                 ${getRoomTables().map(table => {
@@ -1022,14 +1031,14 @@
 
             <!-- Right Sidebar - Reservations and Calendar -->
             <div class="w-full md:w-64 lg:w-72 xl:w-80 md:flex-shrink-0 bg-gradient-to-b from-slate-800 to-slate-900 border-t md:border-t-0 md:border-l border-slate-700 flex flex-col shadow-2xl sidebar-mobile order-1 md:order-2">
-              <div class="p-1.5 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm flex-shrink-0">
+              <div class="p-1.5 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h2 class="text-sm sm:text-xl font-bold text-white">Reservierungen</h2>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Heute: ${new Date().toLocaleDateString('de-DE')}</p>
+                    <h2 class="text-base sm:text-xl font-bold text-white">Reservierungen</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Heute: ${new Date().toLocaleDateString('de-DE')}</p>
                   </div>
-                  <button onclick="openReservationModal()" class="w-8 h-8 sm:w-11 sm:h-11 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center hover:from-green-600 hover:to-green-800 transition shadow-lg flex-shrink-0">
-                    <svg class="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <button onclick="openReservationModal()" class="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center hover:from-green-600 hover:to-green-800 transition shadow-lg">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
                   </button>
@@ -1037,13 +1046,13 @@
               </div>
 
               <!-- Calendar -->
-              <div class="p-1 sm:p-3 border-b border-slate-700/50 mb-1">
-                <div class="bg-slate-900/50 rounded-xl p-1 sm:p-3 backdrop-blur-sm shadow-inner">
+              <div class="p-1.5 sm:p-3 border-b border-slate-700/50 mb-2">
+                <div class="bg-slate-900/50 rounded-xl p-1.5 sm:p-3 backdrop-blur-sm shadow-inner">
 
                   <!-- Mobile: Full Month Calendar View -->
                   <div class="md:hidden">
                     <!-- Month Navigation -->
-                    <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center justify-between mb-2">
                       <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -1058,7 +1067,7 @@
                     </div>
 
                     <!-- Weekday Headers -->
-                    <div class="grid grid-cols-7 gap-0.5 text-center text-[10px] mb-0.5">
+                    <div class="grid grid-cols-7 gap-0.5 text-center text-xs mb-1.5">
                       <div class="text-slate-500 font-semibold py-0.5">MO</div>
                       <div class="text-slate-500 font-semibold py-0.5">DI</div>
                       <div class="text-slate-500 font-semibold py-0.5">MI</div>
@@ -1096,7 +1105,7 @@
                                             state.calendarYear === state.selectedDate.getFullYear();
                           const count = bookingCounts[day] || 0;
 
-                          let classes = 'py-1 cursor-pointer transition rounded-lg min-h-[26px] flex flex-col items-center justify-center';
+                          let classes = 'py-1.5 cursor-pointer transition rounded-lg min-h-[32px] flex flex-col items-center justify-center';
 
                           if (isSelected) {
                             classes += ' bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold shadow-md ring-2 ring-blue-300';
@@ -1108,8 +1117,8 @@
 
                           cells.push(
                             '<div onclick="selectCalendarDate(' + state.calendarYear + ', ' + state.calendarMonth + ', ' + day + ');" class="' + classes + '">' +
-                              '<div class="text-[11px]">' + day + '</div>' +
-                              (count > 0 ? '<div class="text-[9px] text-orange-400 font-bold">' + count + '</div>' : '') +
+                              '<div class="text-xs">' + day + '</div>' +
+                              (count > 0 ? '<div class="text-xs text-orange-400 font-bold">' + count + '</div>' : '') +
                             '</div>'
                           );
                         }
@@ -1225,15 +1234,15 @@
                       </div>
                     </div>
                   ` : `
-                    <div class="space-y-1.5">
+                    <div class="space-y-2 sm:space-y-3">
                       ${getFilteredReservations().map(res => {
                         const paymentBadge = res.booking_method === 'free' ?
-                          '<span class="px-1.5 py-0.5 bg-green-500/20 text-green-300 rounded text-[10px] font-semibold">Frei</span>' :
+                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Frei</span>' :
                           res.payment_method === 'cash' ?
-                          '<span class="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded text-[10px] font-semibold">Bar</span>' :
+                          '<span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-semibold">Bar bezahlt</span>' :
                           res.payment_status === 'paid' ?
-                          '<span class="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-[10px] font-semibold">Online</span>' :
-                          '<span class="px-1.5 py-0.5 bg-green-500/20 text-green-300 rounded text-[10px] font-semibold">Frei</span>';
+                          '<span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs font-semibold">Online</span> <span class="text-green-400 font-bold text-sm ml-1">€350</span>' :
+                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Frei</span>';
 
                         const tableNames = res.reservation_tables && res.reservation_tables.length > 0
                           ? res.reservation_tables.map(rt => {
@@ -1243,24 +1252,24 @@
                           : 'Keine Tische';
 
                         return `
-                          <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-2 hover:bg-slate-800/70 transition shadow-md backdrop-blur-sm">
-                            <div class="flex items-start justify-between mb-1.5">
-                              <div class="flex-1 min-w-0">
-                                <div class="flex items-center space-x-1 mb-1 flex-wrap">
-                                  <span class="font-mono text-[10px] font-bold text-blue-400">${res.booking_code || 'N/A'}</span>
+                          <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-3 sm:p-4 hover:bg-slate-800/70 transition shadow-lg backdrop-blur-sm">
+                            <div class="flex items-start justify-between mb-2 sm:mb-3">
+                              <div class="flex-1">
+                                <div class="flex items-center space-x-1.5 sm:space-x-2 mb-1.5 sm:mb-2 flex-wrap">
+                                  <span class="font-mono text-xs sm:text-sm font-bold text-blue-400">${res.booking_code || 'N/A'}</span>
                                   ${paymentBadge}
                                 </div>
-                                <div class="text-white font-semibold text-sm mb-0.5 truncate">${res.customer_name}</div>
+                                <div class="text-white font-semibold text-base sm:text-lg mb-1">${res.customer_name}</div>
                               </div>
-                              <div class="flex space-x-1 flex-shrink-0 ml-2">
-                                <button onclick="openEditReservationModal('${res.id}')" class="p-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded transition">
-                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div class="flex space-x-1.5 sm:space-x-2">
+                                <button onclick="openEditReservationModal('${res.id}')" class="p-1.5 sm:p-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-lg transition">
+                                  <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                   </svg>
                                 </button>
                                 ${(res.booking_method !== 'stripe' && res.payment_method !== 'stripe' && !res.stripe_payment_intent_id) ? `
-                                  <button onclick="deleteReservation('${res.id}')" class="p-1 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded transition">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <button onclick="deleteReservation('${res.id}')" class="p-1.5 sm:p-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg transition">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                   </button>
@@ -1268,29 +1277,51 @@
                               </div>
                             </div>
 
-                            <div class="space-y-1 text-xs">
+                            <div class="space-y-2 text-sm">
                               <div class="flex items-center text-slate-300">
-                                <svg class="w-3 h-3 mr-1.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span>${res.reservation_time} • ${res.party_size}P</span>
+                                <span>${res.reservation_time}</span>
                               </div>
 
                               <div class="flex items-center text-slate-300">
-                                <svg class="w-3 h-3 mr-1.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span>${res.party_size} Personen</span>
+                              </div>
+
+                              <div class="flex items-center text-slate-300">
+                                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <span>${(() => {
+                                  if (res.reservation_tables && res.reservation_tables.length > 0) {
+                                    const firstTable = state.tables.find(t => t.id === res.reservation_tables[0].table_id);
+                                    if (firstTable && firstTable.room_id) {
+                                      return getRoomName(firstTable.room_id);
+                                    }
+                                  }
+                                  return getRoomName(state.selectedRoom);
+                                })()}</span>
+                              </div>
+
+                              <div class="flex items-center text-slate-300">
+                                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                 </svg>
                                 <span class="truncate">${tableNames}</span>
                               </div>
 
                               ${res.special_requests ? `
-                              <div class="flex items-start text-amber-300 mt-1 pt-1 border-t border-slate-700">
-                                <svg class="w-3 h-3 mr-1.5 mt-0.5 flex-shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div class="flex items-start text-amber-300 mt-2 pt-2 border-t border-slate-700">
+                                <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
                                 </svg>
-                                <div class="flex-1 min-w-0">
-                                  <div class="text-[10px] text-amber-400 font-semibold mb-0.5">Wünsche:</div>
-                                  <div class="text-[11px] leading-tight">${res.special_requests}</div>
+                                <div class="flex-1">
+                                  <div class="text-xs text-amber-400 font-semibold mb-1">Besondere Wünsche:</div>
+                                  <div class="text-sm">${res.special_requests}</div>
                                 </div>
                               </div>
                               ` : ''}
