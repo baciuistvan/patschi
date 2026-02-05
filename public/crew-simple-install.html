@@ -94,7 +94,7 @@
       }
 
       .sidebar-mobile {
-        height: calc(var(--vh, 1vh) * 100 - 60px - 15vh);
+        height: calc(var(--vh, 1vh) * 100 - 60px - 30vh);
         max-height: none;
         min-height: 0;
         overflow: hidden;
@@ -108,6 +108,11 @@
         -webkit-overflow-scrolling: touch;
         flex: 1;
         min-height: 0;
+      }
+
+      .floor-plan-mobile {
+        height: 30vh;
+        min-height: 260px;
       }
 
       .floor-plan-mobile {
@@ -261,22 +266,28 @@
     /* Mobile phones */
     @media (max-width: 767px) {
       .floor-plan-inner {
-        width: 480px;
-        height: 307px;
-        min-width: 340px;
-        padding-left: 22px;
-        padding-top: 26px;
+        width: 360px;
+        height: 240px;
+        min-width: 300px;
+        padding-left: 18px;
+        padding-top: 20px;
+        margin-top: 8px;
+      }
+
+      .floor-plan-container {
+        padding: 0.5rem !important;
+        margin-top: 0.75rem;
       }
     }
 
     /* Extra small phones (iPhone SE, etc.) */
     @media (max-width: 400px) {
       .floor-plan-inner {
-        width: 380px;
-        height: 260px;
-        min-width: 300px;
-        padding-left: 16px;
-        padding-top: 20px;
+        width: 320px;
+        height: 210px;
+        min-width: 280px;
+        padding-left: 14px;
+        padding-top: 16px;
       }
 
       .table-item {
@@ -903,15 +914,22 @@
                 </div>
 
                 <div class="flex items-center space-x-1.5 sm:space-x-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                  ${state.rooms.map(room => `
+                  ${state.rooms.map(room => {
+                    const isActive = state.selectedRoom === room.id;
+                    const icon = room.name.toLowerCase().includes('terrasse') || room.name.toLowerCase().includes('terrace') ?
+                      '<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>' :
+                      '<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>';
+
+                    return `
                     <button
                       onclick="handleRoomSwitch('${room.id}')"
-                      class="px-3 py-1.5 sm:px-5 sm:py-2 whitespace-nowrap ${state.selectedRoom === room.id ? 'bg-blue-600 shadow-lg ring-2 ring-blue-400' : 'bg-slate-700'} text-white rounded-lg hover:bg-blue-700 transition text-xs sm:text-sm font-semibold shadow-md">
-                      ${room.name}
+                      class="px-3 py-1.5 sm:px-4 sm:py-2.5 whitespace-nowrap flex items-center space-x-1.5 sm:space-x-2 ${isActive ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-xl ring-2 ring-blue-300 scale-105' : 'bg-slate-700 hover:bg-slate-600'} text-white rounded-xl transition-all duration-200 text-xs sm:text-sm font-bold shadow-lg">
+                      ${icon}
+                      <span>${room.name}</span>
                     </button>
-                  `).join('')}
+                  `}).join('')}
                   <div class="h-6 sm:h-8 w-px bg-slate-700 mx-1"></div>
-                  <button onclick="handleLogout()" class="p-2 sm:p-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition flex items-center justify-center shadow-md">
+                  <button onclick="handleLogout()" class="p-2 sm:p-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center justify-center shadow-lg">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -983,13 +1001,13 @@
 
             <!-- Right Sidebar - Reservations and Calendar -->
             <div class="w-full md:w-64 lg:w-72 xl:w-80 md:flex-shrink-0 bg-gradient-to-b from-slate-800 to-slate-900 border-t md:border-t-0 md:border-l border-slate-700 flex flex-col shadow-2xl sidebar-mobile order-1 md:order-2">
-              <div class="p-2 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
+              <div class="p-1.5 sm:p-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h2 class="text-lg sm:text-xl font-bold text-white">Reservierungen</h2>
+                    <h2 class="text-base sm:text-xl font-bold text-white">Reservierungen</h2>
                     <p class="text-xs text-slate-400 mt-0.5">Heute: ${new Date().toLocaleDateString('de-DE')}</p>
                   </div>
-                  <button onclick="openReservationModal()" class="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center hover:from-green-600 hover:to-green-800 transition shadow-lg">
+                  <button onclick="openReservationModal()" class="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center hover:from-green-600 hover:to-green-800 transition shadow-lg">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -998,20 +1016,20 @@
               </div>
 
               <!-- Calendar -->
-              <div class="p-2 sm:p-3 border-b border-slate-700/50">
-                <div class="bg-slate-900/50 rounded-xl p-2 sm:p-3 backdrop-blur-sm shadow-inner">
+              <div class="p-1.5 sm:p-3 border-b border-slate-700/50 mb-2">
+                <div class="bg-slate-900/50 rounded-xl p-1.5 sm:p-3 backdrop-blur-sm shadow-inner">
 
                   <!-- Mobile: Full Month Calendar View -->
                   <div class="md:hidden">
                     <!-- Month Navigation -->
-                    <div class="flex items-center justify-between mb-3">
-                      <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+                    <div class="flex items-center justify-between mb-2">
+                      <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                       </button>
                       <h3 class="text-white font-bold text-sm flex-1 text-center">${new Date(state.calendarYear, state.calendarMonth).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h3>
-                      <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+                      <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
@@ -1019,18 +1037,18 @@
                     </div>
 
                     <!-- Weekday Headers -->
-                    <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                      <div class="text-slate-500 font-semibold py-1">MO</div>
-                      <div class="text-slate-500 font-semibold py-1">DI</div>
-                      <div class="text-slate-500 font-semibold py-1">MI</div>
-                      <div class="text-slate-500 font-semibold py-1">DO</div>
-                      <div class="text-slate-500 font-semibold py-1">FR</div>
-                      <div class="text-slate-500 font-semibold py-1">SA</div>
-                      <div class="text-slate-500 font-semibold py-1">SO</div>
+                    <div class="grid grid-cols-7 gap-0.5 text-center text-xs mb-1.5">
+                      <div class="text-slate-500 font-semibold py-0.5">MO</div>
+                      <div class="text-slate-500 font-semibold py-0.5">DI</div>
+                      <div class="text-slate-500 font-semibold py-0.5">MI</div>
+                      <div class="text-slate-500 font-semibold py-0.5">DO</div>
+                      <div class="text-slate-500 font-semibold py-0.5">FR</div>
+                      <div class="text-slate-500 font-semibold py-0.5">SA</div>
+                      <div class="text-slate-500 font-semibold py-0.5">SO</div>
                     </div>
 
                     <!-- Calendar Grid -->
-                    <div class="grid grid-cols-7 gap-1 text-center">
+                    <div class="grid grid-cols-7 gap-0.5 text-center">
                       ${(() => {
                         const firstDay = new Date(state.calendarYear, state.calendarMonth, 1);
                         const lastDay = new Date(state.calendarYear, state.calendarMonth + 1, 0);
@@ -1057,7 +1075,7 @@
                                             state.calendarYear === state.selectedDate.getFullYear();
                           const count = bookingCounts[day] || 0;
 
-                          let classes = 'py-2 cursor-pointer transition rounded-lg min-h-[36px] flex flex-col items-center justify-center';
+                          let classes = 'py-1.5 cursor-pointer transition rounded-lg min-h-[32px] flex flex-col items-center justify-center';
 
                           if (isSelected) {
                             classes += ' bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold shadow-md ring-2 ring-blue-300';
@@ -1069,8 +1087,8 @@
 
                           cells.push(
                             '<div onclick="selectCalendarDate(' + state.calendarYear + ', ' + state.calendarMonth + ', ' + day + ');" class="' + classes + '">' +
-                              '<div class="text-sm">' + day + '</div>' +
-                              (count > 0 ? '<div class="text-xs text-orange-400 font-bold mt-0.5">' + count + '</div>' : '') +
+                              '<div class="text-xs">' + day + '</div>' +
+                              (count > 0 ? '<div class="text-xs text-orange-400 font-bold">' + count + '</div>' : '') +
                             '</div>'
                           );
                         }
