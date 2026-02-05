@@ -474,36 +474,6 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* Mobile Calendar Dropdown */
-    .calendar-dropdown {
-      position: fixed;
-      z-index: 999;
-      background: rgb(15 23 42);
-      border: 1px solid rgb(51 65 85);
-      border-radius: 0.75rem;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: opacity 0.2s, transform 0.2s;
-      pointer-events: none;
-      max-height: 0;
-      overflow: hidden;
-    }
-
-    .calendar-dropdown.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-      max-height: 500px;
-    }
-
-    @media (max-width: 767px) {
-      .calendar-dropdown {
-        left: 0.5rem;
-        right: 0.5rem;
-        width: auto;
-      }
-    }
 
     .date-selector-clickable {
       cursor: pointer;
@@ -1031,112 +1001,82 @@
               <div class="p-2 sm:p-3 border-b border-slate-700/50">
                 <div class="bg-slate-900/50 rounded-xl p-2 sm:p-3 backdrop-blur-sm shadow-inner">
 
-                  <!-- Mobile: Daily Navigation with Dropdown Calendar -->
-                  <div class="md:hidden relative">
-                    <div class="flex items-center justify-between gap-2">
-                      <button onclick="changeDay(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <!-- Mobile: Full Month Calendar View -->
+                  <div class="md:hidden">
+                    <!-- Month Navigation -->
+                    <div class="flex items-center justify-between mb-3">
+                      <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                       </button>
-                      <div class="flex-1 text-center date-selector-clickable" onclick="toggleCalendarDropdown()">
-                        <div class="flex items-center justify-center gap-1">
-                          <div class="text-white font-bold text-sm">${state.selectedDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-                          <svg id="calendarChevron" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                          </svg>
-                        </div>
-                        <div class="text-xs text-slate-400">${(() => {
-                          const count = Object.keys(state.reservations).length;
-                          return count > 0 ? count + ' Reservierung' + (count !== 1 ? 'en' : '') : 'Keine Reservierungen';
-                        })()}</div>
-                      </div>
-                      <button onclick="changeDay(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <h3 class="text-white font-bold text-sm flex-1 text-center">${new Date(state.calendarYear, state.calendarMonth).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h3>
+                      <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                       </button>
                     </div>
 
-                    <!-- Dropdown Calendar -->
-                    <div id="calendarDropdown" class="calendar-dropdown">
-                      <div class="p-3">
-                        <!-- Month Navigation -->
-                        <div class="flex items-center justify-between mb-3">
-                          <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                          </button>
-                          <h3 class="text-white font-bold text-sm flex-1 text-center">${new Date(state.calendarYear, state.calendarMonth).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h3>
-                          <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                          </button>
-                        </div>
+                    <!-- Weekday Headers -->
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                      <div class="text-slate-500 font-semibold py-1">MO</div>
+                      <div class="text-slate-500 font-semibold py-1">DI</div>
+                      <div class="text-slate-500 font-semibold py-1">MI</div>
+                      <div class="text-slate-500 font-semibold py-1">DO</div>
+                      <div class="text-slate-500 font-semibold py-1">FR</div>
+                      <div class="text-slate-500 font-semibold py-1">SA</div>
+                      <div class="text-slate-500 font-semibold py-1">SO</div>
+                    </div>
 
-                        <!-- Weekday Headers -->
-                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                          <div class="text-slate-500 font-semibold py-1">MO</div>
-                          <div class="text-slate-500 font-semibold py-1">DI</div>
-                          <div class="text-slate-500 font-semibold py-1">MI</div>
-                          <div class="text-slate-500 font-semibold py-1">DO</div>
-                          <div class="text-slate-500 font-semibold py-1">FR</div>
-                          <div class="text-slate-500 font-semibold py-1">SA</div>
-                          <div class="text-slate-500 font-semibold py-1">SO</div>
-                        </div>
+                    <!-- Calendar Grid -->
+                    <div class="grid grid-cols-7 gap-1 text-center">
+                      ${(() => {
+                        const firstDay = new Date(state.calendarYear, state.calendarMonth, 1);
+                        const lastDay = new Date(state.calendarYear, state.calendarMonth + 1, 0);
+                        const daysInMonth = lastDay.getDate();
 
-                        <!-- Calendar Grid -->
-                        <div class="grid grid-cols-7 gap-1 text-center">
-                          ${(() => {
-                            const firstDay = new Date(state.calendarYear, state.calendarMonth, 1);
-                            const lastDay = new Date(state.calendarYear, state.calendarMonth + 1, 0);
-                            const daysInMonth = lastDay.getDate();
+                        // Get day of week (0=Sunday, 1=Monday, etc) and adjust to Monday start
+                        let firstDayOfWeek = firstDay.getDay();
+                        firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-                            // Get day of week (0=Sunday, 1=Monday, etc) and adjust to Monday start
-                            let firstDayOfWeek = firstDay.getDay();
-                            firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                        const cells = [];
 
-                            const cells = [];
+                        // Empty cells before first day
+                        for (let i = 0; i < firstDayOfWeek; i++) {
+                          cells.push('<div class="py-2"></div>');
+                        }
 
-                            // Empty cells before first day
-                            for (let i = 0; i < firstDayOfWeek; i++) {
-                              cells.push('<div class="py-2"></div>');
-                            }
+                        // Days of month
+                        for (let day = 1; day <= daysInMonth; day++) {
+                          const isToday = day === today.getDate() &&
+                                         state.calendarMonth === today.getMonth() &&
+                                         state.calendarYear === today.getFullYear();
+                          const isSelected = day === state.selectedDate.getDate() &&
+                                            state.calendarMonth === state.selectedDate.getMonth() &&
+                                            state.calendarYear === state.selectedDate.getFullYear();
+                          const count = bookingCounts[day] || 0;
 
-                            // Days of month
-                            for (let day = 1; day <= daysInMonth; day++) {
-                              const isToday = day === today.getDate() &&
-                                             state.calendarMonth === today.getMonth() &&
-                                             state.calendarYear === today.getFullYear();
-                              const isSelected = day === state.selectedDate.getDate() &&
-                                                state.calendarMonth === state.selectedDate.getMonth() &&
-                                                state.calendarYear === state.selectedDate.getFullYear();
-                              const count = bookingCounts[day] || 0;
+                          let classes = 'py-2 cursor-pointer transition rounded-lg min-h-[36px] flex flex-col items-center justify-center';
 
-                              let classes = 'py-2 cursor-pointer transition rounded-lg min-h-[36px] flex flex-col items-center justify-center';
+                          if (isSelected) {
+                            classes += ' bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold shadow-md ring-2 ring-blue-300';
+                          } else if (isToday) {
+                            classes += ' bg-slate-700 text-white font-bold';
+                          } else {
+                            classes += ' text-slate-300 hover:bg-slate-700 font-medium';
+                          }
 
-                              if (isSelected) {
-                                classes += ' bg-gradient-to-br from-blue-500 to-blue-700 text-white font-bold shadow-md ring-2 ring-blue-300';
-                              } else if (isToday) {
-                                classes += ' bg-slate-700 text-white font-bold';
-                              } else {
-                                classes += ' text-slate-300 hover:bg-slate-700 font-medium';
-                              }
+                          cells.push(
+                            '<div onclick="selectCalendarDate(' + state.calendarYear + ', ' + state.calendarMonth + ', ' + day + ');" class="' + classes + '">' +
+                              '<div class="text-sm">' + day + '</div>' +
+                              (count > 0 ? '<div class="text-xs text-orange-400 font-bold mt-0.5">' + count + '</div>' : '') +
+                            '</div>'
+                          );
+                        }
 
-                              cells.push(
-                                '<div onclick="selectCalendarDate(' + state.calendarYear + ', ' + state.calendarMonth + ', ' + day + '); toggleCalendarDropdown();" class="' + classes + '">' +
-                                  '<div class="text-sm">' + day + '</div>' +
-                                  (count > 0 ? '<div class="text-xs text-orange-400 font-bold mt-0.5">' + count + '</div>' : '') +
-                                '</div>'
-                              );
-                            }
-
-                            return cells.join('');
-                          })()}
-                        </div>
-                      </div>
+                        return cells.join('');
+                      })()}
                     </div>
                   </div>
 
@@ -1800,43 +1740,6 @@
       await selectCalendarDate(year, month, day);
     };
 
-    // Calendar Dropdown Toggle
-    window.toggleCalendarDropdown = function(event) {
-      const dropdown = document.getElementById('calendarDropdown');
-      const chevron = document.getElementById('calendarChevron');
-
-      if (dropdown && chevron) {
-        const isShowing = dropdown.classList.contains('show');
-
-        if (isShowing) {
-          dropdown.classList.remove('show');
-          chevron.style.transform = 'rotate(0deg)';
-        } else {
-          // Find the clickable date selector element
-          const dateSelector = document.querySelector('.date-selector-clickable');
-          if (dateSelector) {
-            // Get position of the date selector
-            const rect = dateSelector.getBoundingClientRect();
-
-            // Position dropdown below the date selector
-            dropdown.style.top = (rect.bottom + 8) + 'px'; // 8px margin
-
-            // On mobile, use left and right padding
-            if (window.innerWidth < 768) {
-              dropdown.style.left = '0.5rem';
-              dropdown.style.right = '0.5rem';
-              dropdown.style.width = 'auto';
-            } else {
-              dropdown.style.left = rect.left + 'px';
-              dropdown.style.width = rect.width + 'px';
-            }
-          }
-
-          dropdown.classList.add('show');
-          chevron.style.transform = 'rotate(180deg)';
-        }
-      }
-    };
 
     // Gift Card Modal Functions
     let currentGiftCard = null;
@@ -2923,24 +2826,6 @@
       });
     }
 
-    // Close calendar dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-      const dropdown = document.getElementById('calendarDropdown');
-      const chevron = document.getElementById('calendarChevron');
-
-      if (dropdown && dropdown.classList.contains('show')) {
-        // Check if click is outside the calendar area
-        const dateSelector = e.target.closest('.date-selector-clickable');
-        const dropdownClick = e.target.closest('#calendarDropdown');
-
-        if (!dateSelector && !dropdownClick) {
-          dropdown.classList.remove('show');
-          if (chevron) {
-            chevron.style.transform = 'rotate(0deg)';
-          }
-        }
-      }
-    });
 
     // Initial render
     render();
