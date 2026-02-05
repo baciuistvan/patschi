@@ -476,16 +476,12 @@
 
     /* Mobile Calendar Dropdown */
     .calendar-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0.5rem;
-      right: 0.5rem;
+      position: fixed;
       z-index: 999;
       background: rgb(15 23 42);
       border: 1px solid rgb(51 65 85);
       border-radius: 0.75rem;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-      margin-top: 0.5rem;
       opacity: 0;
       transform: translateY(-10px);
       transition: opacity 0.2s, transform 0.2s;
@@ -499,6 +495,14 @@
       transform: translateY(0);
       pointer-events: auto;
       max-height: 500px;
+    }
+
+    @media (max-width: 767px) {
+      .calendar-dropdown {
+        left: 0.5rem;
+        right: 0.5rem;
+        width: auto;
+      }
     }
 
     .date-selector-clickable {
@@ -1797,7 +1801,7 @@
     };
 
     // Calendar Dropdown Toggle
-    window.toggleCalendarDropdown = function() {
+    window.toggleCalendarDropdown = function(event) {
       const dropdown = document.getElementById('calendarDropdown');
       const chevron = document.getElementById('calendarChevron');
 
@@ -1808,6 +1812,26 @@
           dropdown.classList.remove('show');
           chevron.style.transform = 'rotate(0deg)';
         } else {
+          // Find the clickable date selector element
+          const dateSelector = document.querySelector('.date-selector-clickable');
+          if (dateSelector) {
+            // Get position of the date selector
+            const rect = dateSelector.getBoundingClientRect();
+
+            // Position dropdown below the date selector
+            dropdown.style.top = (rect.bottom + 8) + 'px'; // 8px margin
+
+            // On mobile, use left and right padding
+            if (window.innerWidth < 768) {
+              dropdown.style.left = '0.5rem';
+              dropdown.style.right = '0.5rem';
+              dropdown.style.width = 'auto';
+            } else {
+              dropdown.style.left = rect.left + 'px';
+              dropdown.style.width = rect.width + 'px';
+            }
+          }
+
           dropdown.classList.add('show');
           chevron.style.transform = 'rotate(180deg)';
         }
