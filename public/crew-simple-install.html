@@ -102,12 +102,43 @@
         flex-direction: column;
       }
 
-      /* Reservations list should scroll, not the entire sidebar */
+      /* Fixed header - no scroll */
+      .sidebar-mobile > div:first-child {
+        flex-shrink: 0;
+      }
+
+      /* Fixed calendar - no scroll */
+      .sidebar-mobile > div:nth-child(2) {
+        flex-shrink: 0;
+      }
+
+      /* Reservations list should scroll */
       .sidebar-mobile > div:last-child {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        flex: 1;
+        flex: 1 1 auto;
         min-height: 0;
+        max-height: 100%;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+      }
+
+      /* Better scrollbar for mobile */
+      .sidebar-mobile > div:last-child::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .sidebar-mobile > div:last-child::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .sidebar-mobile > div:last-child::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.5);
+        border-radius: 2px;
+      }
+
+      .sidebar-mobile > div:last-child::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.7);
       }
 
       .floor-plan-mobile {
@@ -453,13 +484,18 @@
     /* Landscape orientation on mobile */
     @media (max-width: 767px) and (orientation: landscape) {
       .sidebar-mobile {
-        height: calc(var(--vh, 1vh) * 100 - 60px - 20vh);
+        height: calc(var(--vh, 1vh) * 100 - 60px - 25vh);
+      }
+
+      .sidebar-mobile > div:last-child {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
       .floor-plan-mobile {
-        height: 20vh;
-        max-height: 20vh;
-        min-height: 20vh;
+        height: 25vh;
+        max-height: 25vh;
+        min-height: 200px;
       }
 
       .main-container {
@@ -1177,7 +1213,7 @@
               </div>
 
               <!-- Selected Date Info -->
-              <div class="p-2 sm:p-4 flex-1 overflow-y-auto">
+              <div class="p-2 sm:p-4 flex-1 overflow-y-auto min-h-0">
                 <div class="mb-2 sm:mb-4">
                   <!-- Date badge (desktop only - mobile shows in daily nav) -->
                   <div class="hidden md:block text-center mb-2 sm:mb-4">
