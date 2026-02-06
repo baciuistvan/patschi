@@ -89,35 +89,160 @@ Deno.serve(async (req: Request) => {
       });
     };
 
-    let emailBody = settingsMap.email_body || `Dear {{customer_name}},
+    const formattedDate = reservation_date ? formatDate(reservation_date) : '';
+    const depositAmountFormatted = (payment_amount || 0).toFixed(2);
 
-Thank you for your reservation at Patschi!
+    // Create HTML email template
+    const htmlBody = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservierungsbestätigung</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 
-Reservation Details:
-- Booking Code: {{booking_code}}
-- Date: {{reservation_date}}
-- Time: {{reservation_time}}
-- Party Size: {{party_size}} guests
-- Table: {{table_number}}
+          <!-- Header with Logo -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">Patschi</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">Reservierungsbestätigung</p>
+            </td>
+          </tr>
 
-Special Requests: {{special_requests}}
+          <!-- Booking Code Badge -->
+          <tr>
+            <td style="padding: 30px 30px 20px 30px; text-align: center;">
+              <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: inline-block; padding: 16px 32px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                <p style="color: rgba(255,255,255,0.9); margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Buchungsnummer</p>
+                <p style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 2px; font-family: 'Courier New', monospace;">${booking_code}</p>
+              </div>
+            </td>
+          </tr>
 
-Deposit Paid: €{{deposit_amount}}
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 20px 30px 30px 30px;">
+              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Liebe/r ${customer_name},</h2>
+              <p style="color: #4b5563; margin: 0; font-size: 16px; line-height: 1.6;">vielen Dank für Ihre Reservierung! Wir freuen uns sehr, Sie bei uns begrüßen zu dürfen.</p>
+            </td>
+          </tr>
 
-We look forward to welcoming you!
+          <!-- Reservation Details -->
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; overflow: hidden;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <h3 style="color: #1f2937; margin: 0 0 20px 0; font-size: 18px; font-weight: 600;">Reservierungsdetails</h3>
 
-Best regards,
-The Patschi Team`;
+                    <table width="100%" cellpadding="8" cellspacing="0">
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500;">📅 Datum</td>
+                        <td style="color: #1f2937; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${formattedDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500;">⏰ Uhrzeit</td>
+                        <td style="color: #1f2937; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${reservation_time} Uhr</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500;">👥 Anzahl Personen</td>
+                        <td style="color: #1f2937; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${party_size} ${party_size === 1 ? 'Person' : 'Personen'}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500;">🪑 Tisch</td>
+                        <td style="color: #1f2937; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${table_number}</td>
+                      </tr>
+                      ${payment_amount > 0 ? `
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 8px 0; font-weight: 500;">💳 Anzahlung</td>
+                        <td style="color: #10b981; font-size: 16px; padding: 8px 0; text-align: right; font-weight: 700;">€${depositAmountFormatted}</td>
+                      </tr>
+                      ` : ''}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    emailBody = emailBody
-      .replace(/{{customer_name}}/g, customer_name || '')
-      .replace(/{{booking_code}}/g, booking_code || '')
-      .replace(/{{reservation_date}}/g, reservation_date ? formatDate(reservation_date) : '')
-      .replace(/{{reservation_time}}/g, reservation_time || '')
-      .replace(/{{party_size}}/g, party_size?.toString() || '0')
-      .replace(/{{table_number}}/g, table_number || 'To be assigned')
-      .replace(/{{special_requests}}/g, special_requests || 'None')
-      .replace(/{{deposit_amount}}/g, (payment_amount || 0).toFixed(2));
+          ${special_requests ? `
+          <!-- Special Requests -->
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="color: #92400e; margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">📝 Besondere Wünsche</p>
+                    <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.5;">${special_requests}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Important Info -->
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="color: #1e40af; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">ℹ️ Wichtige Hinweise</p>
+                    <p style="color: #1e3a8a; margin: 0; font-size: 13px; line-height: 1.6;">
+                      • Bitte erscheinen Sie pünktlich zu Ihrer Reservierung<br>
+                      • Bei Verspätung über 15 Minuten kann Ihre Reservierung verfallen<br>
+                      • Bei Stornierung oder Änderungen kontaktieren Sie uns bitte rechtzeitig
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="color: #1f2937; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Wir freuen uns auf Ihren Besuch!</p>
+              <p style="color: #6b7280; margin: 0 0 16px 0; font-size: 14px;">Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+              <p style="color: #9ca3af; margin: 0; font-size: 13px; line-height: 1.6;">
+                <strong style="color: #1f2937;">Patschi Restaurant</strong><br>
+                Email: info@patschi.com | Tel: +49 XXX XXXXXXX
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    // Plain text fallback
+    let emailBody = `Liebe/r ${customer_name},
+
+vielen Dank für Ihre Reservierung bei Patschi!
+
+BUCHUNGSNUMMER: ${booking_code}
+
+Reservierungsdetails:
+- Datum: ${formattedDate}
+- Uhrzeit: ${reservation_time} Uhr
+- Anzahl Personen: ${party_size}
+- Tisch: ${table_number}
+${payment_amount > 0 ? `- Anzahlung: €${depositAmountFormatted}` : ''}
+
+${special_requests ? `Besondere Wünsche: ${special_requests}\n` : ''}
+Wir freuen uns auf Ihren Besuch!
+
+Mit freundlichen Grüßen,
+Das Patschi Team`;
 
     let emailSubject = settingsMap.email_subject || 'Reservation Confirmation - {{customer_name}}';
     emailSubject = emailSubject.replace(/{{customer_name}}/g, customer_name);
@@ -145,6 +270,11 @@ The Patschi Team`;
       `Content-Transfer-Encoding: 7bit`,
       ``,
       emailPayload.text,
+      `--${boundary}`,
+      `Content-Type: text/html; charset=UTF-8`,
+      `Content-Transfer-Encoding: 7bit`,
+      ``,
+      htmlBody,
       `--${boundary}--`
     ].join('\r\n');
 
