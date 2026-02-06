@@ -71,7 +71,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
         const { createClient } = supabase;
 
         // Initialize Supabase client
@@ -150,6 +150,7 @@
             const [success, setSuccess] = useState(false);
             const [bookingCode, setBookingCode] = useState('');
             const [cardElement, setCardElement] = useState(null);
+            const cardElementRef = useRef(null);
             const [paymentRequest, setPaymentRequest] = useState(null);
             const [stripeEnabled, setStripeEnabled] = useState(true);
 
@@ -208,6 +209,7 @@
                         },
                     });
                     console.log('Card element created successfully:', card);
+                    cardElementRef.current = card;
                     setCardElement(card);
                 } catch (err) {
                     console.error('Error initializing Stripe elements:', err);
@@ -242,16 +244,17 @@
 
             useEffect(() => {
                 if (step === 3) {
-                    console.log('Step 3 reached, cardElement:', cardElement);
+                    const card = cardElementRef.current || cardElement;
+                    console.log('Step 3 reached, cardElement from ref:', cardElementRef.current, 'from state:', cardElement);
                     initializePaymentRequest();
-                    if (cardElement) {
+                    if (card) {
                         setTimeout(() => {
                             try {
                                 const cardContainer = document.getElementById('card-element');
                                 console.log('Attempting to mount card element, container:', cardContainer, 'hasChildren:', cardContainer?.hasChildNodes());
                                 if (cardContainer && !cardContainer.hasChildNodes()) {
                                     console.log('Mounting card element to #card-element');
-                                    cardElement.mount('#card-element');
+                                    card.mount('#card-element');
                                     console.log('Card element mounted successfully');
                                 }
                             } catch (err) {
@@ -530,7 +533,8 @@
             };
 
             const handleSubmit = async () => {
-                if (!stripe || !cardElement) {
+                const card = cardElementRef.current || cardElement;
+                if (!stripe || !card) {
                     setError('Stripe ist noch nicht geladen. Bitte versuchen Sie es erneut.');
                     return;
                 }
@@ -543,7 +547,7 @@
 
                     const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
                         payment_method: {
-                            card: cardElement,
+                            card: card,
                             billing_details: {
                                 name: formData.customer_name,
                                 email: formData.customer_email,
