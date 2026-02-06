@@ -1404,12 +1404,12 @@ export function ReservationManager() {
                   ))}
                 </div>
                 <div className="bg-slate-900 border border-slate-600 rounded-lg p-2 max-h-48 md:max-h-56 overflow-y-auto">
-                  {allTables.filter(table => table.capacity > 0 && table.room_id === tableRoomFilter).length === 0 ? (
+                  {allTables.filter(table => table.capacity > 0 && table.room_id === tableRoomFilter && table.is_bookable).length === 0 ? (
                     <p className="text-sm text-slate-500">{t('reservations.no_tables_available')}</p>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5">
                       {allTables
-                        .filter(table => table.capacity > 0 && table.room_id === tableRoomFilter)
+                        .filter(table => table.capacity > 0 && table.room_id === tableRoomFilter && table.is_bookable)
                         .sort((a, b) => {
                           const numA = parseInt(a.table_number) || 0;
                           const numB = parseInt(b.table_number) || 0;
@@ -1762,12 +1762,12 @@ export function ReservationManager() {
                   ))}
                 </div>
                 <div className="bg-slate-900 border border-slate-600 rounded-lg p-2 max-h-48 md:max-h-56 overflow-y-auto">
-                  {allTables.filter(table => table.capacity > 0 && table.room_id === tableRoomFilter).length === 0 ? (
+                  {allTables.filter(table => table.capacity > 0 && table.room_id === tableRoomFilter && table.is_bookable).length === 0 ? (
                     <p className="text-sm text-slate-500">{t('reservations.no_tables_available')}</p>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5">
                       {allTables
-                        .filter(table => table.capacity > 0 && table.room_id === tableRoomFilter)
+                        .filter(table => table.capacity > 0 && table.room_id === tableRoomFilter && table.is_bookable)
                         .sort((a, b) => {
                           const numA = parseInt(a.table_number) || 0;
                           const numB = parseInt(b.table_number) || 0;
