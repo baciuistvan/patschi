@@ -1234,7 +1234,7 @@
                       </div>
                     </div>
                   ` : `
-                    <div class="space-y-2 sm:space-y-3">
+                    <div class="space-y-2 sm:space-y-3 pb-20">
                       ${getFilteredReservations().map(res => {
                         const paymentAmount = res.payment_amount || res.deposit_amount || 0;
                         const paymentBadge = res.booking_method === 'free' ?
