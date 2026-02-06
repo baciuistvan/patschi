@@ -82,8 +82,7 @@
 
         // Stripe will be initialized after loading settings
         let stripe = null;
-        const STRIPE_TEST_KEY = 'pk_test_51OEezdIQvWRnwONv7TcGNlANpBkZGIrKaF7KkPmU0K6D3kcQ9BKGVH7d9eCJh0uBTU3CrKd3z0F7S9gK5XcPqmWt00wQYGx5gU';
-        const STRIPE_LIVE_KEY = 'pk_live_51OEezdIQvWRnwONvrkXBEz6EbaztIkLcUGh9X4oa5lFEN3KcCYiZqLT56yfDT4c97UdLsdVmDLQgA0w5eqXZKn9w008uzaLr2X';
+        // Stripe keys will be loaded from database settings
 
         // Icons as SVG components
         const Calendar = () => (
@@ -295,29 +294,35 @@
 
             const loadStripeSettings = async () => {
                 try {
-                    // Load stripe enabled setting
-                    const { data: stripeData } = await supabaseClient
+                    // Load all Stripe settings
+                    const { data: settings } = await supabaseClient
                         .from('settings')
-                        .select('value')
-                        .eq('key', 'stripe_enabled')
-                        .maybeSingle();
+                        .select('key, value')
+                        .in('key', ['stripe_enabled', 'stripe_mode', 'stripe_publishable_key', 'stripe_test_publishable_key']);
 
-                    const enabled = stripeData?.value === 'true';
+                    const settingsMap = {};
+                    settings?.forEach(s => settingsMap[s.key] = s.value);
+
+                    const enabled = settingsMap['stripe_enabled'] === 'true';
+                    const mode = settingsMap['stripe_mode'] || 'test';
+                    const testKey = settingsMap['stripe_test_publishable_key'];
+                    const liveKey = settingsMap['stripe_publishable_key'];
+
+                    console.log('Stripe settings loaded - enabled:', enabled, 'mode:', mode, 'hasTestKey:', !!testKey, 'hasLiveKey:', !!liveKey);
+
                     setStripeEnabled(enabled);
-
-                    // Load stripe mode setting
-                    const { data: modeData } = await supabaseClient
-                        .from('settings')
-                        .select('value')
-                        .eq('key', 'stripe_mode')
-                        .maybeSingle();
-
-                    const mode = modeData?.value || 'test';
-                    console.log('Stripe settings loaded - enabled:', enabled, 'mode:', mode);
 
                     // Initialize Stripe with the correct key
                     if (enabled && typeof Stripe !== 'undefined') {
-                        const stripeKey = mode === 'live' ? STRIPE_LIVE_KEY : STRIPE_TEST_KEY;
+                        const stripeKey = mode === 'live' ? liveKey : testKey;
+
+                        if (!stripeKey) {
+                            console.error('Stripe key not found in settings for mode:', mode);
+                            setError('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
+                            setStripeEnabled(false);
+                            return;
+                        }
+
                         console.log('Initializing Stripe with', mode, 'key');
                         stripe = Stripe(stripeKey);
 
