@@ -116,6 +116,28 @@ export function ReservationManager() {
     if (data) setAllTables(data);
   };
 
+  const getReservedTablesForDateTime = (date: string, time: string, excludeReservationId?: string): Set<string> => {
+    const reservedTableIds = new Set<string>();
+
+    reservations.forEach(res => {
+      // Skip the reservation being edited
+      if (excludeReservationId && res.id === excludeReservationId) {
+        return;
+      }
+
+      // Check if reservation matches the date and time and is not cancelled
+      if (res.reservation_date === date && res.reservation_time === time && res.status !== 'cancelled') {
+        if (res.reservation_tables && Array.isArray(res.reservation_tables)) {
+          res.reservation_tables.forEach((rt: any) => {
+            reservedTableIds.add(rt.table_id);
+          });
+        }
+      }
+    });
+
+    return reservedTableIds;
+  };
+
   const loadReservations = async () => {
     let query = supabase
       .from('reservations')
@@ -1417,11 +1439,18 @@ export function ReservationManager() {
                         })
                         .map((table) => {
                         const isSelected = selectedTables.includes(table.id);
+                        const reservedTables = (newReservation.reservation_date && newReservation.reservation_time)
+                          ? getReservedTablesForDateTime(newReservation.reservation_date, newReservation.reservation_time)
+                          : new Set<string>();
+                        const isReserved = reservedTables.has(table.id);
+
                         return (
                           <button
                             key={table.id}
                             type="button"
+                            disabled={isReserved}
                             onClick={() => {
+                              if (isReserved) return;
                               if (isSelected) {
                                 setSelectedTables(selectedTables.filter(id => id !== table.id));
                               } else {
@@ -1429,7 +1458,9 @@ export function ReservationManager() {
                               }
                             }}
                             className={`p-2 rounded-lg border-2 transition-all ${
-                              isSelected
+                              isReserved
+                                ? 'bg-red-900 border-red-600 text-red-200 cursor-not-allowed opacity-75'
+                                : isSelected
                                 ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
                                 : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
                             }`}
@@ -1437,6 +1468,7 @@ export function ReservationManager() {
                             <div className="text-center">
                               <div className="text-sm font-bold">{table.table_number || table.custom_label || `T${table.id.slice(0, 4)}`}</div>
                               <div className="text-[10px] opacity-80">{table.capacity}p</div>
+                              {isReserved && <div className="text-[9px] font-semibold mt-0.5">Reserviert</div>}
                             </div>
                           </button>
                         );
@@ -1775,11 +1807,18 @@ export function ReservationManager() {
                         })
                         .map((table) => {
                           const isSelected = selectedTables.includes(table.id);
+                          const reservedTables = (newReservation.reservation_date && newReservation.reservation_time)
+                            ? getReservedTablesForDateTime(newReservation.reservation_date, newReservation.reservation_time, editingReservation?.id)
+                            : new Set<string>();
+                          const isReserved = reservedTables.has(table.id);
+
                           return (
                             <button
                               key={table.id}
                               type="button"
+                              disabled={isReserved}
                               onClick={() => {
+                                if (isReserved) return;
                                 if (isSelected) {
                                   setSelectedTables(selectedTables.filter(id => id !== table.id));
                                 } else {
@@ -1787,7 +1826,9 @@ export function ReservationManager() {
                                 }
                               }}
                               className={`p-2 rounded-lg border-2 transition-all ${
-                                isSelected
+                                isReserved
+                                  ? 'bg-red-900 border-red-600 text-red-200 cursor-not-allowed opacity-75'
+                                  : isSelected
                                   ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
                                   : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
                               }`}
@@ -1797,6 +1838,7 @@ export function ReservationManager() {
                                   {table.table_number || table.custom_label || `T${table.id.slice(0, 4)}`}
                                 </div>
                                 <div className="text-[10px] opacity-80">{table.capacity}p</div>
+                                {isReserved && <div className="text-[9px] font-semibold mt-0.5">Reserviert</div>}
                               </div>
                             </button>
                           );
