@@ -116,6 +116,80 @@ Deno.serve(async (req: Request) => {
     if (payment_method !== undefined) updateData.payment_method = payment_method;
     if (booking_method !== undefined) updateData.booking_method = booking_method;
 
+    // If changing date, time, or tables, check for conflicts
+    if ((reservation_date !== undefined || reservation_time !== undefined || selected_tables !== undefined) && selected_tables !== undefined && Array.isArray(selected_tables) && selected_tables.length > 0) {
+      // Get current reservation to use its date/time if not being updated
+      const { data: currentReservation, error: fetchError } = await supabase
+        .from("reservations")
+        .select("reservation_date, reservation_time, duration_minutes")
+        .eq("id", reservation_id)
+        .maybeSingle();
+
+      if (fetchError || !currentReservation) {
+        throw new Error('Failed to fetch current reservation');
+      }
+
+      const finalDate = reservation_date !== undefined ? reservation_date : currentReservation.reservation_date;
+      const finalTime = reservation_time !== undefined ? reservation_time : currentReservation.reservation_time;
+      const durationMinutes = currentReservation.duration_minutes || 120;
+
+      // Calculate time window
+      const requestedStartTime = new Date(`${finalDate}T${finalTime}`);
+      const requestedEndTime = new Date(requestedStartTime.getTime() + durationMinutes * 60000);
+
+      // Check each table for conflicts (excluding this reservation)
+      for (const tableId of selected_tables) {
+        const { data: existingReservations, error: checkError } = await supabase
+          .from('reservation_tables')
+          .select(`
+            reservation_id,
+            reservations!inner (
+              id,
+              reservation_time,
+              reservation_date,
+              duration_minutes,
+              status
+            )
+          `)
+          .eq('table_id', tableId)
+          .eq('reservations.reservation_date', finalDate)
+          .in('reservations.status', ['confirmed', 'pending'])
+          .neq('reservations.id', reservation_id); // Exclude the current reservation
+
+        if (checkError) {
+          console.error('Error checking for conflicts:', checkError);
+          throw new Error('Failed to verify table availability');
+        }
+
+        // Check for time overlaps
+        if (existingReservations && existingReservations.length > 0) {
+          for (const existing of existingReservations) {
+            const res = existing.reservations as any;
+            const existingStartTime = new Date(`${res.reservation_date}T${res.reservation_time}`);
+            const existingEndTime = new Date(existingStartTime.getTime() + (res.duration_minutes || 120) * 60000);
+
+            // Check for time overlap
+            if (
+              (requestedStartTime >= existingStartTime && requestedStartTime < existingEndTime) ||
+              (requestedEndTime > existingStartTime && requestedEndTime <= existingEndTime) ||
+              (requestedStartTime <= existingStartTime && requestedEndTime >= existingEndTime)
+            ) {
+              return new Response(
+                JSON.stringify({
+                  error: 'Dieser Tisch ist für die gewählte Zeit bereits gebucht. Bitte wählen Sie einen anderen Tisch oder eine andere Zeit.',
+                  reason: 'table_conflict'
+                }),
+                {
+                  status: 409,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+              );
+            }
+          }
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from("reservations")
       .update(updateData)

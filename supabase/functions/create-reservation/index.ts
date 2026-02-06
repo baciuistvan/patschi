@@ -59,6 +59,63 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Final availability check to prevent overbooking
+    if (selected_tables && Array.isArray(selected_tables) && selected_tables.length > 0) {
+      // Calculate time window for the reservation
+      const requestedStartTime = new Date(`${reservation_date}T${reservation_time}`);
+      const requestedEndTime = new Date(requestedStartTime.getTime() + (duration_minutes || 120) * 60000);
+
+      // Check each table for conflicts
+      for (const tableId of selected_tables) {
+        const { data: existingReservations, error: checkError } = await supabase
+          .from('reservation_tables')
+          .select(`
+            reservation_id,
+            reservations!inner (
+              reservation_time,
+              reservation_date,
+              duration_minutes,
+              status
+            )
+          `)
+          .eq('table_id', tableId)
+          .eq('reservations.reservation_date', reservation_date)
+          .in('reservations.status', ['confirmed', 'pending']);
+
+        if (checkError) {
+          console.error('Error checking for conflicts:', checkError);
+          throw new Error('Failed to verify table availability');
+        }
+
+        // Check for time overlaps
+        if (existingReservations && existingReservations.length > 0) {
+          for (const existing of existingReservations) {
+            const res = existing.reservations as any;
+            const existingStartTime = new Date(`${res.reservation_date}T${res.reservation_time}`);
+            const existingEndTime = new Date(existingStartTime.getTime() + (res.duration_minutes || 120) * 60000);
+
+            // Check for time overlap
+            if (
+              (requestedStartTime >= existingStartTime && requestedStartTime < existingEndTime) ||
+              (requestedEndTime > existingStartTime && requestedEndTime <= existingEndTime) ||
+              (requestedStartTime <= existingStartTime && requestedEndTime >= existingEndTime)
+            ) {
+              return new Response(
+                JSON.stringify({
+                  error: 'Dieser Tisch ist für die gewählte Zeit bereits gebucht. Bitte wählen Sie ein anderes Datum oder kontaktieren Sie uns direkt.',
+                  reason: 'table_conflict'
+                }),
+                {
+                  status: 409,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+              );
+            }
+          }
+        }
+      }
+    }
+
     // Generate unique booking code
     const booking_code = generateBookingCode();
 
