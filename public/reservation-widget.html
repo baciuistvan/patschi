@@ -26,9 +26,15 @@
             border: 2px solid #cbd5e1;
             border-radius: 12px;
             background: white;
+            min-height: 44px;
         }
         .StripeElement {
             padding: 8px 0;
+        }
+        #card-element:empty:before {
+            content: 'Zahlungsoption wird geladen...';
+            color: #94a3b8;
+            font-size: 14px;
         }
 
         /* Normalize input styling across all devices */
@@ -165,12 +171,6 @@
                     loadRooms();
                     loadDepositAmount();
                     await loadStripeSettings();
-
-                    // Initialize Stripe elements after settings are loaded
-                    setTimeout(() => {
-                        console.log('Initializing Stripe elements, stripe object:', stripe);
-                        initializeStripeElements();
-                    }, 200);
                 };
                 initialize();
             }, []);
@@ -189,7 +189,9 @@
                         setStripeEnabled(false);
                         return;
                     }
+                    console.log('Creating Stripe Elements instance');
                     const elements = stripe.elements();
+                    console.log('Creating card element');
                     const card = elements.create('card', {
                         style: {
                             base: {
@@ -205,6 +207,7 @@
                             },
                         },
                     });
+                    console.log('Card element created successfully:', card);
                     setCardElement(card);
                 } catch (err) {
                     console.error('Error initializing Stripe elements:', err);
@@ -239,18 +242,25 @@
 
             useEffect(() => {
                 if (step === 3) {
+                    console.log('Step 3 reached, cardElement:', cardElement);
                     initializePaymentRequest();
                     if (cardElement) {
                         setTimeout(() => {
                             try {
                                 const cardContainer = document.getElementById('card-element');
+                                console.log('Attempting to mount card element, container:', cardContainer, 'hasChildren:', cardContainer?.hasChildNodes());
                                 if (cardContainer && !cardContainer.hasChildNodes()) {
+                                    console.log('Mounting card element to #card-element');
                                     cardElement.mount('#card-element');
+                                    console.log('Card element mounted successfully');
                                 }
                             } catch (err) {
                                 console.error('Error mounting card element:', err);
+                                setError('Fehler beim Laden der Zahlungsoption. Bitte laden Sie die Seite neu.');
                             }
                         }, 100);
+                    } else {
+                        console.warn('No card element available at step 3');
                     }
                 }
             }, [step, cardElement, formData.payment_amount]);
@@ -307,6 +317,14 @@
                         const stripeKey = mode === 'live' ? STRIPE_LIVE_KEY : STRIPE_TEST_KEY;
                         console.log('Initializing Stripe with', mode, 'key');
                         stripe = Stripe(stripeKey);
+
+                        // Initialize card element immediately after Stripe is ready
+                        setTimeout(() => {
+                            console.log('Creating Stripe card element');
+                            initializeStripeElements();
+                        }, 100);
+                    } else {
+                        console.warn('Stripe not enabled or not available');
                     }
                 } catch (err) {
                     console.error('Error loading Stripe settings:', err);
