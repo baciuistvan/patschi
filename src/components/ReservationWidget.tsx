@@ -17,7 +17,6 @@ export function ReservationWidget() {
   const [error, setError] = useState('');
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [selectedTables, setSelectedTables] = useState<any[]>([]);
-  const [tablesNeeded, setTablesNeeded] = useState(1);
   const [success, setSuccess] = useState(false);
   const [bookingCode, setBookingCode] = useState('');
   const [stripe, setStripe] = useState<Stripe | null>(null);
@@ -49,7 +48,6 @@ export function ReservationWidget() {
   useEffect(() => {
     setAvailabilityChecked(false);
     setSelectedTables([]);
-    setTablesNeeded(1);
     setError('');
   }, [formData.reservation_date, formData.party_size, formData.room_id]);
 
@@ -307,7 +305,6 @@ export function ReservationWidget() {
         if (!availability.available) {
           setAvailabilityChecked(false);
           setSelectedTables([]);
-          setTablesNeeded(1);
           let errorMessage = availability.message || 'Keine Verfügbarkeit';
           if (availability.reason === 'closed') {
             errorMessage = 'An diesem Datum sind alle Tische geschlossen. Bitte wählen Sie ein anderes Datum.';
@@ -319,9 +316,8 @@ export function ReservationWidget() {
           setError(errorMessage);
           return;
         }
-        // Store selected tables info
+        // Store selected table info
         setSelectedTables(availability.selected_tables || []);
-        setTablesNeeded(availability.tables_needed || 1);
         setAvailabilityChecked(true);
       }
 
@@ -725,14 +721,7 @@ export function ReservationWidget() {
         <div className="mb-6 bg-emerald-50 border-2 border-emerald-200 text-emerald-700 px-5 py-4 rounded-xl font-medium">
           <div className="flex items-center gap-2">
             <Check className="w-5 h-5" />
-            <div className="flex flex-col gap-1">
-              <span>Tische verfügbar! Sie können mit Ihrer Buchung fortfahren.</span>
-              {tablesNeeded > 1 && (
-                <span className="text-sm">
-                  Für Ihre Gruppe von {formData.party_size} Personen werden {tablesNeeded} Tische reserviert.
-                </span>
-              )}
-            </div>
+            <span>Tisch verfügbar! Sie können mit Ihrer Buchung fortfahren.</span>
           </div>
         </div>
       )}
