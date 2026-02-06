@@ -2140,6 +2140,16 @@
         roomSelect.appendChild(option);
       });
 
+      // Handle room selection change
+      roomSelect.onchange = (e) => {
+        const selectedRoomId = e.target.value;
+        if (selectedRoomId) {
+          resTableRoomFilter = selectedRoomId;
+          setupRoomFilterButtons();
+          updateTablesDisplay();
+        }
+      };
+
       // Load all tables
       await loadAllTablesForReservation();
 
@@ -2208,6 +2218,29 @@
       });
     }
 
+    function getReservedTablesForDateTime(date, time) {
+      // Get reservations for the selected date/time
+      const reservedTableIds = new Set();
+
+      state.reservations.forEach(res => {
+        // Skip the current reservation being edited
+        if (resEditMode && resEditReservation && res.id === resEditReservation.id) {
+          return;
+        }
+
+        // Check if reservation matches the date and time
+        if (res.reservation_date === date && res.reservation_time === time && res.status !== 'cancelled') {
+          if (res.reservation_tables && Array.isArray(res.reservation_tables)) {
+            res.reservation_tables.forEach(rt => {
+              reservedTableIds.add(rt.table_id);
+            });
+          }
+        }
+      });
+
+      return reservedTableIds;
+    }
+
     function updateTablesDisplay() {
       const grid = document.getElementById('tablesGrid');
       const filteredTables = resAllTables.filter(t => t.capacity > 0 && t.room_id === resTableRoomFilter);
@@ -2217,6 +2250,13 @@
         return;
       }
 
+      // Get selected date and time to check for reserved tables
+      const selectedDate = document.getElementById('resDate')?.value;
+      const selectedTime = document.getElementById('resTime')?.value;
+      const reservedTables = (selectedDate && selectedTime)
+        ? getReservedTablesForDateTime(selectedDate, selectedTime)
+        : new Set();
+
       grid.innerHTML = '';
       filteredTables.sort((a, b) => {
         const numA = parseInt(a.table_number) || 0;
@@ -2224,20 +2264,35 @@
         return numA - numB;
       }).forEach(table => {
         const isSelected = resSelectedTables.includes(table.id);
+        const isReserved = reservedTables.has(table.id);
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = `p-2 rounded-lg border-2 transition-all ${
-          isSelected
-            ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
-            : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500'
-        }`;
+
+        // Different styling for reserved, selected, or available tables
+        let buttonClass = '';
+        if (isReserved) {
+          buttonClass = 'bg-red-900 border-red-600 text-red-200 cursor-not-allowed opacity-75';
+        } else if (isSelected) {
+          buttonClass = 'bg-blue-600 border-blue-400 text-white shadow-lg';
+        } else {
+          buttonClass = 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500';
+        }
+
+        button.className = `p-2 rounded-lg border-2 transition-all ${buttonClass}`;
         button.innerHTML = `
           <div class="text-center">
             <div class="text-sm font-bold">${table.table_number || table.custom_label || `T${table.id.slice(0,4)}`}</div>
             <div class="text-[10px] opacity-80">${table.capacity}p</div>
+            ${isReserved ? '<div class="text-[9px] font-semibold mt-0.5">Reserviert</div>' : ''}
           </div>
         `;
+
         button.onclick = () => {
+          // Prevent clicking reserved tables
+          if (isReserved) {
+            return;
+          }
+
           if (isSelected) {
             resSelectedTables = resSelectedTables.filter(id => id !== table.id);
           } else {
@@ -2246,6 +2301,12 @@
           updateTablesDisplay();
           updateSelectedTablesInfo();
         };
+
+        // Disable button if table is reserved
+        if (isReserved) {
+          button.disabled = true;
+        }
+
         grid.appendChild(button);
       });
     }
@@ -2275,11 +2336,17 @@
         }
       };
 
-      // Date change - update days grid
+      // Date change - update days grid and tables display
       document.getElementById('resDate').onchange = () => {
         if (document.getElementById('multipleDays').checked) {
           updateDaysGrid();
         }
+        updateTablesDisplay();
+      };
+
+      // Time change - update tables display
+      document.getElementById('resTime').onchange = () => {
+        updateTablesDisplay();
       };
 
       // Booking method buttons
