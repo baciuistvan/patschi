@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const sessionToken = `crew_${crewUser.id}_${Date.now()}`;
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000); // 10 years
 
     const { error: sessionError } = await supabase
       .from("crew_sessions")
