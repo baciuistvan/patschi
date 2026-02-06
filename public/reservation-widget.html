@@ -74,8 +74,10 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE'
         );
 
-        // Initialize Stripe
-        const stripe = Stripe('pk_live_51OEezdIQvWRnwONvrkXBEz6EbaztIkLcUGh9X4oa5lFEN3KcCYiZqLT56yfDT4c97UdLsdVmDLQgA0w5eqXZKn9w008uzaLr2X');
+        // Stripe will be initialized after loading settings
+        let stripe = null;
+        const STRIPE_TEST_KEY = 'pk_test_51OEezdIQvWRnwONv7TcGNlANpBkZGIrKaF7KkPmU0K6D3kcQ9BKGVH7d9eCJh0uBTU3CrKd3z0F7S9gK5XcPqmWt00wQYGx5gU';
+        const STRIPE_LIVE_KEY = 'pk_live_51OEezdIQvWRnwONvrkXBEz6EbaztIkLcUGh9X4oa5lFEN3KcCYiZqLT56yfDT4c97UdLsdVmDLQgA0w5eqXZKn9w008uzaLr2X';
 
         // Icons as SVG components
         const Calendar = () => (
@@ -158,10 +160,19 @@
             });
 
             useEffect(() => {
-                loadRooms();
-                loadDepositAmount();
-                loadStripeSettings();
-                initializeStripeElements();
+                console.log('Component mounted, Stripe available:', typeof Stripe !== 'undefined');
+                const initialize = async () => {
+                    loadRooms();
+                    loadDepositAmount();
+                    await loadStripeSettings();
+
+                    // Initialize Stripe elements after settings are loaded
+                    setTimeout(() => {
+                        console.log('Initializing Stripe elements, stripe object:', stripe);
+                        initializeStripeElements();
+                    }, 200);
+                };
+                initialize();
             }, []);
 
             useEffect(() => {
@@ -173,6 +184,11 @@
 
             const initializeStripeElements = () => {
                 try {
+                    if (!stripe) {
+                        console.warn('Stripe not available, skipping card element initialization');
+                        setStripeEnabled(false);
+                        return;
+                    }
                     const elements = stripe.elements();
                     const card = elements.create('card', {
                         style: {
@@ -192,28 +208,33 @@
                     setCardElement(card);
                 } catch (err) {
                     console.error('Error initializing Stripe elements:', err);
+                    setStripeEnabled(false);
                 }
             };
 
             const initializePaymentRequest = () => {
-                if (!formData.payment_amount) return;
+                if (!formData.payment_amount || !stripe) return;
 
-                const pr = stripe.paymentRequest({
-                    country: 'AT',
-                    currency: 'eur',
-                    total: {
-                        label: 'Reservierungs-Anzahlung',
-                        amount: formData.payment_amount,
-                    },
-                    requestPayerName: true,
-                    requestPayerEmail: true,
-                });
+                try {
+                    const pr = stripe.paymentRequest({
+                        country: 'AT',
+                        currency: 'eur',
+                        total: {
+                            label: 'Reservierungs-Anzahlung',
+                            amount: formData.payment_amount,
+                        },
+                        requestPayerName: true,
+                        requestPayerEmail: true,
+                    });
 
-                pr.canMakePayment().then((result) => {
-                    if (result) {
-                        setPaymentRequest(pr);
-                    }
-                });
+                    pr.canMakePayment().then((result) => {
+                        if (result) {
+                            setPaymentRequest(pr);
+                        }
+                    });
+                } catch (err) {
+                    console.error('Error initializing payment request:', err);
+                }
             };
 
             useEffect(() => {
@@ -260,14 +281,36 @@
             };
 
             const loadStripeSettings = async () => {
-                const { data: stripeData } = await supabaseClient
-                    .from('settings')
-                    .select('value')
-                    .eq('key', 'stripe_enabled')
-                    .maybeSingle();
+                try {
+                    // Load stripe enabled setting
+                    const { data: stripeData } = await supabaseClient
+                        .from('settings')
+                        .select('value')
+                        .eq('key', 'stripe_enabled')
+                        .maybeSingle();
 
-                if (stripeData) {
-                    setStripeEnabled(stripeData.value === 'true');
+                    const enabled = stripeData?.value === 'true';
+                    setStripeEnabled(enabled);
+
+                    // Load stripe mode setting
+                    const { data: modeData } = await supabaseClient
+                        .from('settings')
+                        .select('value')
+                        .eq('key', 'stripe_mode')
+                        .maybeSingle();
+
+                    const mode = modeData?.value || 'test';
+                    console.log('Stripe settings loaded - enabled:', enabled, 'mode:', mode);
+
+                    // Initialize Stripe with the correct key
+                    if (enabled && typeof Stripe !== 'undefined') {
+                        const stripeKey = mode === 'live' ? STRIPE_LIVE_KEY : STRIPE_TEST_KEY;
+                        console.log('Initializing Stripe with', mode, 'key');
+                        stripe = Stripe(stripeKey);
+                    }
+                } catch (err) {
+                    console.error('Error loading Stripe settings:', err);
+                    setStripeEnabled(false);
                 }
             };
 
