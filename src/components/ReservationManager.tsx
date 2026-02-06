@@ -119,14 +119,21 @@ export function ReservationManager() {
   const getReservedTablesForDateTime = (date: string, time: string, excludeReservationId?: string): Set<string> => {
     const reservedTableIds = new Set<string>();
 
+    // Normalize time format to HH:MM (remove seconds if present)
+    const normalizeTime = (t: string) => t.slice(0, 5);
+    const normalizedInputTime = normalizeTime(time);
+
     reservations.forEach(res => {
       // Skip the reservation being edited
       if (excludeReservationId && res.id === excludeReservationId) {
         return;
       }
 
+      // Normalize the reservation time for comparison
+      const normalizedResTime = normalizeTime(res.reservation_time);
+
       // Check if reservation matches the date and time and is not cancelled
-      if (res.reservation_date === date && res.reservation_time === time && res.status !== 'cancelled') {
+      if (res.reservation_date === date && normalizedResTime === normalizedInputTime && res.status !== 'cancelled') {
         if (res.reservation_tables && Array.isArray(res.reservation_tables)) {
           res.reservation_tables.forEach((rt: any) => {
             reservedTableIds.add(rt.table_id);
