@@ -399,6 +399,11 @@
                         return;
                     }
 
+                    if (formData.party_size > 10) {
+                        setError('Die maximale Gruppengröße beträgt 10 Personen. Für größere Gruppen kontaktieren Sie uns bitte direkt.');
+                        return;
+                    }
+
                     // Check availability before proceeding
                     const availability = await checkAvailability();
                     if (!availability.available) {
@@ -826,16 +831,19 @@
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Users /> <span style={{marginLeft: '8px'}}>Anzahl der Personen</span>
+                                    <Users /> <span style={{marginLeft: '8px'}}>Anzahl der Personen (max. 10)</span>
                                 </label>
                                 <input
                                     type="number"
                                     min="1"
-                                    max="20"
+                                    max="10"
                                     value={formData.party_size}
                                     onChange={(e) => {
                                         const value = e.target.value;
-                                        setFormData({ ...formData, party_size: value === '' ? '' : (parseInt(value) || '') });
+                                        const numValue = parseInt(value);
+                                        if (value === '' || (numValue >= 1 && numValue <= 10)) {
+                                            setFormData({ ...formData, party_size: value === '' ? '' : numValue });
+                                        }
                                     }}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
