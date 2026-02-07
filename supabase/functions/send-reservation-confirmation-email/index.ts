@@ -71,7 +71,10 @@ Deno.serve(async (req: Request) => {
         "smtp_from_name",
         "email_subject",
         "email_body",
-        "email_body_html"
+        "email_body_html",
+        "payment_email_subject",
+        "payment_email_body",
+        "payment_email_body_html"
       ]);
 
     const settingsMap = settings?.reduce((acc, { key, value }) => {
@@ -108,18 +111,25 @@ Deno.serve(async (req: Request) => {
         .replace(/{{room_name}}/g, reservationData.room_name || 'Hauptraum')
         .replace(/{{special_requests}}/g, special_requests || 'Keine')
         .replace(/{{deposit_amount}}/g, depositAmountFormatted)
-        .replace(/{{booking_code}}/g, booking_code);
+        .replace(/{{booking_code}}/g, booking_code)
+        .replace(/{{payment_link_url}}/g, payment_link_url || '');
     };
+
+    // Determine which templates to use based on whether payment link is present
+    const usePaymentTemplate = !!payment_link_url;
+    const customSubject = usePaymentTemplate ? settingsMap.payment_email_subject : settingsMap.email_subject;
+    const customBody = usePaymentTemplate ? settingsMap.payment_email_body : settingsMap.email_body;
+    const customBodyHtml = usePaymentTemplate ? settingsMap.payment_email_body_html : settingsMap.email_body_html;
 
     // Use custom HTML email template if available, otherwise use default
     let htmlBody = '';
 
-    if (settingsMap.email_body_html) {
+    if (customBodyHtml) {
       // Use custom HTML template and replace variables
-      htmlBody = replaceVariables(settingsMap.email_body_html);
-    } else if (settingsMap.email_body) {
+      htmlBody = replaceVariables(customBodyHtml);
+    } else if (customBody) {
       // Fallback: Wrap plain text custom body in simple HTML wrapper
-      const customBody = replaceVariables(settingsMap.email_body);
+      const bodyText = replaceVariables(customBody);
 
       htmlBody = `<!DOCTYPE html>
 <html>
@@ -136,7 +146,7 @@ Deno.serve(async (req: Request) => {
           <tr>
             <td style="padding: 40px 30px;">
               <div style="color: #1f2937; font-size: 16px; line-height: 1.6;">
-                ${customBody.replace(/\n/g, '<br>')}
+                ${bodyText.replace(/\n/g, '<br>')}
               </div>
             </td>
           </tr>
@@ -307,8 +317,8 @@ Deno.serve(async (req: Request) => {
 
     // Plain text fallback - use custom template or default
     let emailBody = '';
-    if (settingsMap.email_body) {
-      emailBody = replaceVariables(settingsMap.email_body);
+    if (customBody) {
+      emailBody = replaceVariables(customBody);
     } else {
       emailBody = `Liebe/r ${customer_name},
 
@@ -333,7 +343,7 @@ Mit freundlichen Grüßen,
 Das Patschi Team`;
     }
 
-    let emailSubject = settingsMap.email_subject || 'Reservierungsbestätigung - {{customer_name}}';
+    let emailSubject = customSubject || 'Reservierungsbestätigung - {{customer_name}}';
     emailSubject = replaceVariables(emailSubject);
 
     const smtpPort = parseInt(settingsMap.smtp_port || "587");
