@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Status Check</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-2xl font-bold mb-6">Payment Status Diagnostic</h1>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Enter Booking Code:</label>
+          <input
+            type="text"
+            id="bookingCode"
+            placeholder="e.g., ABC12345"
+            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <button
+          onclick="checkStatus()"
+          class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700"
+        >
+          Check Status
+        </button>
+      </div>
+
+      <div id="results" class="mt-6"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('supabase_url');
+    const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabase_anon_key');
+
+    if (!supabaseUrl || !supabaseKey) {
+      document.getElementById('results').innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p class="text-red-800">Please enter your Supabase credentials:</p>
+          <input type="text" id="url" placeholder="Supabase URL" class="w-full mt-2 px-3 py-2 border rounded" />
+          <input type="text" id="key" placeholder="Anon Key" class="w-full mt-2 px-3 py-2 border rounded" />
+          <button onclick="saveCredentials()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+        </div>
+      `;
+    }
+
+    window.saveCredentials = () => {
+      const url = document.getElementById('url').value;
+      const key = document.getElementById('key').value;
+      localStorage.setItem('supabase_url', url);
+      localStorage.setItem('supabase_anon_key', key);
+      location.reload();
+    };
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    window.checkStatus = async () => {
+      const bookingCode = document.getElementById('bookingCode').value.trim().toUpperCase();
+      const resultsDiv = document.getElementById('results');
+
+      if (!bookingCode) {
+        resultsDiv.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">Please enter a booking code</div>';
+        return;
+      }
+
+      resultsDiv.innerHTML = '<div class="text-center py-4">Loading...</div>';
+
+      try {
+        // Check reservation
+        const { data: reservation, error } = await supabase
+          .from('reservations')
+          .select('*')
+          .eq('booking_code', bookingCode)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!reservation) {
+          resultsDiv.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">No reservation found with that booking code</div>';
+          return;
+        }
+
+        // Check SMTP settings
+        const { data: smtpSettings } = await supabase
+          .from('settings')
+          .select('key, value')
+          .in('key', ['smtp_host', 'smtp_user', 'smtp_password']);
+
+        const hasSmtp = smtpSettings && smtpSettings.length >= 3;
+
+        resultsDiv.innerHTML = `
+          <div class="space-y-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 class="font-bold mb-2">Reservation Found</h3>
+              <div class="text-sm space-y-1">
+                <p><strong>Code:</strong> ${reservation.booking_code}</p>
+                <p><strong>Name:</strong> ${reservation.customer_name}</p>
+                <p><strong>Email:</strong> ${reservation.customer_email}</p>
+                <p><strong>Status:</strong> <span class="font-semibold ${reservation.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}">${reservation.status}</span></p>
+                <p><strong>Payment:</strong> <span class="font-semibold ${reservation.payment_status === 'paid' ? 'text-green-600' : 'text-red-600'}">${reservation.payment_status}</span></p>
+                ${reservation.payment_link_url ? `<p><strong>Payment Link:</strong> <a href="${reservation.payment_link_url}" class="text-blue-600 underline" target="_blank">Click here</a></p>` : ''}
+              </div>
+            </div>
+
+            <div class="bg-${hasSmtp ? 'green' : 'red'}-50 border border-${hasSmtp ? 'green' : 'red'}-200 rounded-lg p-4">
+              <h3 class="font-bold mb-2">SMTP Email Settings</h3>
+              <p class="text-sm text-${hasSmtp ? 'green' : 'red'}-800">
+                ${hasSmtp ? '✓ SMTP is configured' : '✗ SMTP not configured - emails cannot be sent'}
+              </p>
+              ${!hasSmtp ? '<p class="text-sm text-red-700 mt-2">Go to Admin Dashboard → Settings → Email Settings to configure SMTP</p>' : ''}
+            </div>
+
+            ${reservation.payment_status === 'paid' ? `
+              <button onclick="resendEmail('${reservation.id}')" class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700">
+                Resend Confirmation Email
+              </button>
+            ` : ''}
+          </div>
+        `;
+      } catch (err) {
+        console.error('Error:', err);
+        resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">Error: ${err.message}</div>`;
+      }
+    };
+
+    window.resendEmail = async (reservationId) => {
+      const resultsDiv = document.getElementById('results');
+
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/send-reservation-confirmation-email`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reservationId: reservationId,
+            is_payment_confirmation: true
+          })
+        });
+
+        if (response.ok) {
+          alert('Email sent successfully!');
+        } else {
+          const error = await response.text();
+          alert('Failed to send email: ' + error);
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    };
+  </script>
+</body>
+</html>
