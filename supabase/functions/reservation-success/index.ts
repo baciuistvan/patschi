@@ -137,6 +137,21 @@ ${reservation ? `
             </div>
           </div>
 
+          ${reservation.payment_amount && parseFloat(reservation.payment_amount) > 0 ? `
+          <div class="flex items-start gap-4 p-4 bg-green-50 rounded-xl border-2 border-green-200">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-xs text-gray-500 mb-1">Bezahlter Betrag</p>
+              <p class="font-bold text-green-700 text-xl">€${parseFloat(reservation.payment_amount).toFixed(2)}</p>
+              <p class="text-xs text-green-600 mt-1">✓ Zahlung erfolgreich abgeschlossen</p>
+            </div>
+          </div>
+          ` : ''}
+
           ${reservation.special_requests ? `
           <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
             <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
