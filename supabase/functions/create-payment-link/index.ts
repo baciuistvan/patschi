@@ -30,8 +30,6 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const requestOrigin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/[^/]*$/, '') || '';
-
     const {
       customer_name,
       customer_email,
@@ -68,7 +66,13 @@ Deno.serve(async (req: Request) => {
       ? (settings?.stripe_live_secret_key || Deno.env.get("STRIPE_SECRET_KEY"))
       : (settings?.stripe_test_secret_key || Deno.env.get("STRIPE_SECRET_KEY"));
 
-    const defaultSuccessUrl = `${supabaseUrl}/functions/v1/reservation-success`;
+    const { data: successSetting } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'success_page_url')
+      .maybeSingle();
+
+    const defaultSuccessUrl = successSetting?.value || `${supabaseUrl}/functions/v1/reservation-success`;
 
     if (!stripeKey) {
       return new Response(
