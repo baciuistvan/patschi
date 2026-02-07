@@ -8,6 +8,7 @@ export function EmailSettings() {
   const [emailFromName, setEmailFromName] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  const [emailBodyHtml, setEmailBodyHtml] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -16,6 +17,7 @@ export function EmailSettings() {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testingReservationEmail, setTestingReservationEmail] = useState(false);
   const [testReservationResult, setTestReservationResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'text' | 'html'>('text');
 
   useEffect(() => {
     loadEmailSettings();
@@ -25,7 +27,7 @@ export function EmailSettings() {
     const { data } = await supabase
       .from('settings')
       .select('*')
-      .in('key', ['email_from_name', 'email_subject', 'email_body']);
+      .in('key', ['email_from_name', 'email_subject', 'email_body', 'email_body_html']);
 
     if (data) {
       data.forEach(setting => {
@@ -38,6 +40,9 @@ export function EmailSettings() {
             break;
           case 'email_body':
             setEmailBody(setting.value);
+            break;
+          case 'email_body_html':
+            setEmailBodyHtml(setting.value);
             break;
         }
       });
@@ -54,6 +59,7 @@ export function EmailSettings() {
         { key: 'email_from_name', value: emailFromName },
         { key: 'email_subject', value: emailSubject },
         { key: 'email_body', value: emailBody },
+        { key: 'email_body_html', value: emailBodyHtml },
       ], { onConflict: 'key' });
 
       setSaveSuccess(true);
@@ -254,19 +260,63 @@ export function EmailSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                E-Mail-Text
-              </label>
-              <p className="text-xs text-slate-400 mb-3">
-                Der Hauptinhalt der Bestätigungs-E-Mail. Verwenden Sie die Variablen unten für dynamische Inhalte.
-              </p>
-              <textarea
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={12}
-                placeholder="Dear {{customer_name}},&#10;&#10;Thank you for your reservation..."
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-300">
+                  E-Mail-Inhalt
+                </label>
+                <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('text')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded transition ${
+                      activeTab === 'text'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Text
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('html')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded transition ${
+                      activeTab === 'html'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    HTML
+                  </button>
+                </div>
+              </div>
+
+              {activeTab === 'text' ? (
+                <>
+                  <p className="text-xs text-slate-400 mb-3">
+                    Einfacher Text für die E-Mail (wird als Fallback verwendet, wenn HTML nicht angezeigt werden kann)
+                  </p>
+                  <textarea
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    rows={12}
+                    placeholder="Liebe/r {{customer_name}},&#10;&#10;vielen Dank für Ihre Reservierung..."
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-400 mb-3">
+                    Vollständiger HTML-Code für die E-Mail. Verwenden Sie table-basiertes Layout für beste E-Mail-Client-Kompatibilität.
+                  </p>
+                  <textarea
+                    value={emailBodyHtml}
+                    onChange={(e) => setEmailBodyHtml(e.target.value)}
+                    rows={20}
+                    placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <meta charset='utf-8'>&#10;</head>&#10;<body>&#10;  <!-- Ihr HTML-Code hier -->&#10;</body>&#10;</html>"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

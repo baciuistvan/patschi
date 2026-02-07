@@ -68,7 +68,8 @@ Deno.serve(async (req: Request) => {
         "smtp_from_email",
         "smtp_from_name",
         "email_subject",
-        "email_body"
+        "email_body",
+        "email_body_html"
       ]);
 
     const settingsMap = settings?.reduce((acc, { key, value }) => {
@@ -108,14 +109,16 @@ Deno.serve(async (req: Request) => {
         .replace(/{{booking_code}}/g, booking_code);
     };
 
-    // Use custom email body from settings or fallback to default HTML template
+    // Use custom HTML email template if available, otherwise use default
     let htmlBody = '';
 
-    if (settingsMap.email_body) {
-      // Use custom template and replace variables
+    if (settingsMap.email_body_html) {
+      // Use custom HTML template and replace variables
+      htmlBody = replaceVariables(settingsMap.email_body_html);
+    } else if (settingsMap.email_body) {
+      // Fallback: Wrap plain text custom body in simple HTML wrapper
       const customBody = replaceVariables(settingsMap.email_body);
 
-      // Wrap custom body in professional email template
       htmlBody = `<!DOCTYPE html>
 <html>
 <head>
@@ -150,7 +153,7 @@ Deno.serve(async (req: Request) => {
 </body>
 </html>`;
     } else {
-      // Fallback to default template
+      // Use default beautiful template
       htmlBody = `
 <!DOCTYPE html>
 <html>
