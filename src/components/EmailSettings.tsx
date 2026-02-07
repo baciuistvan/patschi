@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Save, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { Mail, Save, CheckCircle, AlertCircle, Send, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -18,6 +18,7 @@ export function EmailSettings() {
   const [testingReservationEmail, setTestingReservationEmail] = useState(false);
   const [testReservationResult, setTestReservationResult] = useState<{ success: boolean; message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'text' | 'html'>('text');
+  const [showPreview, setShowPreview] = useState(true);
 
   useEffect(() => {
     loadEmailSettings();
@@ -48,6 +49,33 @@ export function EmailSettings() {
       });
     }
     setLoading(false);
+  };
+
+  const getPreviewHtml = () => {
+    // Replace variables with sample data for preview
+    const sampleData = {
+      customer_name: 'Max Mustermann',
+      customer_email: 'max@example.com',
+      customer_phone: '+43 123 456789',
+      booking_code: 'ABC123',
+      reservation_date: '15.03.2024',
+      reservation_time: '19:00',
+      party_size: '4',
+      table_number: 'Tisch 12',
+      room_name: 'Hauptraum',
+      special_requests: 'Fensterplatz bevorzugt',
+      deposit_amount: '50.00'
+    };
+
+    let html = emailBodyHtml || '';
+
+    // Replace all variables
+    Object.entries(sampleData).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      html = html.replace(regex, value);
+    });
+
+    return html;
   };
 
   const handleSave = async () => {
@@ -264,29 +292,50 @@ export function EmailSettings() {
                 <label className="block text-sm font-medium text-slate-300">
                   E-Mail-Inhalt
                 </label>
-                <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('text')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded transition ${
-                      activeTab === 'text'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Text
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('html')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded transition ${
-                      activeTab === 'html'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    HTML
-                  </button>
+                <div className="flex items-center space-x-3">
+                  {activeTab === 'html' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(!showPreview)}
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-300 hover:text-white hover:border-slate-600 transition text-sm"
+                    >
+                      {showPreview ? (
+                        <>
+                          <EyeOff className="w-4 h-4" />
+                          <span>Vorschau ausblenden</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-4 h-4" />
+                          <span>Vorschau anzeigen</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('text')}
+                      className={`px-4 py-1.5 text-sm font-medium rounded transition ${
+                        activeTab === 'text'
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('html')}
+                      className={`px-4 py-1.5 text-sm font-medium rounded transition ${
+                        activeTab === 'html'
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      HTML
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -308,13 +357,33 @@ export function EmailSettings() {
                   <p className="text-xs text-slate-400 mb-3">
                     Vollständiger HTML-Code für die E-Mail. Verwenden Sie table-basiertes Layout für beste E-Mail-Client-Kompatibilität.
                   </p>
-                  <textarea
-                    value={emailBodyHtml}
-                    onChange={(e) => setEmailBodyHtml(e.target.value)}
-                    rows={20}
-                    placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <meta charset='utf-8'>&#10;</head>&#10;<body>&#10;  <!-- Ihr HTML-Code hier -->&#10;</body>&#10;</html>"
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className={`grid gap-4 ${showPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className="flex flex-col">
+                      <div className="text-xs font-medium text-slate-400 mb-2">HTML Editor</div>
+                      <textarea
+                        value={emailBodyHtml}
+                        onChange={(e) => setEmailBodyHtml(e.target.value)}
+                        rows={24}
+                        placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <meta charset='utf-8'>&#10;</head>&#10;<body>&#10;  <!-- Ihr HTML-Code hier -->&#10;</body>&#10;</html>"
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      />
+                    </div>
+
+                    {showPreview && (
+                      <div className="flex flex-col">
+                        <div className="text-xs font-medium text-slate-400 mb-2">Live-Vorschau</div>
+                        <div className="bg-white rounded-lg overflow-hidden border border-slate-600 flex-1">
+                          <iframe
+                            srcDoc={getPreviewHtml()}
+                            className="w-full h-full"
+                            style={{ minHeight: '600px' }}
+                            sandbox="allow-same-origin"
+                            title="Email Preview"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
