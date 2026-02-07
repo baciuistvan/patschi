@@ -92,8 +92,66 @@ Deno.serve(async (req: Request) => {
     const formattedDate = reservation_date ? formatDate(reservation_date) : '';
     const depositAmountFormatted = (payment_amount || 0).toFixed(2);
 
-    // Create HTML email template
-    const htmlBody = `
+    // Function to replace template variables
+    const replaceVariables = (template: string) => {
+      return template
+        .replace(/{{customer_name}}/g, customer_name)
+        .replace(/{{customer_email}}/g, customer_email)
+        .replace(/{{customer_phone}}/g, reservationData.customer_phone || 'Nicht angegeben')
+        .replace(/{{reservation_date}}/g, formattedDate)
+        .replace(/{{reservation_time}}/g, reservation_time)
+        .replace(/{{party_size}}/g, party_size.toString())
+        .replace(/{{table_number}}/g, table_number)
+        .replace(/{{room_name}}/g, reservationData.room_name || 'Hauptraum')
+        .replace(/{{special_requests}}/g, special_requests || 'Keine')
+        .replace(/{{deposit_amount}}/g, depositAmountFormatted)
+        .replace(/{{booking_code}}/g, booking_code);
+    };
+
+    // Use custom email body from settings or fallback to default HTML template
+    let htmlBody = '';
+
+    if (settingsMap.email_body) {
+      // Use custom template and replace variables
+      const customBody = replaceVariables(settingsMap.email_body);
+
+      // Wrap custom body in professional email template
+      htmlBody = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservierungsbestätigung</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 40px 30px;">
+              <div style="color: #1f2937; font-size: 16px; line-height: 1.6;">
+                ${customBody.replace(/\n/g, '<br>')}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; margin: 0; font-size: 13px; line-height: 1.6;">
+                <strong style="color: #1f2937;">${settingsMap.smtp_from_name || 'Patschi'}</strong><br>
+                ${settingsMap.smtp_from_email}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+    } else {
+      // Fallback to default template
+      htmlBody = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -224,8 +282,14 @@ Deno.serve(async (req: Request) => {
 </body>
 </html>`;
 
-    // Plain text fallback
-    let emailBody = `Liebe/r ${customer_name},
+    }
+
+    // Plain text fallback - use custom template or default
+    let emailBody = '';
+    if (settingsMap.email_body) {
+      emailBody = replaceVariables(settingsMap.email_body);
+    } else {
+      emailBody = `Liebe/r ${customer_name},
 
 vielen Dank für Ihre Reservierung bei Patschi!
 
@@ -243,9 +307,10 @@ Wir freuen uns auf Ihren Besuch!
 
 Mit freundlichen Grüßen,
 Das Patschi Team`;
+    }
 
-    let emailSubject = settingsMap.email_subject || 'Reservation Confirmation - {{customer_name}}';
-    emailSubject = emailSubject.replace(/{{customer_name}}/g, customer_name);
+    let emailSubject = settingsMap.email_subject || 'Reservierungsbestätigung - {{customer_name}}';
+    emailSubject = replaceVariables(emailSubject);
 
     const smtpPort = parseInt(settingsMap.smtp_port || "587");
     const smtpSecure = settingsMap.smtp_secure === "true";

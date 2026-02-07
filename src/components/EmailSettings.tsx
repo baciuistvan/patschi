@@ -14,6 +14,8 @@ export function EmailSettings() {
   const [testEmail, setTestEmail] = useState('');
   const [testingEmail, setTestingEmail] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testingReservationEmail, setTestingReservationEmail] = useState(false);
+  const [testReservationResult, setTestReservationResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     loadEmailSettings();
@@ -138,6 +140,64 @@ export function EmailSettings() {
     }
   };
 
+  const handleTestReservationEmail = async () => {
+    if (!testEmail || !testEmail.includes('@')) {
+      setTestReservationResult({ success: false, message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein' });
+      return;
+    }
+
+    setTestingReservationEmail(true);
+    setTestReservationResult(null);
+
+    try {
+      const testReservation = {
+        customer_name: 'Max Mustermann',
+        customer_email: testEmail,
+        customer_phone: '+43 123 456789',
+        reservation_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        reservation_time: '15:45',
+        party_size: 4,
+        special_requests: 'Fensterplatz bevorzugt',
+        payment_amount: 350,
+        booking_code: 'TEST-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        table_number: 'Tisch 5',
+        room_name: 'Hauptraum'
+      };
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reservation-confirmation-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(testReservation)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setTestReservationResult({
+          success: true,
+          message: `Test-Reservierungsbestätigung erfolgreich an ${testEmail} gesendet! Bitte prüfen Sie Ihr Postfach.`
+        });
+      } else {
+        setTestReservationResult({
+          success: false,
+          message: result.error || 'Fehler beim Senden der Test-E-Mail. Bitte prüfen Sie die Konsole für Details.'
+        });
+        console.error('Test email error:', result);
+      }
+    } catch (error: any) {
+      setTestReservationResult({
+        success: false,
+        message: error.message || 'Ein Fehler ist beim Senden der Test-E-Mail aufgetreten'
+      });
+      console.error('Test email error:', error);
+    } finally {
+      setTestingReservationEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -149,9 +209,9 @@ export function EmailSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">{t('email.title')}</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">Reservierungsbestätigungs-E-Mail</h2>
         <p className="text-slate-400">
-          Customize the confirmation email sent to customers after booking
+          Passen Sie die Bestätigungs-E-Mail an, die nach einer Reservierung an Kunden gesendet wird
         </p>
       </div>
 
@@ -163,10 +223,10 @@ export function EmailSettings() {
           <div className="flex-1 space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                {t('email.from_name')}
+                Absendername
               </label>
               <p className="text-xs text-slate-400 mb-3">
-                The sender name that will appear in the email
+                Der Name, der als Absender in der E-Mail erscheint
               </p>
               <input
                 type="text"
@@ -179,10 +239,10 @@ export function EmailSettings() {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                {t('email.subject')}
+                E-Mail-Betreff
               </label>
               <p className="text-xs text-slate-400 mb-3">
-                The subject line for confirmation emails
+                Die Betreffzeile für Bestätigungs-E-Mails
               </p>
               <input
                 type="text"
@@ -195,10 +255,10 @@ export function EmailSettings() {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                {t('email.body')}
+                E-Mail-Text
               </label>
               <p className="text-xs text-slate-400 mb-3">
-                The main content of the confirmation email
+                Der Hauptinhalt der Bestätigungs-E-Mail. Verwenden Sie die Variablen unten für dynamische Inhalte.
               </p>
               <textarea
                 value={emailBody}
@@ -213,80 +273,84 @@ export function EmailSettings() {
       </div>
 
       <div className="bg-blue-900/20 border border-blue-800 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-3">Available Variables</h3>
+        <h3 className="text-lg font-semibold text-white mb-3">Verfügbare Variablen</h3>
         <p className="text-sm text-slate-300 mb-4">
-          You can use these placeholders in your email subject and body. They will be replaced with actual booking data:
+          Sie können diese Platzhalter in Betreff und Text verwenden. Sie werden automatisch durch die tatsächlichen Reservierungsdaten ersetzt:
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{customer_name}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Customer's full name</p>
+            <p className="text-slate-400 text-xs mt-1">Name des Kunden</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{customer_email}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Customer's email address</p>
+            <p className="text-slate-400 text-xs mt-1">E-Mail-Adresse des Kunden</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{customer_phone}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Customer's phone number</p>
+            <p className="text-slate-400 text-xs mt-1">Telefonnummer des Kunden</p>
+          </div>
+          <div className="bg-slate-900 rounded-lg p-3">
+            <code className="text-blue-400">{'{{booking_code}}'}</code>
+            <p className="text-slate-400 text-xs mt-1">Buchungsnummer</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{reservation_date}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Reservation date</p>
+            <p className="text-slate-400 text-xs mt-1">Reservierungsdatum</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{reservation_time}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Reservation time</p>
+            <p className="text-slate-400 text-xs mt-1">Reservierungszeit</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{party_size}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Number of guests</p>
+            <p className="text-slate-400 text-xs mt-1">Anzahl Personen</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{table_number}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Table number</p>
+            <p className="text-slate-400 text-xs mt-1">Tischnummer</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{room_name}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Room name</p>
+            <p className="text-slate-400 text-xs mt-1">Raumname</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{special_requests}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Special requests or notes</p>
+            <p className="text-slate-400 text-xs mt-1">Besondere Wünsche</p>
           </div>
           <div className="bg-slate-900 rounded-lg p-3">
             <code className="text-blue-400">{'{{deposit_amount}}'}</code>
-            <p className="text-slate-400 text-xs mt-1">Deposit amount paid</p>
+            <p className="text-slate-400 text-xs mt-1">Bezahlte Anzahlung</p>
           </div>
         </div>
       </div>
 
       <div className="bg-green-900/20 border border-green-800 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Test Email Configuration</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">Test-Reservierungsbestätigung senden</h3>
         <p className="text-sm text-slate-300 mb-4">
-          Send a test gift card email to verify your email configuration is working correctly.
+          Senden Sie eine Test-Reservierungsbestätigung, um Ihre E-Mail-Konfiguration und das Template zu überprüfen.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="email"
             value={testEmail}
             onChange={(e) => setTestEmail(e.target.value)}
-            placeholder="your@email.com"
+            placeholder="ihre@email.de"
             className="flex-1 px-4 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
           <button
-            onClick={handleTestEmail}
-            disabled={testingEmail}
+            onClick={handleTestReservationEmail}
+            disabled={testingReservationEmail}
             className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:opacity-50 flex items-center justify-center space-x-2 whitespace-nowrap"
           >
             <Send className="w-4 h-4" />
-            <span>{testingEmail ? 'Sending...' : 'Send Test Email'}</span>
+            <span>{testingReservationEmail ? 'Wird gesendet...' : 'Test-E-Mail senden'}</span>
           </button>
         </div>
-        {testResult && (
-          <div className={`mt-4 p-4 rounded-lg ${testResult.success ? 'bg-green-900/30 border border-green-700' : 'bg-red-900/30 border border-red-700'}`}>
-            <p className={`text-sm ${testResult.success ? 'text-green-300' : 'text-red-300'}`}>
-              {testResult.message}
+        {testReservationResult && (
+          <div className={`mt-4 p-4 rounded-lg ${testReservationResult.success ? 'bg-green-900/30 border border-green-700' : 'bg-red-900/30 border border-red-700'}`}>
+            <p className={`text-sm ${testReservationResult.success ? 'text-green-300' : 'text-red-300'}`}>
+              {testReservationResult.message}
             </p>
           </div>
         )}
@@ -301,12 +365,12 @@ export function EmailSettings() {
           {saveSuccess ? (
             <>
               <CheckCircle className="w-5 h-5" />
-              <span>Saved Successfully</span>
+              <span>Erfolgreich gespeichert</span>
             </>
           ) : (
             <>
               <Save className="w-5 h-5" />
-              <span>{saving ? 'Saving...' : 'Save Email Template'}</span>
+              <span>{saving ? 'Wird gespeichert...' : 'E-Mail-Vorlage speichern'}</span>
             </>
           )}
         </button>
