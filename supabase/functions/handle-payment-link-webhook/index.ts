@@ -71,11 +71,12 @@ Deno.serve(async (req: Request) => {
       if (reservations && reservations.length > 0) {
         const reservation = reservations[0];
 
-        // Update the reservation to mark as paid
+        // Update the reservation to mark as paid and confirmed
         const { error: updateError } = await supabase
           .from("reservations")
           .update({
             payment_status: "paid",
+            status: "confirmed",
             booking_method: "payment_link",
             stripe_payment_intent_id: paymentIntentId,
             updated_at: new Date().toISOString(),

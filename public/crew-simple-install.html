@@ -1237,7 +1237,9 @@
                     <div class="space-y-2 sm:space-y-3 pb-20">
                       ${getFilteredReservations().map(res => {
                         const paymentAmount = res.payment_amount || res.deposit_amount || 0;
-                        const paymentBadge = res.booking_method === 'free' ?
+                        const paymentBadge = res.payment_link_url && res.payment_status === 'paid' ?
+                          '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Online bezahlt</span>' + (paymentAmount > 0 ? ` <span class="text-green-400 font-bold text-sm ml-1">€${paymentAmount.toFixed(2)}</span>` : '') :
+                          res.booking_method === 'free' ?
                           '<span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-semibold">Frei</span>' :
                           res.payment_method === 'cash' ?
                           '<span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-semibold">Bar bezahlt</span>' + (paymentAmount > 0 ? ` <span class="text-green-400 font-bold text-sm ml-1">€${paymentAmount.toFixed(2)}</span>` : '') :

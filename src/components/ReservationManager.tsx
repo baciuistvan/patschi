@@ -933,13 +933,17 @@ export function ReservationManager() {
                               </span>
                             )}
                             <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
-                              (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
+                              (reservation as any).payment_link_url && reservation.payment_status === 'paid'
+                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                                : (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
                                 ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                                 ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                                 : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                             } print:bg-transparent print:border-0 print:text-gray-800`}>
-                              {(reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
+                              {(reservation as any).payment_link_url && reservation.payment_status === 'paid'
+                                ? `Online bezahlt ${reservation.payment_amount > 0 ? '€' + reservation.payment_amount.toFixed(2) : ''}`
+                                : (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
                                 ? 'Online'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                                 ? `Anzahlung: €${reservation.payment_amount}`
@@ -1098,13 +1102,17 @@ export function ReservationManager() {
                       </span>
                     )}
                     <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
-                      (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
+                      (reservation as any).payment_link_url && reservation.payment_status === 'paid'
+                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                        : (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
                         ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                         ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                         : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                     } print:bg-transparent print:border-0 print:text-gray-800`}>
-                      {(reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
+                      {(reservation as any).payment_link_url && reservation.payment_status === 'paid'
+                        ? `Online bezahlt ${reservation.payment_amount > 0 ? '€' + reservation.payment_amount.toFixed(2) : ''}`
+                        : (reservation as any).booking_method === 'online' || ((reservation as any).booking_method === 'manual' && (reservation as any).payment_method === 'stripe')
                         ? 'Online'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                         ? `Anzahlung: €${reservation.payment_amount}`
