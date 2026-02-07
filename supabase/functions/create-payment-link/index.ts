@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
       payment_status: 'unpaid',
       payment_amount: 0,
       payment_method: 'stripe',
-      booking_method: 'payment_link',
+      booking_method: 'online',
       booking_code
     };
 
