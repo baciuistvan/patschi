@@ -66,9 +66,9 @@ Deno.serve(async (req: Request) => {
       ? (settings?.stripe_live_secret_key || Deno.env.get("STRIPE_SECRET_KEY"))
       : (settings?.stripe_test_secret_key || Deno.env.get("STRIPE_SECRET_KEY"));
 
-    // Get success URL from settings or use Supabase-hosted page
+    // Get success URL from settings or use Supabase edge function
     const defaultSuccessUrl = settings?.success_page_url ||
-      `${supabaseUrl.replace('/functions/v1', '')}/reservation-success.html`;
+      `${supabaseUrl}/reservation-success`;
 
     if (!stripeKey) {
       return new Response(
