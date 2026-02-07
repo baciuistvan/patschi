@@ -54,27 +54,53 @@ Deno.serve(async (req: Request) => {
 
     // If reservationId is provided, fetch full reservation details
     if (reservationId && !customer_name) {
-      const { data: reservation } = await supabase
+      console.log('[EMAIL] Fetching reservation with ID:', reservationId);
+
+      const { data: reservation, error: fetchError } = await supabase
         .from('reservations')
         .select('*')
         .eq('id', reservationId)
         .maybeSingle();
 
-      if (reservation) {
-        customer_name = reservation.customer_name;
-        customer_email = reservation.customer_email;
-        reservation_date = reservation.reservation_date;
-        reservation_time = reservation.reservation_time;
-        party_size = reservation.party_size;
-        special_requests = reservation.special_requests || '';
-        payment_amount = reservation.payment_amount || 0;
-        booking_code = reservation.booking_code;
+      if (fetchError) {
+        console.error('[EMAIL] Error fetching reservation:', fetchError);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch reservation details", details: fetchError.message }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
+
+      if (!reservation) {
+        console.error('[EMAIL] No reservation found with ID:', reservationId);
+        return new Response(
+          JSON.stringify({ error: "Reservation not found", reservationId }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      console.log('[EMAIL] Reservation fetched successfully:', reservation.booking_code);
+
+      customer_name = reservation.customer_name;
+      customer_email = reservation.customer_email;
+      reservation_date = reservation.reservation_date;
+      reservation_time = reservation.reservation_time;
+      party_size = reservation.party_size;
+      special_requests = reservation.special_requests || '';
+      payment_amount = reservation.payment_amount || 0;
+      booking_code = reservation.booking_code;
+      table_number = reservation.table_number || 'To be assigned';
     }
 
     if (!customer_email || !customer_name) {
+      console.error('[EMAIL] Missing required fields - customer_email:', customer_email, 'customer_name:', customer_name);
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ error: "Missing required fields", provided: { customer_email: !!customer_email, customer_name: !!customer_name } }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
