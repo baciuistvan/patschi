@@ -45,17 +45,57 @@ Deno.serve(async (req: Request) => {
       const session = event.data.object;
       const paymentIntentId = session.payment_intent;
       const customerEmail = session.customer_details?.email;
+      const metadata = session.metadata || {};
 
-      console.log("Payment completed for:", customerEmail, "Payment intent:", paymentIntentId);
+      console.log("Payment completed for:", customerEmail);
+      console.log("Payment intent:", paymentIntentId);
+      console.log("Session metadata:", metadata);
 
-      // Find the reservation by payment intent ID or customer email
-      const { data: reservations, error: findError } = await supabase
-        .from("reservations")
-        .select("*")
-        .or(`stripe_payment_intent_id.eq.${paymentIntentId},customer_email.eq.${customerEmail}`)
-        .eq("payment_status", "unpaid")
-        .order("created_at", { ascending: false })
-        .limit(1);
+      let reservation = null;
+      let findError = null;
+
+      // First try to find by booking_code from metadata (most reliable for payment links)
+      if (metadata.booking_code) {
+        console.log("Looking for reservation by booking_code:", metadata.booking_code);
+        const { data, error } = await supabase
+          .from("reservations")
+          .select("*")
+          .eq("booking_code", metadata.booking_code)
+          .eq("payment_status", "unpaid")
+          .maybeSingle();
+
+        reservation = data;
+        findError = error;
+      }
+
+      // If not found by booking code, try by reservation_id from metadata
+      if (!reservation && metadata.reservation_id) {
+        console.log("Looking for reservation by reservation_id:", metadata.reservation_id);
+        const { data, error } = await supabase
+          .from("reservations")
+          .select("*")
+          .eq("id", metadata.reservation_id)
+          .eq("payment_status", "unpaid")
+          .maybeSingle();
+
+        reservation = data;
+        findError = error;
+      }
+
+      // If still not found, try by payment intent or customer email
+      if (!reservation && (paymentIntentId || customerEmail)) {
+        console.log("Looking for reservation by payment_intent or email");
+        const { data: reservations, error } = await supabase
+          .from("reservations")
+          .select("*")
+          .or(`stripe_payment_intent_id.eq.${paymentIntentId},customer_email.eq.${customerEmail}`)
+          .eq("payment_status", "unpaid")
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        reservation = reservations && reservations.length > 0 ? reservations[0] : null;
+        findError = error;
+      }
 
       if (findError) {
         console.error("Error finding reservation:", findError);
@@ -68,8 +108,7 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      if (reservations && reservations.length > 0) {
-        const reservation = reservations[0];
+      if (reservation) {
 
         // Update the reservation to mark as paid and confirmed
         const { error: updateError } = await supabase
