@@ -258,11 +258,15 @@ ${reservation ? `
 </body>
 </html>`;
 
+  const headers = new Headers();
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Client-Info, Apikey");
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("X-Content-Type-Options", "nosniff");
+
   return new Response(html, {
     status: 200,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "text/html; charset=utf-8",
-    },
+    headers: headers,
   });
 });

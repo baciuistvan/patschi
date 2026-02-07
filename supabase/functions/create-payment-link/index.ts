@@ -66,9 +66,10 @@ Deno.serve(async (req: Request) => {
       ? (settings?.stripe_live_secret_key || Deno.env.get("STRIPE_SECRET_KEY"))
       : (settings?.stripe_test_secret_key || Deno.env.get("STRIPE_SECRET_KEY"));
 
-    // Get success URL from settings or use Supabase edge function
+    // Get success URL from settings or use default HTML page
+    // Default to the static HTML page which will be served from your domain
     const defaultSuccessUrl = settings?.success_page_url ||
-      `${supabaseUrl}/functions/v1/reservation-success`;
+      `https://playful-travesseiro-8cccaa.netlify.app/reservation-success.html`;
 
     if (!stripeKey) {
       return new Response(
