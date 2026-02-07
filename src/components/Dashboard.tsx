@@ -17,11 +17,10 @@ interface DashboardProps {
 
 export function Dashboard({ onSwitchSystem }: DashboardProps) {
   const { adminUser, signOut } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [currentView, setCurrentView] = useState<View>('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
 
@@ -114,7 +113,6 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                 <button
                   onClick={() => {
                     setShowAccountMenu(!showAccountMenu);
-                    setShowLanguageMenu(false);
                     setShowThemeMenu(false);
                   }}
                   className="hidden sm:flex items-center space-x-1.5 text-right hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg px-2.5 py-1.5 transition"
@@ -144,7 +142,6 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                 <button
                   onClick={() => {
                     setShowThemeMenu(!showThemeMenu);
-                    setShowLanguageMenu(false);
                     setShowAccountMenu(false);
                   }}
                   className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
@@ -181,46 +178,14 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                   </div>
                 )}
               </div>
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowLanguageMenu(!showLanguageMenu);
-                    setShowThemeMenu(false);
-                    setShowAccountMenu(false);
-                  }}
-                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition flex items-center space-x-1"
-                  title="Language"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span className="text-xs font-medium">{language.toUpperCase()}</span>
-                </button>
-                {showLanguageMenu && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 min-w-32">
-                    <button
-                      onClick={() => {
-                        setLanguage('en');
-                        setShowLanguageMenu(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition ${
-                        language === 'en' ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-slate-700' : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      English
-                    </button>
-                    <button
-                      onClick={() => {
-                        setLanguage('de');
-                        setShowLanguageMenu(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition ${
-                        language === 'de' ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-slate-700' : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      Deutsch
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={() => window.open('/crew-simple-install.html', '_blank')}
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition flex items-center space-x-1"
+                title="Open Crew Dashboard"
+              >
+                <Users className="w-4 h-4" />
+                <span className="text-xs font-medium hidden sm:inline">Crew</span>
+              </button>
               <button
                 onClick={handleSignOut}
                 className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
