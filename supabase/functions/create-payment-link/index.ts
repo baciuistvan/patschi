@@ -70,9 +70,7 @@ Deno.serve(async (req: Request) => {
 
     // Get success URL from settings or use default HTML page
     // Default to the static HTML page which will be served from your domain
-    const defaultSuccessUrl = requestOrigin
-      ? `${requestOrigin}/zahlung-erfolgreich.html`
-      : `https://playful-travesseiro-8cccaa.netlify.app/zahlung-erfolgreich.html`;
+    const defaultSuccessUrl = `https://patschi.services/zahlung-erfolgreich.html`;
 
     if (!stripeKey) {
       return new Response(
