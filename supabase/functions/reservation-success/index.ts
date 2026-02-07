@@ -211,12 +211,7 @@ const getHTML = (bookingCode: string) => `<!DOCTYPE html>
 
         const { data: reservation, error } = await supabase
           .from('reservations')
-          .select(\`
-            *,
-            rooms (
-              name
-            )
-          \`)
+          .select('*')
           .eq('booking_code', BOOKING_CODE)
           .maybeSingle();
 
@@ -236,9 +231,9 @@ const getHTML = (bookingCode: string) => `<!DOCTYPE html>
 
     function displayReservation(reservation) {
       document.getElementById('bookingCode').textContent = reservation.booking_code;
-      document.getElementById('guestName').textContent = reservation.guest_name;
-      document.getElementById('guestEmail').textContent = reservation.guest_email;
-      document.getElementById('roomName').textContent = reservation.rooms?.name || 'N/A';
+      document.getElementById('guestName').textContent = reservation.customer_name;
+      document.getElementById('guestEmail').textContent = reservation.customer_email;
+      document.getElementById('roomName').textContent = 'Restaurant';
 
       const date = new Date(reservation.reservation_date);
       const dateStr = date.toLocaleDateString('de-DE', {
@@ -247,10 +242,10 @@ const getHTML = (bookingCode: string) => `<!DOCTYPE html>
         month: 'long',
         day: 'numeric'
       });
-      const timeStr = reservation.reservation_time;
+      const timeStr = reservation.reservation_time.substring(0, 5);
       document.getElementById('dateTime').textContent = \`\${dateStr} um \${timeStr} Uhr\`;
 
-      document.getElementById('guests').textContent = \`\${reservation.guests} \${reservation.guests === 1 ? 'Gast' : 'Gäste'}\`;
+      document.getElementById('guests').textContent = \`\${reservation.party_size} \${reservation.party_size === 1 ? 'Gast' : 'Gäste'}\`;
 
       if (reservation.special_requests) {
         document.getElementById('specialRequests').textContent = reservation.special_requests;
