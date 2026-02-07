@@ -2222,14 +2222,21 @@
       // Get reservations for the selected date/time
       const reservedTableIds = new Set();
 
+      // Normalize time format to HH:MM (remove seconds if present)
+      const normalizeTime = (t) => t.slice(0, 5);
+      const normalizedInputTime = normalizeTime(time);
+
       state.reservations.forEach(res => {
         // Skip the current reservation being edited
         if (resEditMode && resEditReservation && res.id === resEditReservation.id) {
           return;
         }
 
+        // Normalize the reservation time for comparison
+        const normalizedResTime = normalizeTime(res.reservation_time);
+
         // Check if reservation matches the date and time
-        if (res.reservation_date === date && res.reservation_time === time && res.status !== 'cancelled') {
+        if (res.reservation_date === date && normalizedResTime === normalizedInputTime && res.status !== 'cancelled') {
           if (res.reservation_tables && Array.isArray(res.reservation_tables)) {
             res.reservation_tables.forEach(rt => {
               reservedTableIds.add(rt.table_id);
