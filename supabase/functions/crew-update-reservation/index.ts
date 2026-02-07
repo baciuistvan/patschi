@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
       .from("reservations")
       .update(updateData)
       .eq("id", reservation_id)
-      .select()
+      .select('*')
       .single();
 
     if (error) {
