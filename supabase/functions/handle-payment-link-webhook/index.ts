@@ -97,28 +97,33 @@ Deno.serve(async (req: Request) => {
 
         // Send payment confirmation email
         try {
-          const emailResponse = await fetch(
-            `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({
-                reservationId: reservation.id,
-                is_payment_confirmation: true,
-              }),
-            }
-          );
+          const emailUrl = `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`;
+          console.log('[WEBHOOK] Calling email function:', emailUrl);
+          console.log('[WEBHOOK] Reservation ID:', reservation.id);
+
+          const emailResponse = await fetch(emailUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              reservationId: reservation.id,
+              is_payment_confirmation: true,
+            }),
+          });
+
+          const emailResponseText = await emailResponse.text();
+          console.log('[WEBHOOK] Email function status:', emailResponse.status);
+          console.log('[WEBHOOK] Email function response:', emailResponseText);
 
           if (!emailResponse.ok) {
-            console.error("Failed to send payment confirmation email:", await emailResponse.text());
+            console.error("[WEBHOOK] Failed to send payment confirmation email - Status:", emailResponse.status, "Response:", emailResponseText);
           } else {
-            console.log("Payment confirmation email sent successfully");
+            console.log("[WEBHOOK] Payment confirmation email sent successfully");
           }
         } catch (emailError) {
-          console.error("Error sending payment confirmation email:", emailError);
+          console.error("[WEBHOOK] Error calling email function:", emailError);
         }
 
         return new Response(
