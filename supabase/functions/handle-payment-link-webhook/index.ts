@@ -1,0 +1,171 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, stripe-signature",
+};
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const signature = req.headers.get("stripe-signature");
+    const body = await req.text();
+
+    // Parse the webhook event
+    let event;
+    try {
+      event = JSON.parse(body);
+    } catch (err) {
+      console.error("Error parsing webhook body:", err);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Webhook event received:", event.type);
+
+    // Handle checkout.session.completed event
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const paymentIntentId = session.payment_intent;
+      const customerEmail = session.customer_details?.email;
+
+      console.log("Payment completed for:", customerEmail, "Payment intent:", paymentIntentId);
+
+      // Find the reservation by payment intent ID or customer email
+      const { data: reservations, error: findError } = await supabase
+        .from("reservations")
+        .select("*")
+        .or(`stripe_payment_intent_id.eq.${paymentIntentId},customer_email.eq.${customerEmail}`)
+        .eq("payment_status", "unpaid")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (findError) {
+        console.error("Error finding reservation:", findError);
+        return new Response(
+          JSON.stringify({ error: "Database error" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (reservations && reservations.length > 0) {
+        const reservation = reservations[0];
+
+        // Update the reservation to mark as paid
+        const { error: updateError } = await supabase
+          .from("reservations")
+          .update({
+            payment_status: "paid",
+            booking_method: "payment_link",
+            stripe_payment_intent_id: paymentIntentId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", reservation.id);
+
+        if (updateError) {
+          console.error("Error updating reservation:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Failed to update reservation" }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        console.log("Reservation updated successfully:", reservation.id);
+
+        // Send confirmation email
+        try {
+          const emailResponse = await fetch(
+            `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                reservationId: reservation.id,
+              }),
+            }
+          );
+
+          if (!emailResponse.ok) {
+            console.error("Failed to send confirmation email:", await emailResponse.text());
+          }
+        } catch (emailError) {
+          console.error("Error sending confirmation email:", emailError);
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Payment processed successfully",
+            reservationId: reservation.id
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      } else {
+        console.log("No matching reservation found for payment");
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "No reservation found to update"
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // Return success for other event types
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Webhook received"
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+
+  } catch (error) {
+    console.error("Webhook handler error:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error"
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});

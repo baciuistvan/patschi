@@ -40,7 +40,8 @@ Deno.serve(async (req: Request) => {
       room_id,
       special_requests,
       duration_minutes,
-      table_ids
+      table_ids,
+      success_url
     } = await req.json();
 
     if (!customer_name || !customer_email || !reservation_date || !reservation_time || !party_size) {
@@ -151,7 +152,7 @@ Deno.serve(async (req: Request) => {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${supabaseUrl.replace('/functions/v1', '')}/reservation-success?booking_code=${booking_code}`,
+          url: success_url || `https://patschi.at/reservation-success.html?booking_code=${booking_code}`,
         },
       },
     });
