@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
 
         console.log("Reservation updated successfully:", reservation.id);
 
-        // Send confirmation email
+        // Send payment confirmation email
         try {
           const emailResponse = await fetch(
             `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`,
@@ -107,15 +107,18 @@ Deno.serve(async (req: Request) => {
               },
               body: JSON.stringify({
                 reservationId: reservation.id,
+                is_payment_confirmation: true,
               }),
             }
           );
 
           if (!emailResponse.ok) {
-            console.error("Failed to send confirmation email:", await emailResponse.text());
+            console.error("Failed to send payment confirmation email:", await emailResponse.text());
+          } else {
+            console.log("Payment confirmation email sent successfully");
           }
         } catch (emailError) {
-          console.error("Error sending confirmation email:", emailError);
+          console.error("Error sending payment confirmation email:", emailError);
         }
 
         return new Response(

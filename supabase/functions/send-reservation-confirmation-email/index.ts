@@ -18,6 +18,8 @@ interface ReservationData {
   booking_code: string;
   table_number?: string;
   payment_link_url?: string;
+  is_payment_confirmation?: boolean;
+  reservationId?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -35,7 +37,7 @@ Deno.serve(async (req: Request) => {
 
     const reservationData: ReservationData = await req.json();
 
-    const {
+    let {
       customer_name,
       customer_email,
       reservation_date,
@@ -45,8 +47,30 @@ Deno.serve(async (req: Request) => {
       payment_amount = 0,
       booking_code,
       table_number = 'To be assigned',
-      payment_link_url
+      payment_link_url,
+      is_payment_confirmation = false,
+      reservationId
     } = reservationData;
+
+    // If reservationId is provided, fetch full reservation details
+    if (reservationId && !customer_name) {
+      const { data: reservation } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('id', reservationId)
+        .maybeSingle();
+
+      if (reservation) {
+        customer_name = reservation.customer_name;
+        customer_email = reservation.customer_email;
+        reservation_date = reservation.reservation_date;
+        reservation_time = reservation.reservation_time;
+        party_size = reservation.party_size;
+        special_requests = reservation.special_requests || '';
+        payment_amount = reservation.payment_amount || 0;
+        booking_code = reservation.booking_code;
+      }
+    }
 
     if (!customer_email || !customer_name) {
       return new Response(
@@ -115,8 +139,8 @@ Deno.serve(async (req: Request) => {
         .replace(/{{payment_link_url}}/g, payment_link_url || '');
     };
 
-    // Determine which templates to use based on whether payment link is present
-    const usePaymentTemplate = !!payment_link_url;
+    // Determine which templates to use based on whether payment link is present or if it's a payment confirmation
+    const usePaymentTemplate = !!payment_link_url && !is_payment_confirmation;
     const customSubject = usePaymentTemplate ? settingsMap.payment_email_subject : settingsMap.email_subject;
     const customBody = usePaymentTemplate ? settingsMap.payment_email_body : settingsMap.email_body;
     const customBodyHtml = usePaymentTemplate ? settingsMap.payment_email_body_html : settingsMap.email_body_html;
@@ -182,9 +206,9 @@ Deno.serve(async (req: Request) => {
 
           <!-- Header with Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
+            <td style="background: linear-gradient(135deg, ${is_payment_confirmation ? '#10b981 0%, #059669' : '#1e3a8a 0%, #3b82f6'} 100%); padding: 40px 30px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">Patschi</h1>
-              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">Reservierungsbestätigung</p>
+              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">${is_payment_confirmation ? 'Zahlungsbestätigung' : 'Reservierungsbestätigung'}</p>
             </td>
           </tr>
 
@@ -203,7 +227,9 @@ Deno.serve(async (req: Request) => {
             <td style="padding: 20px 30px 30px 30px;">
               <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Liebe/r ${customer_name},</h2>
               <p style="color: #4b5563; margin: 0; font-size: 16px; line-height: 1.6;">
-                ${payment_link_url
+                ${is_payment_confirmation
+                  ? 'vielen Dank für Ihre Zahlung! Ihre Reservierung ist nun vollständig bestätigt. Wir freuen uns sehr, Sie bei uns begrüßen zu dürfen.'
+                  : payment_link_url
                   ? 'vielen Dank für Ihre Reservierungsanfrage! Um Ihre Reservierung zu bestätigen, klicken Sie bitte auf den Button unten, um die Anzahlung zu leisten.'
                   : 'vielen Dank für Ihre Reservierung! Wir freuen uns sehr, Sie bei uns begrüßen zu dürfen.'}
               </p>
@@ -269,6 +295,24 @@ Deno.serve(async (req: Request) => {
                   <td style="padding: 16px 20px;">
                     <p style="color: #92400e; margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">📝 Besondere Wünsche</p>
                     <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.5;">${special_requests}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          ${is_payment_confirmation ? `
+          <!-- Payment Confirmation Notice -->
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #d1fae5; border-left: 4px solid #10b981; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="color: #065f46; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">✅ Zahlung erfolgreich</p>
+                    <p style="color: #047857; margin: 0; font-size: 13px; line-height: 1.6;">
+                      Ihre Anzahlung von €${depositAmountFormatted} wurde erfolgreich verarbeitet. Ihre Reservierung ist nun vollständig bestätigt.
+                    </p>
                   </td>
                 </tr>
               </table>
@@ -343,7 +387,7 @@ Mit freundlichen Grüßen,
 Das Patschi Team`;
     }
 
-    let emailSubject = customSubject || 'Reservierungsbestätigung - {{customer_name}}';
+    let emailSubject = customSubject || (is_payment_confirmation ? 'Zahlungsbestätigung - {{customer_name}}' : 'Reservierungsbestätigung - {{customer_name}}');
     emailSubject = replaceVariables(emailSubject);
 
     const smtpPort = parseInt(settingsMap.smtp_port || "587");
