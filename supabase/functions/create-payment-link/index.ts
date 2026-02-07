@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
     // Get success URL from settings or use default HTML page
     // Default to the static HTML page which will be served from your domain
     const defaultSuccessUrl = settings?.success_page_url ||
-      `https://playful-travesseiro-8cccaa.netlify.app/reservation-success.html`;
+      `https://playful-travesseiro-8cccaa.netlify.app/zahlung-erfolgreich.html`;
 
     if (!stripeKey) {
       return new Response(
