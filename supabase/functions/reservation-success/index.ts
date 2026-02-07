@@ -70,8 +70,7 @@ Deno.serve(async (req: Request) => {
     return new Response(successPageHTML, {
       status: 200,
       headers: {
-        ...corsHeaders,
-        "Content-Type": "text/html",
+        "Content-Type": "text/html; charset=utf-8",
       },
     });
   } catch (error) {
@@ -80,7 +79,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
