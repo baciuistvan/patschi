@@ -67,14 +67,11 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const encoder = new TextEncoder();
-    const encoded = encoder.encode(successPageHTML);
-
-    return new Response(encoded, {
+    return new Response(successPageHTML, {
       status: 200,
       headers: {
         ...corsHeaders,
-        "Content-Type": "text/html; charset=utf-8",
+        "Content-Type": "text/html",
       },
     });
   } catch (error) {
