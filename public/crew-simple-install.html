@@ -2250,7 +2250,7 @@
 
     function updateTablesDisplay() {
       const grid = document.getElementById('tablesGrid');
-      const filteredTables = resAllTables.filter(t => t.capacity > 0 && t.room_id === resTableRoomFilter);
+      const filteredTables = resAllTables.filter(t => t.capacity > 0 && t.room_id === resTableRoomFilter && t.is_bookable !== false);
 
       if (filteredTables.length === 0) {
         grid.innerHTML = '<p class="text-sm text-slate-500 col-span-5">Keine Tische verfügbar</p>';
