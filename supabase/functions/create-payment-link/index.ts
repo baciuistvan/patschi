@@ -66,6 +66,10 @@ Deno.serve(async (req: Request) => {
       ? (settings?.stripe_live_secret_key || Deno.env.get("STRIPE_SECRET_KEY"))
       : (settings?.stripe_test_secret_key || Deno.env.get("STRIPE_SECRET_KEY"));
 
+    // Get success URL from settings or use Supabase-hosted page
+    const defaultSuccessUrl = settings?.success_page_url ||
+      `${supabaseUrl.replace('/functions/v1', '')}/reservation-success.html`;
+
     if (!stripeKey) {
       return new Response(
         JSON.stringify({ error: "Stripe not configured" }),
@@ -152,7 +156,7 @@ Deno.serve(async (req: Request) => {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: success_url || `https://patschi.at/reservation-success.html?booking_code=${booking_code}`,
+          url: success_url || `${defaultSuccessUrl}?booking_code=${booking_code}`,
         },
       },
     });
