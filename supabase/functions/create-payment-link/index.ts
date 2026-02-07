@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
 
     // Get success URL from settings or use Supabase edge function
     const defaultSuccessUrl = settings?.success_page_url ||
-      `${supabaseUrl}/reservation-success`;
+      `${supabaseUrl}/functions/v1/reservation-success`;
 
     if (!stripeKey) {
       return new Response(
