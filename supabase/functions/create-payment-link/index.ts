@@ -30,6 +30,8 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const requestOrigin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/[^/]*$/, '') || '';
+
     const {
       customer_name,
       customer_email,
@@ -68,8 +70,9 @@ Deno.serve(async (req: Request) => {
 
     // Get success URL from settings or use default HTML page
     // Default to the static HTML page which will be served from your domain
-    const defaultSuccessUrl = settings?.success_page_url ||
-      `https://playful-travesseiro-8cccaa.netlify.app/zahlung-erfolgreich.html`;
+    const defaultSuccessUrl = requestOrigin
+      ? `${requestOrigin}/zahlung-erfolgreich.html`
+      : `https://playful-travesseiro-8cccaa.netlify.app/zahlung-erfolgreich.html`;
 
     if (!stripeKey) {
       return new Response(
