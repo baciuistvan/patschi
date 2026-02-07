@@ -17,6 +17,7 @@ interface ReservationData {
   payment_amount?: number;
   booking_code: string;
   table_number?: string;
+  payment_link_url?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -43,7 +44,8 @@ Deno.serve(async (req: Request) => {
       special_requests = '',
       payment_amount = 0,
       booking_code,
-      table_number = 'To be assigned'
+      table_number = 'To be assigned',
+      payment_link_url
     } = reservationData;
 
     if (!customer_email || !customer_name) {
@@ -190,9 +192,25 @@ Deno.serve(async (req: Request) => {
           <tr>
             <td style="padding: 20px 30px 30px 30px;">
               <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Liebe/r ${customer_name},</h2>
-              <p style="color: #4b5563; margin: 0; font-size: 16px; line-height: 1.6;">vielen Dank für Ihre Reservierung! Wir freuen uns sehr, Sie bei uns begrüßen zu dürfen.</p>
+              <p style="color: #4b5563; margin: 0; font-size: 16px; line-height: 1.6;">
+                ${payment_link_url
+                  ? 'vielen Dank für Ihre Reservierungsanfrage! Um Ihre Reservierung zu bestätigen, klicken Sie bitte auf den Button unten, um die Anzahlung zu leisten.'
+                  : 'vielen Dank für Ihre Reservierung! Wir freuen uns sehr, Sie bei uns begrüßen zu dürfen.'}
+              </p>
             </td>
           </tr>
+
+          ${payment_link_url ? `
+          <!-- Payment Link Button -->
+          <tr>
+            <td style="padding: 0 30px 30px 30px; text-align: center;">
+              <a href="${payment_link_url}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 18px; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
+                💳 Jetzt Anzahlung leisten
+              </a>
+              <p style="color: #6b7280; margin: 16px 0 0 0; font-size: 13px;">Betrag: €${depositAmountFormatted}</p>
+            </td>
+          </tr>
+          ` : ''}
 
           <!-- Reservation Details -->
           <tr>
@@ -294,10 +312,13 @@ Deno.serve(async (req: Request) => {
     } else {
       emailBody = `Liebe/r ${customer_name},
 
-vielen Dank für Ihre Reservierung bei Patschi!
+${payment_link_url
+  ? 'vielen Dank für Ihre Reservierungsanfrage! Um Ihre Reservierung zu bestätigen, leisten Sie bitte die Anzahlung über den folgenden Link:'
+  : 'vielen Dank für Ihre Reservierung bei Patschi!'}
 
 BUCHUNGSNUMMER: ${booking_code}
 
+${payment_link_url ? `Zahlungslink: ${payment_link_url}\n` : ''}
 Reservierungsdetails:
 - Datum: ${formattedDate}
 - Uhrzeit: ${reservation_time} Uhr
