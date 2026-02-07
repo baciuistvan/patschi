@@ -151,6 +151,8 @@
             const cardElementRef = useRef(null);
             const [paymentRequest, setPaymentRequest] = useState(null);
             const [stripeEnabled, setStripeEnabled] = useState(true);
+            const [sessionStarted, setSessionStarted] = useState(false);
+            const [paymentIntentCreated, setPaymentIntentCreated] = useState(false);
 
             const [formData, setFormData] = useState({
                 party_size: 2,
@@ -170,9 +172,20 @@
                     loadRooms();
                     loadDepositAmount();
                     await loadStripeSettings();
+                    setSessionStarted(true);
                 };
                 initialize();
-            }, []);
+
+                // Track page abandonment
+                const handleBeforeUnload = () => {
+                    if (!success && sessionStarted && formData.customer_name) {
+                        logAbandonment();
+                    }
+                };
+
+                window.addEventListener('beforeunload', handleBeforeUnload);
+                return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+            }, [success, sessionStarted, formData.customer_name]);
 
             useEffect(() => {
                 setAvailabilityChecked(false);
@@ -335,6 +348,44 @@
                 } catch (err) {
                     console.error('Error loading Stripe settings:', err);
                     setStripeEnabled(false);
+                }
+            };
+
+            const logAbandonment = async (stage = null, reason = null, errorMsg = null, paymentIntentId = null) => {
+                try {
+                    // Determine stage automatically if not provided
+                    let abandonmentStage = stage;
+                    if (!abandonmentStage) {
+                        if (step === 1) {
+                            abandonmentStage = 'form_incomplete';
+                        } else if (step === 2) {
+                            abandonmentStage = 'cancelled_before_payment';
+                        } else if (step === 3) {
+                            abandonmentStage = paymentIntentCreated ? 'payment_initiated' : 'cancelled_before_payment';
+                        }
+                    }
+
+                    const room = rooms.find(r => r.id === formData.room_id);
+
+                    await supabaseClient.from('abandoned_reservations').insert({
+                        customer_name: formData.customer_name || 'Unbekannt',
+                        customer_email: formData.customer_email || 'nicht angegeben',
+                        customer_phone: formData.customer_phone || null,
+                        reservation_date: formData.reservation_date || new Date().toISOString().split('T')[0],
+                        reservation_time: formData.reservation_time || '15:45',
+                        party_size: formData.party_size || 2,
+                        room_id: formData.room_id || null,
+                        room_name: room?.name || null,
+                        abandonment_stage: abandonmentStage,
+                        abandonment_reason: reason,
+                        error_message: errorMsg,
+                        payment_intent_id: paymentIntentId,
+                        amount: stripeEnabled ? formData.payment_amount : null,
+                    });
+
+                    console.log('Abandonment logged:', abandonmentStage);
+                } catch (err) {
+                    console.error('Error logging abandonment:', err);
                 }
             };
 
@@ -531,6 +582,7 @@
                         throw new Error('Keine Zahlungsinformationen erhalten');
                     }
 
+                    setPaymentIntentCreated(true);
                     return data.clientSecret;
                 } catch (error) {
                     console.error('createPaymentIntent error:', error);
@@ -563,10 +615,12 @@
                     });
 
                     if (stripeError) {
+                        await logAbandonment('payment_failed', 'Stripe error', stripeError.message, null);
                         throw new Error(stripeError.message);
                     }
 
                     if (paymentIntent.status !== 'succeeded') {
+                        await logAbandonment('payment_failed', 'Payment not succeeded', `Status: ${paymentIntent.status}`, paymentIntent.id);
                         throw new Error('Zahlung fehlgeschlagen');
                     }
 
@@ -1018,6 +1072,7 @@
 
                                                             if (result.error) {
                                                                 ev.complete('fail');
+                                                                await logAbandonment('payment_failed', 'Payment Request API error', result.error.message, null);
                                                                 setError(result.error.message || 'Zahlung fehlgeschlagen');
                                                                 setLoading(false);
                                                             } else {
