@@ -1,0 +1,11 @@
+# Serve static HTML files directly
+/reservation-success.html /reservation-success.html 200
+/zahlung-erfolgreich.html /zahlung-erfolgreich.html 200
+/crew.html /crew.html 200
+/admin.html /admin.html 200
+/gift-card-widget.html /gift-card-widget.html 200
+/gift-card-preview.html /gift-card-preview.html 200
+/reservation-widget.html /reservation-widget.html 200
+
+# SPA fallback for React routes (must be last)
+/* /index.html 200
