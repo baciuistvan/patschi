@@ -145,7 +145,7 @@ Deno.serve(async (req: Request) => {
     const { data: reservation, error: reservationError } = await supabase
       .from("reservations")
       .insert(reservationData)
-      .select()
+      .select('*')
       .single();
 
     if (reservationError) {
