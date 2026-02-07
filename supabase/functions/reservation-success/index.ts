@@ -67,7 +67,10 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    return new Response(successPageHTML, {
+    const encoder = new TextEncoder();
+    const encoded = encoder.encode(successPageHTML);
+
+    return new Response(encoded, {
       status: 200,
       headers: {
         ...corsHeaders,
