@@ -68,9 +68,7 @@ Deno.serve(async (req: Request) => {
       ? (settings?.stripe_live_secret_key || Deno.env.get("STRIPE_SECRET_KEY"))
       : (settings?.stripe_test_secret_key || Deno.env.get("STRIPE_SECRET_KEY"));
 
-    // Get success URL from settings or use default HTML page
-    // Default to the static HTML page which will be served from your domain
-    const defaultSuccessUrl = `https://patschi.services/zahlung-erfolgreich.html`;
+    const defaultSuccessUrl = `${supabaseUrl}/functions/v1/reservation-success`;
 
     if (!stripeKey) {
       return new Response(
