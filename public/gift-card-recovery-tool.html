@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gift Card Recovery Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 mb-4">🎁 Gift Card Recovery Tool</h1>
+      <p class="text-gray-600 mb-4">This tool finds paid gift cards that never received their PDFs and emails, then processes them.</p>
+
+      <button
+        onclick="findMissingGiftCards()"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+      >
+        Find Missing Gift Cards
+      </button>
+    </div>
+
+    <div id="results" class="space-y-4"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    window.supabase = supabase;
+
+    window.findMissingGiftCards = async function() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<div class="bg-white rounded-lg shadow p-6"><p class="text-gray-600">Searching for missing gift cards...</p></div>';
+
+      try {
+        // Find gift cards that were paid but have no PDF
+        const { data: giftCards, error } = await supabase
+          .from('gift_cards')
+          .select('*')
+          .eq('status', 'active')
+          .is('pdf_url', null)
+          .not('stripe_payment_intent_id', 'is', null);
+
+        if (error) throw error;
+
+        if (!giftCards || giftCards.length === 0) {
+          resultsDiv.innerHTML = `
+            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+              <p class="text-green-800 font-semibold">✅ All gift cards are processed!</p>
+              <p class="text-green-700 text-sm mt-2">No missing PDFs or emails found.</p>
+            </div>
+          `;
+          return;
+        }
+
+        resultsDiv.innerHTML = `
+          <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6">
+            <p class="text-yellow-900 font-semibold">⚠️ Found ${giftCards.length} gift card(s) that need processing</p>
+          </div>
+        `;
+
+        // Process each gift card
+        for (const card of giftCards) {
+          await processGiftCard(card);
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        resultsDiv.innerHTML = `
+          <div class="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+            <p class="text-red-800 font-semibold">❌ Error: ${error.message}</p>
+          </div>
+        `;
+      }
+    };
+
+    window.processGiftCard = async function(card) {
+      const resultsDiv = document.getElementById('results');
+
+      const cardDiv = document.createElement('div');
+      cardDiv.className = 'bg-white rounded-lg shadow p-6';
+      cardDiv.id = `card-${card.id}`;
+      cardDiv.innerHTML = `
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 class="font-bold text-lg">${card.code}</h3>
+            <p class="text-sm text-gray-600">€${card.original_amount} - ${card.recipient_email}</p>
+          </div>
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        </div>
+        <div class="space-y-2 text-sm">
+          <p id="status-${card.id}" class="text-gray-600">Processing...</p>
+        </div>
+      `;
+      resultsDiv.appendChild(cardDiv);
+
+      const updateStatus = (message, isError = false) => {
+        const statusEl = document.getElementById(`status-${card.id}`);
+        if (statusEl) {
+          statusEl.innerHTML += `<br>${isError ? '❌' : '✓'} ${message}`;
+          if (isError) statusEl.className = 'text-red-600';
+        }
+      };
+
+      try {
+        // Generate PDF using the library
+        updateStatus('Generating PDF...');
+
+        // Import the PDF generation library
+        const { jsPDF } = await import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm');
+        const { default: html2canvas } = await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm');
+
+        // Create PDF content
+        const pdf = new jsPDF();
+        pdf.setFontSize(24);
+        pdf.text('Geschenkgutschein', 105, 30, { align: 'center' });
+
+        pdf.setFontSize(16);
+        pdf.text(`Code: ${card.code}`, 105, 50, { align: 'center' });
+        pdf.text(`Barcode: ${card.barcode}`, 105, 60, { align: 'center' });
+        pdf.text(`Betrag: €${Number(card.original_amount).toFixed(2)}`, 105, 80, { align: 'center' });
+
+        if (card.recipient_name) {
+          pdf.setFontSize(12);
+          pdf.text(`Für: ${card.recipient_name}`, 105, 100, { align: 'center' });
+        }
+
+        if (card.message) {
+          pdf.setFontSize(10);
+          const lines = pdf.splitTextToSize(card.message, 170);
+          pdf.text(lines, 105, 120, { align: 'center' });
+        }
+
+        pdf.setFontSize(10);
+        pdf.text(`Gültig bis: ${new Date(card.expiry_date).toLocaleDateString('de-DE')}`, 105, 250, { align: 'center' });
+
+        const pdfBlob = pdf.output('blob');
+        updateStatus('PDF generated');
+
+        // Upload PDF
+        updateStatus('Uploading PDF...');
+        const formData = new FormData();
+        formData.append('giftCardId', card.id);
+        formData.append('pdf', pdfBlob, `gift-card-${card.code}.pdf`);
+
+        const uploadResponse = await fetch(
+          `${supabaseUrl}/functions/v1/upload-gift-card-pdf`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(`Upload failed: ${error.error}`);
+        }
+
+        const uploadResult = await uploadResponse.json();
+        updateStatus(`PDF uploaded: ${uploadResult.pdf_url}`);
+
+        // Send email
+        if (card.recipient_email) {
+          updateStatus('Sending email...');
+          const emailResponse = await fetch(
+            `${supabaseUrl}/functions/v1/send-gift-card-email`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseKey}`,
+              },
+              body: JSON.stringify({ giftCardId: card.id }),
+            }
+          );
+
+          if (!emailResponse.ok) {
+            const error = await emailResponse.json();
+            updateStatus(`Email failed: ${error.error}`, true);
+          } else {
+            updateStatus(`Email sent to ${card.recipient_email}`);
+          }
+        }
+
+        // Update card display
+        const spinner = cardDiv.querySelector('.animate-spin');
+        if (spinner) {
+          spinner.className = 'rounded-full h-6 w-6 bg-green-100 flex items-center justify-center text-green-600 text-xl';
+          spinner.textContent = '✓';
+        }
+
+      } catch (error) {
+        console.error('Error processing gift card:', error);
+        updateStatus(`Error: ${error.message}`, true);
+
+        const spinner = cardDiv.querySelector('.animate-spin');
+        if (spinner) {
+          spinner.className = 'rounded-full h-6 w-6 bg-red-100 flex items-center justify-center text-red-600 text-xl';
+          spinner.textContent = '✗';
+        }
+      }
+    };
+  </script>
+</body>
+</html>
