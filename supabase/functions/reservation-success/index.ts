@@ -111,21 +111,21 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const headers = new Headers(corsHeaders);
+    headers.set("Content-Type", "text/html; charset=utf-8");
+
     return new Response(buildThankYouHtml(), {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/html; charset=utf-8",
-      },
+      headers,
     });
   } catch (err: any) {
     console.error('Error:', err);
+    const headers = new Headers(corsHeaders);
+    headers.set("Content-Type", "text/html; charset=utf-8");
+
     return new Response(buildThankYouHtml(), {
       status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/html; charset=utf-8",
-      },
+      headers,
     });
   }
 });
