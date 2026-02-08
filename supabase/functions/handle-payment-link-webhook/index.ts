@@ -23,14 +23,105 @@ Deno.serve(async (req: Request) => {
     const signature = req.headers.get("stripe-signature");
     const body = await req.text();
 
-    // Parse the webhook event
+    // Get webhook secret from settings
+    const { data: webhookSecretData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "stripe_webhook_secret")
+      .maybeSingle();
+
+    const webhookSecret = webhookSecretData?.value;
+
+    if (!webhookSecret) {
+      console.error("Webhook secret not configured");
+      return new Response(
+        JSON.stringify({ error: "Webhook secret not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!signature) {
+      console.error("No stripe-signature header");
+      return new Response(
+        JSON.stringify({ error: "No signature provided" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Verify webhook signature
     let event;
     try {
+      // Manual signature verification since we can't use Stripe SDK in Deno edge functions
+      const crypto = globalThis.crypto.subtle;
+      const encoder = new TextEncoder();
+
+      // Extract timestamp and signatures from header
+      const signatureParts = signature.split(',');
+      let timestamp = '';
+      const signatures: string[] = [];
+
+      for (const part of signatureParts) {
+        const [key, value] = part.split('=');
+        if (key === 't') timestamp = value;
+        if (key === 'v1') signatures.push(value);
+      }
+
+      if (!timestamp || signatures.length === 0) {
+        throw new Error("Invalid signature format");
+      }
+
+      // Check timestamp tolerance (5 minutes)
+      const currentTime = Math.floor(Date.now() / 1000);
+      const timestampNum = parseInt(timestamp, 10);
+      if (currentTime - timestampNum > 300) {
+        throw new Error("Timestamp too old");
+      }
+
+      // Construct signed payload
+      const signedPayload = `${timestamp}.${body}`;
+
+      // Compute expected signature
+      const keyData = encoder.encode(webhookSecret);
+      const messageData = encoder.encode(signedPayload);
+
+      const cryptoKey = await crypto.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const signatureBuffer = await crypto.sign('HMAC', cryptoKey, messageData);
+      const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+      const expectedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Compare with provided signatures
+      const signatureValid = signatures.some(sig => sig === expectedSignature);
+
+      if (!signatureValid) {
+        console.error("Signature verification failed");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      console.log("✓ Webhook signature verified");
       event = JSON.parse(body);
     } catch (err) {
-      console.error("Error parsing webhook body:", err);
+      console.error("Signature verification error:", err);
       return new Response(
-        JSON.stringify({ error: "Invalid JSON" }),
+        JSON.stringify({ error: "Signature verification failed" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
