@@ -20,18 +20,21 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get Stripe mode from settings
+    // Get Stripe settings from database
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("key, value")
-      .in("key", ["stripe_mode", "stripe_enabled"]);
+      .in("key", ["stripe_mode", "stripe_enabled", "stripe_live_secret_key", "stripe_test_secret_key"]);
 
     if (settingsError) {
       throw new Error(`Failed to fetch settings: ${settingsError.message}`);
     }
 
-    const stripeMode = settings?.find(s => s.key === "stripe_mode")?.value || "test";
-    const stripeEnabled = settings?.find(s => s.key === "stripe_enabled")?.value === "true";
+    const settingsMap: Record<string, string> = {};
+    settings?.forEach(s => settingsMap[s.key] = s.value);
+
+    const stripeMode = settingsMap["stripe_mode"] || "test";
+    const stripeEnabled = settingsMap["stripe_enabled"] === "true";
 
     if (!stripeEnabled) {
       return new Response(
@@ -45,15 +48,15 @@ Deno.serve(async (req: Request) => {
 
     // Get the appropriate Stripe secret key based on mode
     const stripeSecretKey = stripeMode === "live"
-      ? Deno.env.get("STRIPE_SECRET_KEY_LIVE")
-      : Deno.env.get("STRIPE_SECRET_KEY_TEST");
+      ? settingsMap["stripe_live_secret_key"]
+      : settingsMap["stripe_test_secret_key"];
 
     if (!stripeSecretKey) {
       console.error(`[Stripe] Missing secret key for ${stripeMode} mode`);
       return new Response(
         JSON.stringify({
-          error: `Stripe ${stripeMode} mode is not configured. Please set up your Stripe secret key in Supabase dashboard under Edge Functions > Secrets.`,
-          details: `Missing: STRIPE_SECRET_KEY_${stripeMode.toUpperCase()}`
+          error: `Stripe ${stripeMode} mode is not configured. Please add your Stripe secret key in the admin dashboard settings.`,
+          details: `Missing: stripe_${stripeMode}_secret_key`
         }),
         {
           status: 500,

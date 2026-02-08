@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
+import { CreditCard, AlertCircle, CheckCircle, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -14,6 +14,11 @@ export function StripeSettings() {
   const [stripeMode, setStripeMode] = useState<'test' | 'live'>('test');
   const [toggling, setToggling] = useState(false);
   const isTestMode = import.meta.env.VITE_STRIPE_TEST_MODE === 'true';
+  const [testSecretKey, setTestSecretKey] = useState('');
+  const [liveSecretKey, setLiveSecretKey] = useState('');
+  const [testPublishableKey, setTestPublishableKey] = useState('');
+  const [livePublishableKey, setLivePublishableKey] = useState('');
+  const [showSecretKeys, setShowSecretKeys] = useState(false);
 
   useEffect(() => {
     checkStripeStatus();
@@ -40,24 +45,41 @@ export function StripeSettings() {
   };
 
   const loadSettings = async () => {
-    const { data: depositData } = await supabase
+    const { data: settings } = await supabase
       .from('settings')
       .select('*')
-      .eq('key', 'deposit_amount')
-      .maybeSingle();
+      .in('key', [
+        'deposit_amount',
+        'stripe_enabled',
+        'stripe_test_secret_key',
+        'stripe_live_secret_key',
+        'stripe_test_publishable_key',
+        'stripe_live_publishable_key'
+      ]);
 
-    if (depositData) {
-      setDepositAmount(parseFloat(depositData.value));
-    }
-
-    const { data: stripeEnabledData } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('key', 'stripe_enabled')
-      .maybeSingle();
-
-    if (stripeEnabledData) {
-      setStripeEnabled(stripeEnabledData.value === 'true');
+    if (settings) {
+      settings.forEach(setting => {
+        switch(setting.key) {
+          case 'deposit_amount':
+            setDepositAmount(parseFloat(setting.value));
+            break;
+          case 'stripe_enabled':
+            setStripeEnabled(setting.value === 'true');
+            break;
+          case 'stripe_test_secret_key':
+            setTestSecretKey(setting.value || '');
+            break;
+          case 'stripe_live_secret_key':
+            setLiveSecretKey(setting.value || '');
+            break;
+          case 'stripe_test_publishable_key':
+            setTestPublishableKey(setting.value || '');
+            break;
+          case 'stripe_live_publishable_key':
+            setLivePublishableKey(setting.value || '');
+            break;
+        }
+      });
     }
   };
 
@@ -112,21 +134,27 @@ export function StripeSettings() {
     setSaveSuccess(false);
 
     try {
-      await supabase
-        .from('settings')
-        .upsert({
-          key: 'deposit_amount',
-          value: depositAmount.toString(),
-        }, {
-          onConflict: 'key'
-        });
+      const settingsToUpdate = [
+        { key: 'deposit_amount', value: depositAmount.toString() },
+        { key: 'stripe_enabled', value: stripeEnabled.toString() },
+      ];
+
+      if (testSecretKey) {
+        settingsToUpdate.push({ key: 'stripe_test_secret_key', value: testSecretKey });
+      }
+      if (liveSecretKey) {
+        settingsToUpdate.push({ key: 'stripe_live_secret_key', value: liveSecretKey });
+      }
+      if (testPublishableKey) {
+        settingsToUpdate.push({ key: 'stripe_test_publishable_key', value: testPublishableKey });
+      }
+      if (livePublishableKey) {
+        settingsToUpdate.push({ key: 'stripe_live_publishable_key', value: livePublishableKey });
+      }
 
       await supabase
         .from('settings')
-        .upsert({
-          key: 'stripe_enabled',
-          value: stripeEnabled.toString(),
-        }, {
+        .upsert(settingsToUpdate, {
           onConflict: 'key'
         });
 
@@ -273,6 +301,110 @@ export function StripeSettings() {
               <div className="mt-4 bg-green-900/20 border border-green-700 rounded-lg p-3">
                 <p className="text-sm text-green-300">
                   <strong>Live Mode Active:</strong> Using live API keys. Real charges will be processed.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-4">Stripe API Keys</h3>
+          <p className="text-sm text-slate-400 mb-4">
+            Enter your Stripe API keys. Get them from your <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">Stripe Dashboard</a>.
+          </p>
+
+          <div className="space-y-6">
+            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700 space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-md font-semibold text-white">Test Mode Keys</h4>
+                <span className="text-xs px-2 py-1 bg-amber-500/20 text-amber-300 rounded">For Testing</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Test Publishable Key
+                </label>
+                <input
+                  type="text"
+                  value={testPublishableKey}
+                  onChange={(e) => setTestPublishableKey(e.target.value)}
+                  placeholder="pk_test_..."
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Test Secret Key
+                </label>
+                <div className="relative">
+                  <input
+                    type={showSecretKeys ? "text" : "password"}
+                    value={testSecretKey}
+                    onChange={(e) => setTestSecretKey(e.target.value)}
+                    placeholder="sk_test_..."
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm pr-24"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecretKeys(!showSecretKeys)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-300 bg-slate-700 px-3 py-1 rounded"
+                  >
+                    {showSecretKeys ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 rounded-lg p-4 border border-slate-700 space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-md font-semibold text-white">Live Mode Keys</h4>
+                <span className="text-xs px-2 py-1 bg-green-500/20 text-green-300 rounded">Real Payments</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Live Publishable Key
+                </label>
+                <input
+                  type="text"
+                  value={livePublishableKey}
+                  onChange={(e) => setLivePublishableKey(e.target.value)}
+                  placeholder="pk_live_..."
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Live Secret Key
+                </label>
+                <div className="relative">
+                  <input
+                    type={showSecretKeys ? "text" : "password"}
+                    value={liveSecretKey}
+                    onChange={(e) => setLiveSecretKey(e.target.value)}
+                    placeholder="sk_live_..."
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm pr-24"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecretKeys(!showSecretKeys)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-300 bg-slate-700 px-3 py-1 rounded"
+                  >
+                    {showSecretKeys ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {(testSecretKey.startsWith('sk_live') || liveSecretKey.startsWith('sk_test') ||
+              testPublishableKey.startsWith('pk_live') || livePublishableKey.startsWith('pk_test')) && (
+              <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+                <p className="text-sm text-red-300">
+                  <strong>Warning:</strong> You may have entered keys in the wrong fields. Test keys should start with <code className="bg-slate-800 px-2 py-0.5 rounded">sk_test_</code> or <code className="bg-slate-800 px-2 py-0.5 rounded">pk_test_</code>, and live keys should start with <code className="bg-slate-800 px-2 py-0.5 rounded">sk_live_</code> or <code className="bg-slate-800 px-2 py-0.5 rounded">pk_live_</code>.
                 </p>
               </div>
             )}
