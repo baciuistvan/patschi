@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webhook Tester</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Stripe Webhook Tester</h1>
+
+      <!-- Webhook URL Display -->
+      <div class="mb-8">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Your Webhook URL:</label>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            id="webhookUrl"
+            readonly
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+          >
+          <button
+            onclick="copyWebhookUrl()"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Test Section -->
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Test Webhook Security</h2>
+        <p class="text-gray-600 mb-4">This will check if your webhook is properly secured with signature verification.</p>
+
+        <div class="space-y-4">
+          <!-- Test 1: No Signature -->
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h3 class="font-medium mb-2">Test 1: Request Without Signature</h3>
+            <p class="text-sm text-gray-600 mb-3">Should be rejected (400 Bad Request)</p>
+            <button
+              onclick="testNoSignature()"
+              class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Run Test
+            </button>
+            <div id="test1-result" class="mt-3 text-sm"></div>
+          </div>
+
+          <!-- Test 2: Invalid Signature -->
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h3 class="font-medium mb-2">Test 2: Request With Invalid Signature</h3>
+            <p class="text-sm text-gray-600 mb-3">Should be rejected (400 Bad Request)</p>
+            <button
+              onclick="testInvalidSignature()"
+              class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Run Test
+            </button>
+            <div id="test2-result" class="mt-3 text-sm"></div>
+          </div>
+
+          <!-- Test 3: Check Webhook Secret -->
+          <div class="border border-gray-200 rounded-lg p-4">
+            <h3 class="font-medium mb-2">Test 3: Check Webhook Secret Configuration</h3>
+            <p class="text-sm text-gray-600 mb-3">Verify webhook secret is stored in database</p>
+            <button
+              onclick="checkWebhookSecret()"
+              class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Run Test
+            </button>
+            <div id="test3-result" class="mt-3 text-sm"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stripe CLI Instructions -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4 text-blue-900">Test With Real Stripe Events</h2>
+        <p class="text-gray-700 mb-4">To test with actual Stripe events, use the Stripe CLI:</p>
+
+        <div class="space-y-3">
+          <div>
+            <p class="text-sm font-medium text-gray-700 mb-1">1. Install Stripe CLI:</p>
+            <code class="block bg-white px-4 py-2 rounded border text-sm">brew install stripe/stripe-cli/stripe</code>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-gray-700 mb-1">2. Login to Stripe:</p>
+            <code class="block bg-white px-4 py-2 rounded border text-sm">stripe login</code>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-gray-700 mb-1">3. Forward events to your webhook:</p>
+            <code class="block bg-white px-4 py-2 rounded border text-sm break-all" id="stripeForwardCmd"></code>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-gray-700 mb-1">4. Trigger a test event:</p>
+            <code class="block bg-white px-4 py-2 rounded border text-sm">stripe trigger checkout.session.completed</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Webhook Logs -->
+      <div class="mt-8">
+        <h2 class="text-xl font-semibold mb-4">Check Stripe Dashboard</h2>
+        <p class="text-gray-600 mb-4">View webhook logs in your Stripe Dashboard:</p>
+        <a
+          href="https://dashboard.stripe.com/test/webhooks"
+          target="_blank"
+          class="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          Open Stripe Webhook Logs →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('supabaseUrl');
+    const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabaseKey');
+
+    window.supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+    // Set webhook URL
+    if (supabaseUrl) {
+      const webhookUrl = `${supabaseUrl}/functions/v1/handle-payment-link-webhook`;
+      document.getElementById('webhookUrl').value = webhookUrl;
+      document.getElementById('stripeForwardCmd').textContent = `stripe listen --forward-to ${webhookUrl}`;
+      window.webhookUrl = webhookUrl;
+    }
+
+    window.copyWebhookUrl = function() {
+      const input = document.getElementById('webhookUrl');
+      input.select();
+      document.execCommand('copy');
+      alert('Webhook URL copied to clipboard!');
+    };
+
+    window.testNoSignature = async function() {
+      const resultDiv = document.getElementById('test1-result');
+      resultDiv.innerHTML = '<span class="text-gray-600">Testing...</span>';
+
+      try {
+        const response = await fetch(window.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'checkout.session.completed',
+            data: { object: {} }
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.status === 400) {
+          resultDiv.innerHTML = '<div class="text-green-600 font-medium">✓ PASS: Request rejected (no signature)</div>';
+        } else {
+          resultDiv.innerHTML = `<div class="text-red-600 font-medium">✗ FAIL: Request accepted (status ${response.status})</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+      }
+    };
+
+    window.testInvalidSignature = async function() {
+      const resultDiv = document.getElementById('test2-result');
+      resultDiv.innerHTML = '<span class="text-gray-600">Testing...</span>';
+
+      try {
+        const response = await fetch(window.webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'stripe-signature': 't=1234567890,v1=fakesignature'
+          },
+          body: JSON.stringify({
+            type: 'checkout.session.completed',
+            data: { object: {} }
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.status === 400) {
+          resultDiv.innerHTML = '<div class="text-green-600 font-medium">✓ PASS: Invalid signature rejected</div>';
+        } else {
+          resultDiv.innerHTML = `<div class="text-red-600 font-medium">✗ FAIL: Invalid signature accepted (status ${response.status})</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+      }
+    };
+
+    window.checkWebhookSecret = async function() {
+      const resultDiv = document.getElementById('test3-result');
+      resultDiv.innerHTML = '<span class="text-gray-600">Checking...</span>';
+
+      try {
+        if (!window.supabase) {
+          resultDiv.innerHTML = '<div class="text-red-600">Supabase not configured</div>';
+          return;
+        }
+
+        const { data, error } = await window.supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'stripe_webhook_secret')
+          .maybeSingle();
+
+        if (error) {
+          resultDiv.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+        } else if (data && data.value) {
+          const secret = data.value;
+          const masked = secret.substring(0, 12) + '***' + secret.substring(secret.length - 4);
+          resultDiv.innerHTML = `<div class="text-green-600 font-medium">✓ PASS: Webhook secret configured (${masked})</div>`;
+        } else {
+          resultDiv.innerHTML = '<div class="text-red-600 font-medium">✗ FAIL: No webhook secret found in database</div>';
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+      }
+    };
+  </script>
+</body>
+</html>
