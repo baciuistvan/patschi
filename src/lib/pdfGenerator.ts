@@ -145,22 +145,26 @@ export async function generateGiftCardPDF(giftCard: GiftCard): Promise<Blob> {
   const dividerY = giftCard.message ? 200 : 175;
   pdf.line(75, dividerY, 135, dividerY);
 
+  // GT CODE section
   pdf.setFontSize(9);
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(102, 102, 102);
   pdf.text('GT CODE', pageWidth / 2, dividerY + 10, { align: 'center' });
 
+  // Dashed box for code
   pdf.setDrawColor(0, 0, 0);
   pdf.setLineWidth(0.5);
-  pdf.setLineDash([2, 2]);
+  pdf.setLineDash([3, 3]);
   const codeBoxY = dividerY + 15;
-  pdf.roundedRect(40, codeBoxY, cardWidth - 80, 15, 3, 3, 'S');
+  const codeBoxHeight = 18;
+  pdf.roundedRect(40, codeBoxY, cardWidth - 80, codeBoxHeight, 2, 2, 'S');
   pdf.setLineDash([]);
 
+  // Code text in red
   pdf.setFontSize(16);
   pdf.setFont('courier', 'bold');
   pdf.setTextColor(220, 38, 38);
-  pdf.text(giftCard.code, pageWidth / 2, codeBoxY + 10, { align: 'center' });
+  pdf.text(giftCard.code, pageWidth / 2, codeBoxY + 12, { align: 'center' });
 
   const generatedDate = new Date().toLocaleDateString('de-DE', {
     year: 'numeric',
@@ -168,35 +172,32 @@ export async function generateGiftCardPDF(giftCard: GiftCard): Promise<Blob> {
     day: '2-digit'
   });
 
-  const detailsY = codeBoxY + 25;
-  pdf.setFontSize(11);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(102, 102, 102);
+  const detailsY = codeBoxY + codeBoxHeight + 10;
 
   let currentY = detailsY;
 
   // Only show "From" if showPurchaser is true (customer purchase)
   if (giftCard.showPurchaser !== false) {
+    pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(220, 38, 38);
     pdf.text('From: ', 30, currentY);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(102, 102, 102);
+    pdf.setTextColor(0, 0, 0);
     pdf.text(giftCard.purchaser_name, 50, currentY);
     currentY += 8;
   }
 
+  // "Gültig ab:" section
+  pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(220, 38, 38);
-  pdf.text('Gültig ab: ', 30, currentY);
+  pdf.text('Gültig ab:', 30, currentY);
   pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(102, 102, 102);
-  pdf.text(generatedDate, 57, currentY);
+  pdf.setTextColor(0, 0, 0);
+  pdf.text(generatedDate, 60, currentY);
 
-  pdf.setDrawColor(233, 236, 239);
-  pdf.setLineWidth(0.5);
-  pdf.line(20, currentY + 7, cardWidth - 20, currentY + 7);
-
+  // Footer section
   pdf.setFontSize(7);
   pdf.setTextColor(0, 0, 0);
   const footerText = [
