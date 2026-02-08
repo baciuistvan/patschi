@@ -54,19 +54,26 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get Stripe settings
-    const { data: settings } = await supabase
+    // Get settings from database
+    const { data: settingsArray } = await supabase
       .from('settings')
-      .select('*')
-      .limit(1)
-      .maybeSingle();
+      .select('key, value')
+      .in('key', ['stripe_mode', 'stripe_live_secret_key', 'stripe_test_secret_key', 'success_page_url']);
 
-    const stripeMode = settings?.stripe_mode || 'test';
+    const settings: Record<string, string> = {};
+    settingsArray?.forEach((s: any) => {
+      settings[s.key] = s.value;
+    });
+
+    const stripeMode = settings['stripe_mode'] || 'test';
     const stripeKey = stripeMode === 'live'
-      ? (settings?.stripe_live_secret_key || Deno.env.get("STRIPE_SECRET_KEY"))
-      : (settings?.stripe_test_secret_key || Deno.env.get("STRIPE_SECRET_KEY"));
+      ? (settings['stripe_live_secret_key'] || Deno.env.get("STRIPE_SECRET_KEY"))
+      : (settings['stripe_test_secret_key'] || Deno.env.get("STRIPE_SECRET_KEY"));
 
-    const defaultSuccessUrl = `${supabaseUrl}/functions/v1/reservation-success`;
+    // Get success page URL from settings
+    const defaultSuccessUrl = settings['success_page_url']
+      ? `${settings['success_page_url'].replace('/zahlung-erfolgreich.html', '')}/reservation-success.html`
+      : `https://playful-travesseiro-8cccaa.netlify.app/reservation-success.html`;
 
     if (!stripeKey) {
       return new Response(
