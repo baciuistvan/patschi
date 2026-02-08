@@ -91,18 +91,33 @@ export function ReservationWidget() {
 
   const initializeStripe = async (mode: 'test' | 'live') => {
     try {
-      const keyEnvVar = mode === 'test'
-        ? 'VITE_STRIPE_PUBLISHABLE_KEY_TEST'
-        : 'VITE_STRIPE_PUBLISHABLE_KEY_LIVE';
-
-      let key = import.meta.env[keyEnvVar];
+      // Load the appropriate key from database settings
+      const settingKey = mode === 'test'
+        ? 'stripe_test_publishable_key'
+        : 'stripe_live_publishable_key';
 
       console.log('[Stripe Init] Mode:', mode);
-      console.log('[Stripe Init] Looking for env var:', keyEnvVar);
+      console.log('[Stripe Init] Loading key from settings:', settingKey);
+
+      const { data: keyData, error: keyError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', settingKey)
+        .single();
+
+      if (keyError || !keyData?.value) {
+        console.error(`[Stripe Init] ${mode} key not found in database:`, keyError);
+        setStripeError(`Stripe ${mode === 'test' ? 'Test' : 'Live'}-Modus ist nicht konfiguriert. Bitte laden Sie die Seite neu oder kontaktieren Sie den Administrator.`);
+        setStripe(null);
+        setCardElement(null);
+        return;
+      }
+
+      const key = keyData.value;
       console.log('[Stripe Init] Key found:', key ? `${key.substring(0, 10)}...` : 'NONE');
 
       if (!key || key.length === 0) {
-        console.error(`[Stripe Init] ${mode} key not found`);
+        console.error(`[Stripe Init] ${mode} key is empty`);
         setStripeError(`Stripe ${mode === 'test' ? 'Test' : 'Live'}-Modus ist nicht konfiguriert. Bitte laden Sie die Seite neu oder kontaktieren Sie den Administrator.`);
         setStripe(null);
         setCardElement(null);
