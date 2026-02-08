@@ -158,12 +158,6 @@ Deno.serve(async (req: Request) => {
         customer_name,
         customer_email,
       },
-      after_completion: {
-        type: 'redirect',
-        redirect: {
-          url: success_url || `${defaultSuccessUrl}?booking_code=${booking_code}`,
-        },
-      },
     });
 
     // Update reservation with payment link info
