@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, TrendingDown, Clock, Users, Calendar, Mail, Phone, X } from 'lucide-react';
+import { AlertCircle, TrendingDown, Clock, Users, Calendar, Mail, Phone, X, Send, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AbandonedReservation {
@@ -55,10 +55,19 @@ export function AbandonedReservations() {
   });
   const [selectedReservation, setSelectedReservation] = useState<AbandonedReservation | null>(null);
   const [filterStage, setFilterStage] = useState<string>('all');
+  const [sending, setSending] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   useEffect(() => {
     loadReservations();
   }, []);
+
+  useEffect(() => {
+    setSending(false);
+    setSendSuccess(false);
+    setSendError(null);
+  }, [selectedReservation]);
 
   const loadReservations = async () => {
     try {
@@ -113,6 +122,62 @@ export function AbandonedReservations() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleSendPaymentLink = async () => {
+    if (!selectedReservation || !selectedReservation.customer_email) {
+      setSendError('Keine gültige E-Mail-Adresse vorhanden');
+      setTimeout(() => setSendError(null), 4000);
+      return;
+    }
+
+    try {
+      setSending(true);
+      setSendSuccess(false);
+      setSendError(null);
+
+      const { data: { url: supabaseUrl } } = await supabase.auth.getSession();
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-link`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_name: selectedReservation.customer_name,
+          customer_email: selectedReservation.customer_email,
+          customer_phone: selectedReservation.customer_phone || '',
+          reservation_date: selectedReservation.reservation_date,
+          reservation_time: selectedReservation.reservation_time,
+          party_size: selectedReservation.party_size,
+          room_id: selectedReservation.room_id,
+          special_requests: '',
+          payment_amount: selectedReservation.amount || (selectedReservation.party_size * 3500),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Erstellen des Zahlungslinks');
+      }
+
+      const result = await response.json();
+
+      setSendSuccess(true);
+      setTimeout(() => {
+        setSendSuccess(false);
+      }, 4000);
+
+      await loadReservations();
+    } catch (error: any) {
+      console.error('Error sending payment link:', error);
+      setSendError(error.message || 'Fehler beim Senden des Zahlungslinks');
+      setTimeout(() => setSendError(null), 4000);
+    } finally {
+      setSending(false);
+    }
   };
 
   if (loading) {
@@ -448,6 +513,60 @@ export function AbandonedReservations() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={handleSendPaymentLink}
+                  disabled={sending || !selectedReservation.customer_email}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition"
+                >
+                  {sending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Senden...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      <span>Zahlungslink schicken</span>
+                    </>
+                  )}
+                </button>
+
+                {sendSuccess && (
+                  <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                        Zahlungslink erfolgreich gesendet!
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                        Eine E-Mail wurde an {selectedReservation.customer_email} gesendet.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {sendError && (
+                  <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                        Fehler beim Senden
+                      </p>
+                      <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+                        {sendError}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!selectedReservation.customer_email && (
+                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 text-center">
+                    Keine E-Mail-Adresse vorhanden
+                  </p>
+                )}
               </div>
             </div>
           </div>
