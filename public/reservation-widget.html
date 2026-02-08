@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tisch Reservierung</title>
+    <title>Table Reservation | Tisch Reservierung</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -74,6 +74,194 @@
         const { useState, useEffect, useRef } = React;
         const { createClient } = supabase;
 
+        // Language translations
+        const translations = {
+            de: {
+                title: 'Tisch Reservierung',
+                subtitle: 'Reservieren Sie Ihren Tisch für 15:45 Uhr',
+                maintenance: {
+                    title: 'Online-Reservierung nicht verfügbar',
+                    message: 'Unsere Online-Reservierung ist derzeit nicht verfügbar.',
+                    apology: 'Wir entschuldigen uns für die Unannehmlichkeiten und danken für Ihr Verständnis.',
+                    contact: 'Für Reservierungen kontaktieren Sie uns bitte:'
+                },
+                success: {
+                    title: 'Reservierung bestätigt!',
+                    thanks: 'Vielen Dank für Ihre Buchung',
+                    bookingNumber: 'Ihre Buchungsnummer',
+                    keepNumber: 'Bitte bewahren Sie diese Nummer auf',
+                    date: 'Datum',
+                    time: 'Uhrzeit',
+                    guests: 'Personen',
+                    paid: 'Bezahlt',
+                    emailSent: 'Eine Bestätigungs-E-Mail wurde an',
+                    important: 'Wichtig:',
+                    newReservation: 'Neue Reservierung'
+                },
+                step1: {
+                    heading: 'Datum und Anzahl der Gäste',
+                    selectDate: 'Datum wählen',
+                    timeFixed: 'Uhrzeit (fest)',
+                    timeNote: 'Alle Reservierungen sind für 15:45 Uhr',
+                    partySize: 'Anzahl der Personen (max. 10)',
+                    area: 'Bereich',
+                    available: 'Tisch verfügbar! Sie können mit Ihrer Buchung fortfahren.'
+                },
+                step2: {
+                    heading: 'Ihre Kontaktdaten',
+                    noDeposit: 'Keine Anzahlung erforderlich. Ihre Reservierung wird nach dem Absenden direkt bestätigt.',
+                    name: 'Name *',
+                    email: 'E-Mail *',
+                    phone: 'Telefon (optional)',
+                    specialRequests: 'Besondere Wünsche (optional)',
+                    placeholder: {
+                        name: 'Max Mustermann',
+                        email: 'max@beispiel.de',
+                        phone: '+43 123 456789',
+                        requests: 'z.B. Allergien, besondere Anlässe...'
+                    }
+                },
+                step3: {
+                    heading: 'Zahlung & Bestätigung',
+                    summary: 'Reservierungsübersicht',
+                    date: 'Datum:',
+                    time: 'Uhrzeit:',
+                    guests: 'Personen:',
+                    deposit: 'Anzahlung:',
+                    depositRequired: 'Eine Anzahlung von',
+                    depositRequired2: 'ist erforderlich, um Ihre Reservierung zu bestätigen.',
+                    paymentMethod: 'Zahlungsmethode',
+                    appleGooglePay: 'Apple Pay / Google Pay',
+                    orPayWithCard: 'oder mit Karte bezahlen',
+                    securePayment: 'Ihre Zahlung wird sicher über Stripe verarbeitet. Ihre Kartendaten werden verschlüsselt übertragen und niemals auf unserem Server gespeichert.',
+                    payNow: 'Jetzt bezahlen & buchen'
+                },
+                buttons: {
+                    back: 'Zurück',
+                    next: 'Weiter',
+                    checkingAvailability: 'Verfügbarkeit prüfen...',
+                    creatingReservation: 'Reservierung wird erstellt...',
+                    completeReservation: 'Reservierung abschließen',
+                    processing: 'Wird verarbeitet...'
+                },
+                errors: {
+                    selectDate: 'Bitte wählen Sie ein Datum',
+                    futureDate: 'Bitte wählen Sie ein zukünftiges Datum',
+                    todayCutoff: 'Reservierungen für heute sind nur bis 12:00 Uhr möglich. Bitte wählen Sie ein Datum ab morgen.',
+                    partySize: 'Bitte geben Sie die Anzahl der Personen an',
+                    maxGuests: 'Die maximale Gruppengröße beträgt 10 Personen. Für größere Gruppen kontaktieren Sie uns bitte direkt.',
+                    noAvailability: 'Keine Verfügbarkeit',
+                    allClosed: 'An diesem Datum sind alle Tische geschlossen. Bitte wählen Sie ein anderes Datum.',
+                    fullyBooked: 'An diesem Datum und dieser Uhrzeit sind alle Tische bereits gebucht. Bitte wählen Sie ein anderes Datum.',
+                    capacityExceeded: 'Leider haben wir keine verfügbaren Tische für',
+                    capacityExceeded2: 'Personen. Bitte kontaktieren Sie uns direkt.',
+                    fillRequired: 'Bitte füllen Sie alle Pflichtfelder aus',
+                    invalidEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+                    checkingError: 'Fehler beim Prüfen der Verfügbarkeit',
+                    creationError: 'Fehler beim Erstellen der Reservierung',
+                    paymentError: 'Fehler beim Erstellen der Zahlung',
+                    paymentFailed: 'Zahlung fehlgeschlagen',
+                    stripeNotLoaded: 'Stripe ist noch nicht geladen. Bitte versuchen Sie es erneut.',
+                    generic: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.'
+                }
+            },
+            en: {
+                title: 'Table Reservation',
+                subtitle: 'Reserve your table for 15:45',
+                maintenance: {
+                    title: 'Online Reservations Unavailable',
+                    message: 'Our online reservation system is currently unavailable.',
+                    apology: 'We apologize for the inconvenience and thank you for your understanding.',
+                    contact: 'For reservations, please contact us:'
+                },
+                success: {
+                    title: 'Reservation Confirmed!',
+                    thanks: 'Thank you for your booking',
+                    bookingNumber: 'Your Booking Number',
+                    keepNumber: 'Please keep this number safe',
+                    date: 'Date',
+                    time: 'Time',
+                    guests: 'Guests',
+                    paid: 'Paid',
+                    emailSent: 'A confirmation email has been sent to',
+                    important: 'Important:',
+                    newReservation: 'New Reservation'
+                },
+                step1: {
+                    heading: 'Date and Number of Guests',
+                    selectDate: 'Select Date',
+                    timeFixed: 'Time (fixed)',
+                    timeNote: 'All reservations are for 15:45',
+                    partySize: 'Number of Guests (max. 10)',
+                    area: 'Area',
+                    available: 'Table available! You can proceed with your booking.'
+                },
+                step2: {
+                    heading: 'Your Contact Details',
+                    noDeposit: 'No deposit required. Your reservation will be confirmed immediately after submission.',
+                    name: 'Name *',
+                    email: 'Email *',
+                    phone: 'Phone (optional)',
+                    specialRequests: 'Special Requests (optional)',
+                    placeholder: {
+                        name: 'John Doe',
+                        email: 'john@example.com',
+                        phone: '+43 123 456789',
+                        requests: 'e.g. allergies, special occasions...'
+                    }
+                },
+                step3: {
+                    heading: 'Payment & Confirmation',
+                    summary: 'Reservation Summary',
+                    date: 'Date:',
+                    time: 'Time:',
+                    guests: 'Guests:',
+                    deposit: 'Deposit:',
+                    depositRequired: 'A deposit of',
+                    depositRequired2: 'is required to confirm your reservation.',
+                    paymentMethod: 'Payment Method',
+                    appleGooglePay: 'Apple Pay / Google Pay',
+                    orPayWithCard: 'or pay by card',
+                    securePayment: 'Your payment is securely processed via Stripe. Your card details are encrypted and never stored on our servers.',
+                    payNow: 'Pay Now & Book'
+                },
+                buttons: {
+                    back: 'Back',
+                    next: 'Next',
+                    checkingAvailability: 'Checking availability...',
+                    creatingReservation: 'Creating reservation...',
+                    completeReservation: 'Complete Reservation',
+                    processing: 'Processing...'
+                },
+                errors: {
+                    selectDate: 'Please select a date',
+                    futureDate: 'Please select a future date',
+                    todayCutoff: 'Reservations for today are only possible until 12:00 PM. Please select a date from tomorrow onwards.',
+                    partySize: 'Please enter the number of guests',
+                    maxGuests: 'Maximum group size is 10 people. For larger groups, please contact us directly.',
+                    noAvailability: 'No availability',
+                    allClosed: 'All tables are closed on this date. Please select another date.',
+                    fullyBooked: 'All tables are already booked on this date and time. Please select another date.',
+                    capacityExceeded: 'Unfortunately we have no available tables for',
+                    capacityExceeded2: 'guests. Please contact us directly.',
+                    fillRequired: 'Please fill in all required fields',
+                    invalidEmail: 'Please enter a valid email address',
+                    checkingError: 'Error checking availability',
+                    creationError: 'Error creating reservation',
+                    paymentError: 'Error creating payment',
+                    paymentFailed: 'Payment failed',
+                    stripeNotLoaded: 'Stripe is not yet loaded. Please try again.',
+                    generic: 'An error occurred. Please try again.'
+                }
+            }
+        };
+
+        // Detect browser language (German or default to English)
+        const detectLanguage = () => {
+            const browserLang = navigator.language || navigator.userLanguage;
+            return browserLang.toLowerCase().startsWith('de') ? 'de' : 'en';
+        };
+
         // Initialize Supabase client
         const supabaseClient = createClient(
             'https://qwwerwkekvmaswusvgxy.supabase.co',
@@ -139,6 +327,10 @@
             // Maintenance mode flag
             const MAINTENANCE_MODE = false;
 
+            // Language state with auto-detection
+            const [language, setLanguage] = useState(detectLanguage());
+            const t = translations[language];
+
             const [step, setStep] = useState(1);
             const [rooms, setRooms] = useState([]);
             const [loading, setLoading] = useState(false);
@@ -153,6 +345,16 @@
             const [stripeEnabled, setStripeEnabled] = useState(true);
             const [sessionStarted, setSessionStarted] = useState(false);
             const [paymentIntentCreated, setPaymentIntentCreated] = useState(false);
+
+            const toggleLanguage = () => {
+                setLanguage(prev => prev === 'de' ? 'en' : 'de');
+            };
+
+            // Update document title when language changes
+            useEffect(() => {
+                document.title = language === 'de' ? 'Tisch Reservierung' : 'Table Reservation';
+                document.documentElement.lang = language;
+            }, [language]);
 
             const [formData, setFormData] = useState({
                 party_size: 2,
@@ -235,7 +437,7 @@
                         country: 'AT',
                         currency: 'eur',
                         total: {
-                            label: 'Reservierungs-Anzahlung',
+                            label: language === 'de' ? 'Reservierungs-Anzahlung' : 'Reservation Deposit',
                             amount: formData.payment_amount,
                         },
                         requestPayerName: true,
@@ -269,7 +471,7 @@
                                 }
                             } catch (err) {
                                 console.error('Error mounting card element:', err);
-                                setError('Fehler beim Laden der Zahlungsoption. Bitte laden Sie die Seite neu.');
+                                setError(t.errors.paymentError);
                             }
                         }, 100);
                     } else {
@@ -406,7 +608,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Fehler beim Prüfen der Verfügbarkeit');
+                    throw new Error(t.errors.checkingError);
                 }
 
                 return await response.json();
@@ -421,14 +623,14 @@
 
                 if (step === 1) {
                     if (!formData.reservation_date) {
-                        setError('Bitte wählen Sie ein Datum');
+                        setError(t.errors.selectDate);
                         return;
                     }
                     const selectedDate = new Date(formData.reservation_date);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     if (selectedDate < today) {
-                        setError('Bitte wählen Sie ein zukünftiges Datum');
+                        setError(t.errors.futureDate);
                         return;
                     }
 
@@ -441,17 +643,17 @@
                     const isToday = selectedDate.getTime() === today.getTime();
 
                     if (isToday && currentTimeInMinutes >= cutoffTimeInMinutes) {
-                        setError('Reservierungen für heute sind nur bis 12:00 Uhr möglich. Bitte wählen Sie ein Datum ab morgen.');
+                        setError(t.errors.todayCutoff);
                         return;
                     }
 
                     if (!formData.party_size || formData.party_size < 1) {
-                        setError('Bitte geben Sie die Anzahl der Personen an');
+                        setError(t.errors.partySize);
                         return;
                     }
 
                     if (formData.party_size > 10) {
-                        setError('Die maximale Gruppengröße beträgt 10 Personen. Für größere Gruppen kontaktieren Sie uns bitte direkt.');
+                        setError(t.errors.maxGuests);
                         return;
                     }
 
@@ -460,13 +662,13 @@
                     if (!availability.available) {
                         setAvailabilityChecked(false);
                         setSelectedTables([]);
-                        let errorMessage = availability.message || 'Keine Verfügbarkeit';
+                        let errorMessage = availability.message || t.errors.noAvailability;
                         if (availability.reason === 'closed') {
-                            errorMessage = 'An diesem Datum sind alle Tische geschlossen. Bitte wählen Sie ein anderes Datum.';
+                            errorMessage = t.errors.allClosed;
                         } else if (availability.reason === 'fully_booked') {
-                            errorMessage = 'An diesem Datum und dieser Uhrzeit sind alle Tische bereits gebucht. Bitte wählen Sie ein anderes Datum.';
+                            errorMessage = t.errors.fullyBooked;
                         } else if (availability.reason === 'capacity_exceeded') {
-                            errorMessage = `Leider haben wir keine verfügbaren Tische für ${formData.party_size} Personen. Bitte kontaktieren Sie uns direkt.`;
+                            errorMessage = `${t.errors.capacityExceeded} ${formData.party_size} ${t.errors.capacityExceeded2}`;
                         }
                         setError(errorMessage);
                         return;
@@ -478,12 +680,12 @@
 
                 if (step === 2) {
                     if (!formData.customer_name || !formData.customer_email) {
-                        setError('Bitte füllen Sie alle Pflichtfelder aus');
+                        setError(t.errors.fillRequired);
                         return;
                     }
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(formData.customer_email)) {
-                        setError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
+                        setError(t.errors.invalidEmail);
                         return;
                     }
 
@@ -498,7 +700,7 @@
                     setStep(step + 1);
                 } catch (err) {
                     console.error('Error in handleNextStep:', err);
-                    setError(err.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+                    setError(err.message || t.errors.generic);
                 } finally {
                     setLoading(false);
                 }
@@ -537,14 +739,14 @@
                     const responseData = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(responseData.error || 'Fehler beim Erstellen der Reservierung');
+                        throw new Error(responseData.error || t.errors.creationError);
                     }
 
                     setBookingCode(responseData.booking_code);
                     setSuccess(true);
                 } catch (err) {
                     console.error('Error creating free reservation:', err);
-                    setError(err.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+                    setError(err.message || t.errors.generic);
                 }
             };
 
@@ -574,12 +776,12 @@
 
                     if (!response.ok) {
                         console.error('Payment intent error:', data);
-                        throw new Error(data.error || 'Fehler beim Erstellen der Zahlung');
+                        throw new Error(data.error || t.errors.paymentError);
                     }
 
                     if (!data.clientSecret) {
                         console.error('No client secret in response:', data);
-                        throw new Error('Keine Zahlungsinformationen erhalten');
+                        throw new Error(t.errors.paymentError);
                     }
 
                     setPaymentIntentCreated(true);
@@ -593,7 +795,7 @@
             const handleSubmit = async () => {
                 const card = cardElementRef.current || cardElement;
                 if (!stripe || !card) {
-                    setError('Stripe ist noch nicht geladen. Bitte versuchen Sie es erneut.');
+                    setError(t.errors.stripeNotLoaded);
                     return;
                 }
 
@@ -621,7 +823,7 @@
 
                     if (paymentIntent.status !== 'succeeded') {
                         await logAbandonment('payment_failed', 'Payment not succeeded', `Status: ${paymentIntent.status}`, paymentIntent.id);
-                        throw new Error('Zahlung fehlgeschlagen');
+                        throw new Error(t.errors.paymentFailed);
                     }
 
                     const reservationData = {
@@ -656,14 +858,14 @@
                     const responseData = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(responseData.error || 'Fehler beim Erstellen der Reservierung');
+                        throw new Error(responseData.error || t.errors.creationError);
                     }
 
                     setBookingCode(responseData.booking_code);
                     setSuccess(true);
                 } catch (err) {
                     console.error('Error:', err);
-                    setError(err.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+                    setError(err.message || t.errors.generic);
                 } finally {
                     setLoading(false);
                 }
@@ -681,15 +883,15 @@
                                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                 </svg>
                             </div>
-                            <h2 style={{fontSize: '28px', fontWeight: 'bold', color: '#0f172a', marginBottom: '16px'}}>Online-Reservierung nicht verfügbar</h2>
+                            <h2 style={{fontSize: '28px', fontWeight: 'bold', color: '#0f172a', marginBottom: '16px'}}>{t.maintenance.title}</h2>
                             <p style={{fontSize: '18px', color: '#475569', lineHeight: '1.6', marginBottom: '12px'}}>
-                                Unsere Online-Reservierung ist derzeit nicht verfügbar.
+                                {t.maintenance.message}
                             </p>
                             <p style={{fontSize: '16px', color: '#64748b', lineHeight: '1.6'}}>
-                                Wir entschuldigen uns für die Unannehmlichkeiten und danken für Ihr Verständnis.
+                                {t.maintenance.apology}
                             </p>
                             <div style={{background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: '16px', padding: '24px', marginTop: '32px', textAlign: 'left'}}>
-                                <p style={{fontSize: '16px', color: '#334155', fontWeight: '600', marginBottom: '16px'}}>Für Reservierungen kontaktieren Sie uns bitte:</p>
+                                <p style={{fontSize: '16px', color: '#334155', fontWeight: '600', marginBottom: '16px'}}>{t.maintenance.contact}</p>
                                 <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
                                     <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                                         <Phone />
@@ -713,23 +915,23 @@
                             <div style={{width: '80px', height: '80px', background: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)'}}>
                                 <Check />
                             </div>
-                            <h2 style={{fontSize: '30px', fontWeight: 'bold', color: '#0f172a', marginBottom: '12px'}}>Reservierung bestätigt!</h2>
-                            <p style={{fontSize: '18px', color: '#475569', marginBottom: '32px'}}>Vielen Dank für Ihre Buchung</p>
+                            <h2 style={{fontSize: '30px', fontWeight: 'bold', color: '#0f172a', marginBottom: '12px'}}>{t.success.title}</h2>
+                            <p style={{fontSize: '18px', color: '#475569', marginBottom: '32px'}}>{t.success.thanks}</p>
 
                             <div style={{background: 'white', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '32px', marginBottom: '32px'}}>
                                 <div style={{marginBottom: '24px'}}>
-                                    <p style={{fontSize: '14px', color: '#475569', marginBottom: '8px'}}>Ihre Buchungsnummer</p>
+                                    <p style={{fontSize: '14px', color: '#475569', marginBottom: '8px'}}>{t.success.bookingNumber}</p>
                                     <div style={{fontSize: '36px', fontWeight: 'bold', color: '#10b981', letterSpacing: '0.1em', marginBottom: '4px'}}>
                                         {bookingCode}
                                     </div>
-                                    <p style={{fontSize: '14px', color: '#64748b'}}>Bitte bewahren Sie diese Nummer auf</p>
+                                    <p style={{fontSize: '14px', color: '#64748b'}}>{t.success.keepNumber}</p>
                                 </div>
 
                                 <div style={{borderTop: '1px solid #e2e8f0', paddingTop: '24px', textAlign: 'left'}}>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                                        <span style={{color: '#475569'}}>Datum</span>
+                                        <span style={{color: '#475569'}}>{t.success.date}</span>
                                         <span style={{fontWeight: '600', color: '#0f172a'}}>
-                                            {new Date(formData.reservation_date).toLocaleDateString('de-DE', {
+                                            {new Date(formData.reservation_date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
                                                 weekday: 'long',
                                                 year: 'numeric',
                                                 month: 'long',
@@ -738,16 +940,16 @@
                                         </span>
                                     </div>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                                        <span style={{color: '#475569'}}>Uhrzeit</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>15:45 Uhr</span>
+                                        <span style={{color: '#475569'}}>{t.success.time}</span>
+                                        <span style={{fontWeight: '600', color: '#0f172a'}}>15:45{language === 'de' ? ' Uhr' : ''}</span>
                                     </div>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                                        <span style={{color: '#475569'}}>Personen</span>
+                                        <span style={{color: '#475569'}}>{t.success.guests}</span>
                                         <span style={{fontWeight: '600', color: '#0f172a'}}>{formData.party_size}</span>
                                     </div>
                                     {stripeEnabled && formData.payment_amount > 0 && (
                                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #e2e8f0'}}>
-                                            <span style={{color: '#475569'}}>Bezahlt</span>
+                                            <span style={{color: '#475569'}}>{t.success.paid}</span>
                                             <span style={{fontWeight: 'bold', color: '#10b981', fontSize: '18px'}}>
                                                 €{(formData.payment_amount / 100).toFixed(2)}
                                             </span>
@@ -758,7 +960,7 @@
 
                             <div style={{background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '12px', padding: '24px', marginBottom: '24px'}}>
                                 <p style={{fontSize: '14px', color: '#1e40af'}}>
-                                    <strong>Wichtig:</strong> Eine Bestätigungs-E-Mail wurde an <strong>{formData.customer_email}</strong> gesendet.
+                                    <strong>{t.success.important}</strong> {t.success.emailSent} <strong>{formData.customer_email}</strong>.
                                 </p>
                             </div>
 
@@ -786,7 +988,7 @@
                                 onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
                                 onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                             >
-                                Neue Reservierung
+                                {t.success.newReservation}
                             </button>
                         </div>
                     </div>
@@ -796,8 +998,18 @@
             return (
                 <div style={{maxWidth: '672px', margin: '0 auto', padding: '16px', background: 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'}}>
                     <div style={{marginBottom: '24px'}}>
-                        <h2 style={{fontSize: '24px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px'}}>Tisch Reservierung</h2>
-                        <p style={{fontSize: '16px', color: '#475569'}}>Reservieren Sie Ihren Tisch für 15:45 Uhr</p>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+                            <h2 style={{fontSize: '24px', fontWeight: 'bold', color: '#0f172a'}}>{t.title}</h2>
+                            <button
+                                onClick={toggleLanguage}
+                                style={{padding: '8px 16px', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s'}}
+                                onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
+                                onMouseOut={(e) => e.target.style.background = '#f1f5f9'}
+                            >
+                                {language === 'de' ? 'EN' : 'DE'}
+                            </button>
+                        </div>
+                        <p style={{fontSize: '16px', color: '#475569'}}>{t.subtitle}</p>
 
                         <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px'}}>
                             {(stripeEnabled ? [1, 2, 3] : [1, 2]).map((s, index, arr) => (
@@ -846,18 +1058,18 @@
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
-                                <span>Tisch verfügbar! Sie können mit Ihrer Buchung fortfahren.</span>
+                                <span>{t.step1.available}</span>
                             </div>
                         </div>
                     )}
 
                     {step === 1 && (
                         <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>Datum und Anzahl der Gäste</h3>
+                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step1.heading}</h3>
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Calendar /> <span style={{marginLeft: '8px'}}>Datum wählen</span>
+                                    <Calendar /> <span style={{marginLeft: '8px'}}>{t.step1.selectDate}</span>
                                 </label>
                                 <input
                                     type="date"
@@ -877,15 +1089,15 @@
 
                             <div style={{background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: '12px', padding: '16px'}}>
                                 <label style={{display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px'}}>
-                                    Uhrzeit (fest)
+                                    {t.step1.timeFixed}
                                 </label>
-                                <div style={{fontSize: '24px', fontWeight: 'bold', color: '#10b981'}}>15:45 Uhr</div>
-                                <p style={{fontSize: '12px', color: '#64748b', marginTop: '4px'}}>Alle Reservierungen sind für 15:45 Uhr</p>
+                                <div style={{fontSize: '24px', fontWeight: 'bold', color: '#10b981'}}>15:45{language === 'de' ? ' Uhr' : ''}</div>
+                                <p style={{fontSize: '12px', color: '#64748b', marginTop: '4px'}}>{t.step1.timeNote}</p>
                             </div>
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Users /> <span style={{marginLeft: '8px'}}>Anzahl der Personen (max. 10)</span>
+                                    <Users /> <span style={{marginLeft: '8px'}}>{t.step1.partySize}</span>
                                 </label>
                                 <input
                                     type="number"
@@ -906,7 +1118,7 @@
                             {rooms.length > 1 && (
                                 <div>
                                     <label style={{display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                        Bereich
+                                        {t.step1.area}
                                     </label>
                                     <select
                                         value={formData.room_id}
@@ -924,64 +1136,64 @@
 
                     {step === 2 && (
                         <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>Ihre Kontaktdaten</h3>
+                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step2.heading}</h3>
 
                             {!stripeEnabled && (
                                 <div style={{background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '12px', padding: '20px'}}>
                                     <p style={{fontSize: '14px', color: '#1e40af'}}>
-                                        <strong>Info:</strong> Keine Anzahlung erforderlich. Ihre Reservierung wird nach dem Absenden direkt bestätigt.
+                                        <strong>Info:</strong> {t.step2.noDeposit}
                                     </p>
                                 </div>
                             )}
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Users /> <span style={{marginLeft: '8px'}}>Name *</span>
+                                    <Users /> <span style={{marginLeft: '8px'}}>{t.step2.name}</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.customer_name}
                                     onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                                    placeholder="Max Mustermann"
+                                    placeholder={t.step2.placeholder.name}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
                             </div>
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Mail /> <span style={{marginLeft: '8px'}}>E-Mail *</span>
+                                    <Mail /> <span style={{marginLeft: '8px'}}>{t.step2.email}</span>
                                 </label>
                                 <input
                                     type="email"
                                     value={formData.customer_email}
                                     onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                                    placeholder="max@beispiel.de"
+                                    placeholder={t.step2.placeholder.email}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
                             </div>
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Phone /> <span style={{marginLeft: '8px'}}>Telefon (optional)</span>
+                                    <Phone /> <span style={{marginLeft: '8px'}}>{t.step2.phone}</span>
                                 </label>
                                 <input
                                     type="tel"
                                     value={formData.customer_phone}
                                     onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                                    placeholder="+43 123 456789"
+                                    placeholder={t.step2.placeholder.phone}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
                             </div>
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <MessageSquare /> <span style={{marginLeft: '8px'}}>Besondere Wünsche (optional)</span>
+                                    <MessageSquare /> <span style={{marginLeft: '8px'}}>{t.step2.specialRequests}</span>
                                 </label>
                                 <textarea
                                     value={formData.special_requests}
                                     onChange={(e) => setFormData({ ...formData, special_requests: e.target.value })}
                                     rows={4}
-                                    placeholder="z.B. Allergien, besondere Anlässe..."
+                                    placeholder={t.step2.placeholder.requests}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', boxSizing: 'border-box'}}
                                 />
                             </div>
@@ -990,7 +1202,7 @@
 
                     {step === 3 && stripeEnabled && (
                         <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>Zahlung & Bestätigung</h3>
+                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step3.heading}</h3>
 
                             <div style={{background: '#dcfce7', border: '2px solid #86efac', borderRadius: '12px', padding: '16px', marginBottom: '16px'}}>
                                 <p style={{fontSize: '14px', color: '#166534'}}>
@@ -999,12 +1211,12 @@
                             </div>
 
                             <div style={{background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '16px', padding: '24px', border: '2px solid #e2e8f0'}}>
-                                <h4 style={{fontWeight: 'bold', fontSize: '18px', color: '#0f172a', marginBottom: '16px'}}>Reservierungsübersicht</h4>
+                                <h4 style={{fontWeight: 'bold', fontSize: '18px', color: '#0f172a', marginBottom: '16px'}}>{t.step3.summary}</h4>
                                 <div style={{display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '16px'}}>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <span style={{color: '#475569'}}>Datum:</span>
+                                        <span style={{color: '#475569'}}>{t.step3.date}</span>
                                         <span style={{fontWeight: '600', color: '#0f172a'}}>
-                                            {new Date(formData.reservation_date).toLocaleDateString('de-DE', {
+                                            {new Date(formData.reservation_date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
                                                 weekday: 'short',
                                                 year: 'numeric',
                                                 month: 'long',
@@ -1013,15 +1225,15 @@
                                         </span>
                                     </div>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <span style={{color: '#475569'}}>Uhrzeit:</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>15:45 Uhr</span>
+                                        <span style={{color: '#475569'}}>{t.step3.time}</span>
+                                        <span style={{fontWeight: '600', color: '#0f172a'}}>15:45{language === 'de' ? ' Uhr' : ''}</span>
                                     </div>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <span style={{color: '#475569'}}>Personen:</span>
+                                        <span style={{color: '#475569'}}>{t.step3.guests}</span>
                                         <span style={{fontWeight: '600', color: '#0f172a'}}>{formData.party_size}</span>
                                     </div>
                                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', marginTop: '12px', borderTop: '2px solid #cbd5e1'}}>
-                                        <span style={{fontWeight: 'bold', fontSize: '18px', color: '#334155'}}>Anzahlung:</span>
+                                        <span style={{fontWeight: 'bold', fontSize: '18px', color: '#334155'}}>{t.step3.deposit}</span>
                                         <span style={{fontWeight: 'bold', fontSize: '24px', color: '#10b981'}}>
                                             €{(formData.payment_amount / 100).toFixed(2)}
                                         </span>
@@ -1031,13 +1243,13 @@
 
                             <div style={{background: '#fef3c7', border: '2px solid #fcd34d', borderRadius: '12px', padding: '20px'}}>
                                 <p style={{fontSize: '14px', color: '#78350f'}}>
-                                    <strong>Wichtig:</strong> Eine Anzahlung von €{(formData.payment_amount / 100).toFixed(2)} ist erforderlich, um Ihre Reservierung zu bestätigen.
+                                    <strong>{t.success.important}</strong> {t.step3.depositRequired} €{(formData.payment_amount / 100).toFixed(2)} {t.step3.depositRequired2}
                                 </p>
                             </div>
 
                             <div>
                                 <label style={{display: 'flex', alignItems: 'center', fontSize: '16px', fontWeight: '600', color: '#334155', marginBottom: '12px'}}>
-                                    <CreditCard /> <span style={{marginLeft: '8px'}}>Zahlungsmethode</span>
+                                    <CreditCard /> <span style={{marginLeft: '8px'}}>{t.step3.paymentMethod}</span>
                                 </label>
 
                 {paymentRequest && (
@@ -1050,12 +1262,12 @@
                                                 try {
                                                     const secret = await createPaymentIntent();
                                                     if (!secret) {
-                                                        throw new Error('Fehler beim Erstellen der Zahlung');
+                                                        throw new Error(t.errors.paymentError);
                                                     }
 
                                                     paymentRequest.update({
                                                         total: {
-                                                            label: 'Reservierungs-Anzahlung',
+                                                            label: language === 'de' ? 'Reservierungs-Anzahlung' : 'Reservation Deposit',
                                                             amount: formData.payment_amount,
                                                         },
                                                     });
@@ -1073,7 +1285,7 @@
                                                             if (result.error) {
                                                                 ev.complete('fail');
                                                                 await logAbandonment('payment_failed', 'Payment Request API error', result.error.message, null);
-                                                                setError(result.error.message || 'Zahlung fehlgeschlagen');
+                                                                setError(result.error.message || t.errors.paymentFailed);
                                                                 setLoading(false);
                                                             } else {
                                                                 ev.complete('success');
@@ -1118,14 +1330,14 @@
                                                             }
                                                         } catch (err) {
                                                             ev.complete('fail');
-                                                            setError(err.message || 'Fehler beim Verarbeiten der Zahlung');
+                                                            setError(err.message || t.errors.paymentError);
                                                             setLoading(false);
                                                         }
                                                     });
 
                                                     paymentRequest.show();
                                                 } catch (err) {
-                                                    setError(err.message || 'Fehler beim Initialisieren der Zahlung');
+                                                    setError(err.message || t.errors.paymentError);
                                                     setLoading(false);
                                                 }
                                             }}
@@ -1133,14 +1345,14 @@
                                             style={{width: '100%', padding: '14px 20px', background: loading ? '#94a3b8' : '#1e293b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '16px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: loading ? 0.5 : 1}}
                                         >
                                             <CreditCard />
-                                            {loading ? 'Wird verarbeitet...' : 'Apple Pay / Google Pay'}
+                                            {loading ? t.buttons.processing : t.step3.appleGooglePay}
                                         </button>
                                         <div style={{position: 'relative', margin: '24px 0'}}>
                                             <div style={{position: 'absolute', inset: 0, display: 'flex', alignItems: 'center'}}>
                                                 <div style={{width: '100%', borderTop: '1px solid #cbd5e1'}}></div>
                                             </div>
                                             <div style={{position: 'relative', display: 'flex', justifyContent: 'center', fontSize: '14px'}}>
-                                                <span style={{background: 'white', padding: '0 16px', color: '#64748b'}}>oder mit Karte bezahlen</span>
+                                                <span style={{background: 'white', padding: '0 16px', color: '#64748b'}}>{t.step3.orPayWithCard}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1151,7 +1363,7 @@
 
                             <div style={{background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '12px', padding: '20px'}}>
                                 <p style={{fontSize: '12px', color: '#1e40af'}}>
-                                    Ihre Zahlung wird sicher über Stripe verarbeitet. Ihre Kartendaten werden verschlüsselt übertragen und niemals auf unserem Server gespeichert.
+                                    {t.step3.securePayment}
                                 </p>
                             </div>
                         </div>
@@ -1163,7 +1375,7 @@
                                 onClick={() => setStep(step - 1)}
                                 style={{flex: 1, minWidth: '120px', padding: '14px 20px', border: '2px solid #cbd5e1', color: '#334155', borderRadius: '12px', background: 'white', fontWeight: '600', fontSize: '16px', cursor: 'pointer'}}
                             >
-                                Zurück
+                                {t.buttons.back}
                             </button>
                         )}
                         {step < 3 ? (
@@ -1175,12 +1387,12 @@
                                 onMouseOut={(e) => !loading && (e.target.style.transform = 'scale(1)')}
                             >
                                 {loading && step === 1
-                                    ? 'Verfügbarkeit prüfen...'
+                                    ? t.buttons.checkingAvailability
                                     : loading && step === 2 && !stripeEnabled
-                                    ? 'Reservierung wird erstellt...'
+                                    ? t.buttons.creatingReservation
                                     : step === 2 && !stripeEnabled
-                                    ? 'Reservierung abschließen'
-                                    : 'Weiter'}
+                                    ? t.buttons.completeReservation
+                                    : t.buttons.next}
                             </button>
                         ) : (
                             <button
@@ -1188,7 +1400,7 @@
                                 disabled={loading}
                                 style={{flex: 1, minWidth: '200px', padding: '14px 20px', background: loading ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '16px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)', opacity: loading ? 0.5 : 1}}
                             >
-                                {loading ? 'Wird verarbeitet...' : 'Jetzt bezahlen & buchen'}
+                                {loading ? t.buttons.processing : t.step3.payNow}
                             </button>
                         )}
                     </div>
