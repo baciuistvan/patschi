@@ -45,14 +45,24 @@ Deno.serve(async (req: Request) => {
       throw new Error("Gift card PDF not yet generated");
     }
 
-    // Get SMTP settings
-    const { data: settings } = await supabase
+    // Get SMTP settings from key-value table
+    const { data: settingsRows } = await supabase
       .from("settings")
-      .select("smtp_host, smtp_port, smtp_user, smtp_password, smtp_from_email, smtp_from_name")
-      .single();
+      .select("key, value")
+      .in("key", ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_email", "smtp_from_name"]);
 
-    if (!settings || !settings.smtp_host) {
+    if (!settingsRows || settingsRows.length === 0) {
       throw new Error("SMTP not configured");
+    }
+
+    // Convert key-value pairs to object
+    const settings: any = {};
+    settingsRows.forEach((row: any) => {
+      settings[row.key] = row.value;
+    });
+
+    if (!settings.smtp_host) {
+      throw new Error("SMTP host not configured");
     }
 
     // Prepare email content

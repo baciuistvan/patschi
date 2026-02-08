@@ -21,15 +21,21 @@ Deno.serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get Stripe settings
-    const { data: settings } = await supabase
+    // Get Stripe settings from key-value table
+    const { data: settingsRows } = await supabase
       .from("settings")
-      .select("stripe_live_secret_key, stripe_test_secret_key, stripe_mode")
-      .single();
+      .select("key, value")
+      .in("key", ["stripe_live_secret_key", "stripe_test_secret_key", "stripe_mode"]);
 
-    if (!settings) {
+    if (!settingsRows || settingsRows.length === 0) {
       throw new Error("Stripe settings not configured");
     }
+
+    // Convert key-value pairs to object
+    const settings: any = {};
+    settingsRows.forEach((row: any) => {
+      settings[row.key] = row.value;
+    });
 
     const stripeKey = settings.stripe_mode === "test"
       ? settings.stripe_test_secret_key
