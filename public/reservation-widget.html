@@ -162,6 +162,8 @@
                     paymentError: 'Fehler beim Erstellen der Zahlung',
                     paymentFailed: 'Zahlung fehlgeschlagen',
                     stripeNotLoaded: 'Stripe ist noch nicht geladen. Bitte versuchen Sie es erneut.',
+                    testCardRequired: 'Test-Modus: Bitte verwenden Sie eine Test-Kartennummer. Beispiel: 4242 4242 4242 4242 (beliebiges zukünftiges Datum und CVC)',
+                    cardDeclined: 'Karte abgelehnt. Bitte überprüfen Sie Ihre Kartendaten oder verwenden Sie eine andere Karte.',
                     generic: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.'
                 }
             },
@@ -251,6 +253,8 @@
                     paymentError: 'Error creating payment',
                     paymentFailed: 'Payment failed',
                     stripeNotLoaded: 'Stripe is not yet loaded. Please try again.',
+                    testCardRequired: 'Test Mode: Please use a test card number. Example: 4242 4242 4242 4242 (any future date and CVC)',
+                    cardDeclined: 'Card declined. Please check your card details or use a different card.',
                     generic: 'An error occurred. Please try again.'
                 }
             }
@@ -355,6 +359,31 @@
                 document.title = language === 'de' ? 'Tisch Reservierung' : 'Table Reservation';
                 document.documentElement.lang = language;
             }, [language]);
+
+            // Process Stripe error messages into user-friendly text
+            const processStripeError = (errorMessage) => {
+                if (!errorMessage) return t.errors.paymentFailed;
+
+                const lowerMsg = errorMessage.toLowerCase();
+
+                // Check for test mode / test card errors
+                if (lowerMsg.includes('test') && (lowerMsg.includes('card') || lowerMsg.includes('kártya'))) {
+                    return t.errors.testCardRequired;
+                }
+
+                // Check for card declined errors
+                if (lowerMsg.includes('declined') || lowerMsg.includes('elutasított') || lowerMsg.includes('abgelehnt')) {
+                    return t.errors.cardDeclined;
+                }
+
+                // Return original message if it's short and clear
+                if (errorMessage.length < 100) {
+                    return errorMessage;
+                }
+
+                // Default to generic payment error
+                return t.errors.paymentFailed;
+            };
 
             const [formData, setFormData] = useState({
                 party_size: 2,
@@ -818,7 +847,7 @@
 
                     if (stripeError) {
                         await logAbandonment('payment_failed', 'Stripe error', stripeError.message, null);
-                        throw new Error(stripeError.message);
+                        throw new Error(processStripeError(stripeError.message));
                     }
 
                     if (paymentIntent.status !== 'succeeded') {
@@ -1204,9 +1233,22 @@
                         <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
                             <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step3.heading}</h3>
 
-                            <div style={{background: '#dcfce7', border: '2px solid #86efac', borderRadius: '12px', padding: '16px', marginBottom: '16px'}}>
-                                <p style={{fontSize: '14px', color: '#166534'}}>
-                                    Debug: Step 3 is rendering. Stripe: {stripe ? 'loaded' : 'not loaded'}, Card element: {cardElement ? 'ready' : 'not ready'}
+                            <div style={{background: '#fef3c7', border: '2px solid #fcd34d', borderRadius: '12px', padding: '16px'}}>
+                                <p style={{fontSize: '13px', color: '#78350f', fontWeight: '600', marginBottom: '8px'}}>
+                                    {language === 'de' ? '⚠️ Test-Modus' : '⚠️ Test Mode'}
+                                </p>
+                                <p style={{fontSize: '13px', color: '#78350f', marginBottom: '8px'}}>
+                                    {language === 'de'
+                                        ? 'Verwenden Sie eine Test-Kartennummer:'
+                                        : 'Use a test card number:'}
+                                </p>
+                                <p style={{fontSize: '13px', color: '#78350f', fontFamily: 'monospace', background: '#fef9e5', padding: '8px', borderRadius: '6px'}}>
+                                    4242 4242 4242 4242
+                                </p>
+                                <p style={{fontSize: '12px', color: '#92400e', marginTop: '8px'}}>
+                                    {language === 'de'
+                                        ? 'CVC: beliebige 3 Ziffern • Ablaufdatum: beliebiges zukünftiges Datum'
+                                        : 'CVC: any 3 digits • Expiry: any future date'}
                                 </p>
                             </div>
 
@@ -1285,7 +1327,7 @@
                                                             if (result.error) {
                                                                 ev.complete('fail');
                                                                 await logAbandonment('payment_failed', 'Payment Request API error', result.error.message, null);
-                                                                setError(result.error.message || t.errors.paymentFailed);
+                                                                setError(processStripeError(result.error.message));
                                                                 setLoading(false);
                                                             } else {
                                                                 ev.complete('success');
