@@ -541,7 +541,7 @@
                     const { data: settings } = await supabaseClient
                         .from('settings')
                         .select('key, value')
-                        .in('key', ['stripe_enabled', 'stripe_mode', 'stripe_publishable_key', 'stripe_test_publishable_key']);
+                        .in('key', ['stripe_enabled', 'stripe_mode', 'stripe_live_publishable_key', 'stripe_test_publishable_key']);
 
                     const settingsMap = {};
                     settings?.forEach(s => settingsMap[s.key] = s.value);
@@ -549,7 +549,7 @@
                     const enabled = settingsMap['stripe_enabled'] === 'true';
                     const mode = settingsMap['stripe_mode'] || 'test';
                     const testKey = settingsMap['stripe_test_publishable_key'];
-                    const liveKey = settingsMap['stripe_publishable_key'];
+                    const liveKey = settingsMap['stripe_live_publishable_key'];
 
                     console.log('Stripe settings loaded - enabled:', enabled, 'mode:', mode, 'hasTestKey:', !!testKey, 'hasLiveKey:', !!liveKey);
 
