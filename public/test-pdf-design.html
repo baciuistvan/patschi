@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test PDF Design</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-50 p-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">Test Gift Card PDF Design</h1>
+      <p class="text-gray-600 mb-6">Click the buttons below to test different PDF designs:</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onclick="generateCurrentDesign()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold"
+        >
+          Download Current Design
+        </button>
+
+        <button
+          onclick="generateClassicDesign()"
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-semibold"
+        >
+          Download Classic Design (with Barcode)
+        </button>
+
+        <button
+          onclick="generateMinimalDesign()"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-4 rounded-lg font-semibold"
+        >
+          Download Minimal Design
+        </button>
+
+        <button
+          onclick="generateElegantDesign()"
+          class="bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-lg font-semibold"
+        >
+          Download Elegant Design
+        </button>
+      </div>
+
+      <div class="mt-8 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+        <p class="text-blue-900 text-sm"><strong>Instructions:</strong> Download each design and tell me which one matches what you see in Gutscheinverwaltung, or describe what needs to change!</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">Sample Gift Card Data</h2>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><strong>Code:</strong> GS-ABC123</div>
+        <div><strong>Amount:</strong> €75.00</div>
+        <div><strong>Recipient:</strong> Max Mustermann</div>
+        <div><strong>Purchaser:</strong> Anna Schmidt</div>
+        <div><strong>Barcode:</strong> 1234567890123</div>
+        <div><strong>Valid Until:</strong> 31.12.2026</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleData = {
+      code: 'GS-ABC123',
+      barcode: '1234567890123',
+      current_balance: 75,
+      recipient_name: 'Max Mustermann',
+      purchaser_name: 'Anna Schmidt',
+      message: 'Viel Freude beim Genießen!',
+      expiry_date: '2026-12-31'
+    };
+
+    async function generateCurrentDesign() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+
+      // White background
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
+      // Logo placeholder (red box)
+      pdf.setFillColor(220, 38, 38);
+      pdf.rect(65, 40, 80, 20, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PATSCHI SERFAUS', pageWidth / 2, 52, { align: 'center' });
+
+      // Title
+      pdf.setFontSize(32);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text('GUTSCHEIN', pageWidth / 2, 100, { align: 'center' });
+
+      // Amount
+      pdf.setFontSize(56);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`€ ${sampleData.current_balance.toFixed(2)}`, pageWidth / 2, 130, { align: 'center' });
+
+      // Recipient box
+      pdf.setFillColor(248, 249, 250);
+      pdf.roundedRect(20, 145, 170, 22, 3, 3, 'F');
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(102, 102, 102);
+      pdf.text('GESCHENK FÜR:', pageWidth / 2, 153, { align: 'center' });
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text(sampleData.recipient_name, pageWidth / 2, 162, { align: 'center' });
+
+      // Code
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(102, 102, 102);
+      pdf.text('GT CODE', pageWidth / 2, 185, { align: 'center' });
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(40, 190, 130, 15, 3, 3, 'S');
+      pdf.setFontSize(16);
+      pdf.setFont('courier', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text(sampleData.code, pageWidth / 2, 200, { align: 'center' });
+
+      // Details
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(102, 102, 102);
+      pdf.text(`Von: ${sampleData.purchaser_name}`, 30, 220);
+      pdf.text(`Gültig bis: ${new Date(sampleData.expiry_date).toLocaleDateString('de-DE')}`, 30, 228);
+
+      // Footer
+      pdf.setFontSize(7);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Patschi by Köhle GmbH, Dorfbahnstrasse 82, 6534 Serfaus', pageWidth / 2, 280, { align: 'center' });
+
+      pdf.save('current-design.pdf');
+    }
+
+    async function generateClassicDesign() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = 210;
+
+      // Border
+      pdf.setDrawColor(220, 38, 38);
+      pdf.setLineWidth(2);
+      pdf.rect(10, 10, pageWidth - 20, 277, 'S');
+
+      // Logo area
+      pdf.setFillColor(220, 38, 38);
+      pdf.rect(10, 10, pageWidth - 20, 40, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PATSCHI SERFAUS', pageWidth / 2, 35, { align: 'center' });
+
+      // Gutschein text
+      pdf.setFontSize(36);
+      pdf.setTextColor(220, 38, 38);
+      pdf.text('GUTSCHEIN', pageWidth / 2, 70, { align: 'center' });
+
+      // Amount in box
+      pdf.setFillColor(220, 38, 38);
+      pdf.roundedRect(50, 85, 110, 35, 5, 5, 'F');
+      pdf.setFontSize(48);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(`€ ${sampleData.current_balance.toFixed(2)}`, pageWidth / 2, 110, { align: 'center' });
+
+      // Recipient
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('EMPFÄNGER:', 30, 140);
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text(sampleData.recipient_name, 30, 150);
+
+      // Barcode area
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('BARCODE:', 30, 170);
+
+      // Simple barcode representation
+      pdf.setFontSize(24);
+      pdf.setFont('courier', 'bold');
+      pdf.text(sampleData.barcode, 30, 180);
+
+      // Draw barcode lines
+      let x = 30;
+      for (let i = 0; i < sampleData.barcode.length; i++) {
+        const digit = parseInt(sampleData.barcode[i]);
+        const width = digit % 2 === 0 ? 2 : 1;
+        pdf.setFillColor(0, 0, 0);
+        pdf.rect(x, 185, width, 15, 'F');
+        x += width + 1;
+      }
+
+      // Code
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('GUTSCHEIN-CODE:', 30, 215);
+      pdf.setFontSize(20);
+      pdf.setFont('courier', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text(sampleData.code, 30, 225);
+
+      // Details box
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(25, 235, 160, 30, 3, 3, 'S');
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Von: ${sampleData.purchaser_name}`, 30, 245);
+      pdf.text(`Gültig bis: ${new Date(sampleData.expiry_date).toLocaleDateString('de-DE')}`, 30, 253);
+      pdf.text(`Nachricht: ${sampleData.message}`, 30, 261);
+
+      // Footer
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Patschi by Köhle GmbH • Dorfbahnstrasse 82 • 6534 Serfaus', pageWidth / 2, 275, { align: 'center' });
+      pdf.text('Tel. +43 5476 6290 • E-Mail: info@patschi.at', pageWidth / 2, 280, { align: 'center' });
+
+      pdf.save('classic-design-with-barcode.pdf');
+    }
+
+    async function generateMinimalDesign() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = 210;
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageWidth, 297, 'F');
+
+      // Minimal header
+      pdf.setDrawColor(220, 38, 38);
+      pdf.setLineWidth(3);
+      pdf.line(50, 50, 160, 50);
+
+      // Simple logo text
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text('PATSCHI SERFAUS', pageWidth / 2, 40, { align: 'center' });
+
+      // Title
+      pdf.setFontSize(40);
+      pdf.text('GUTSCHEIN', pageWidth / 2, 80, { align: 'center' });
+
+      // Amount
+      pdf.setFontSize(72);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`€${sampleData.current_balance}`, pageWidth / 2, 130, { align: 'center' });
+
+      // Line
+      pdf.setDrawColor(220, 38, 38);
+      pdf.setLineWidth(1);
+      pdf.line(40, 145, 170, 145);
+
+      // Info
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Für: ${sampleData.recipient_name}`, pageWidth / 2, 165, { align: 'center' });
+      pdf.text(`Code: ${sampleData.code}`, pageWidth / 2, 175, { align: 'center' });
+      pdf.text(`Barcode: ${sampleData.barcode}`, pageWidth / 2, 185, { align: 'center' });
+
+      pdf.setFontSize(9);
+      pdf.setTextColor(120, 120, 120);
+      pdf.text(`Gültig bis: ${new Date(sampleData.expiry_date).toLocaleDateString('de-DE')}`, pageWidth / 2, 200, { align: 'center' });
+
+      pdf.save('minimal-design.pdf');
+    }
+
+    async function generateElegantDesign() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = 210;
+
+      // Elegant border
+      pdf.setDrawColor(220, 38, 38);
+      pdf.setLineWidth(1);
+      pdf.rect(15, 15, pageWidth - 30, 267, 'S');
+      pdf.setLineWidth(0.5);
+      pdf.rect(18, 18, pageWidth - 36, 261, 'S');
+
+      // Header
+      pdf.setFontSize(28);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text('PATSCHI SERFAUS', pageWidth / 2, 40, { align: 'center' });
+
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Geschenkgutschein', pageWidth / 2, 50, { align: 'center' });
+
+      // Decorative line
+      pdf.setDrawColor(220, 38, 38);
+      pdf.setLineWidth(0.5);
+      pdf.line(50, 60, pageWidth - 50, 60);
+
+      // Amount in elegant box
+      pdf.setFillColor(245, 245, 245);
+      pdf.roundedRect(40, 75, pageWidth - 80, 45, 8, 8, 'F');
+      pdf.setDrawColor(220, 38, 38);
+      pdf.setLineWidth(1);
+      pdf.roundedRect(40, 75, pageWidth - 80, 45, 8, 8, 'S');
+
+      pdf.setFontSize(48);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(220, 38, 38);
+      pdf.text(`€ ${sampleData.current_balance.toFixed(2)}`, pageWidth / 2, 105, { align: 'center' });
+
+      // Details section
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+
+      pdf.text('Empfänger:', 30, 140);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(sampleData.recipient_name, 60, 140);
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Von:', 30, 150);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(sampleData.purchaser_name, 60, 150);
+
+      // Code box
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Gutschein-Code', pageWidth / 2, 170, { align: 'center' });
+
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(50, 175, pageWidth - 100, 12, 3, 3, 'S');
+      pdf.setFontSize(14);
+      pdf.setFont('courier', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(sampleData.code, pageWidth / 2, 183, { align: 'center' });
+
+      // Barcode
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Barcode', pageWidth / 2, 200, { align: 'center' });
+      pdf.setFontSize(18);
+      pdf.setFont('courier', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(sampleData.barcode, pageWidth / 2, 210, { align: 'center' });
+
+      // Message
+      if (sampleData.message) {
+        pdf.setFillColor(255, 250, 240);
+        pdf.roundedRect(30, 220, pageWidth - 60, 25, 5, 5, 'F');
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(100, 80, 0);
+        pdf.text(`"${sampleData.message}"`, pageWidth / 2, 235, { align: 'center' });
+      }
+
+      // Footer
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Gültig bis: ${new Date(sampleData.expiry_date).toLocaleDateString('de-DE')}`, pageWidth / 2, 260, { align: 'center' });
+
+      pdf.setFontSize(7);
+      pdf.text('Patschi by Köhle GmbH • Dorfbahnstrasse 82 • 6534 Serfaus', pageWidth / 2, 270, { align: 'center' });
+      pdf.text('Tel. +43 5476 6290 • E-Mail: info@patschi.at', pageWidth / 2, 275, { align: 'center' });
+
+      pdf.save('elegant-design.pdf');
+    }
+  </script>
+</body>
+</html>
