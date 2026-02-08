@@ -408,6 +408,23 @@ export function StripeSettings() {
                 </p>
               </div>
             )}
+
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 flex items-center space-x-2"
+              >
+                {saveSuccess ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Saved</span>
+                  </>
+                ) : (
+                  <span>{saving ? 'Saving...' : 'Save API Keys'}</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
