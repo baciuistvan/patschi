@@ -102,7 +102,7 @@ function buildThankYouHtml(): string {
 </html>`;
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve((req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
@@ -111,21 +111,28 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const headers = new Headers(corsHeaders);
-    headers.set("Content-Type", "text/html; charset=utf-8");
+    const html = buildThankYouHtml();
 
-    return new Response(buildThankYouHtml(), {
+    return new Response(html, {
       status: 200,
-      headers,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+      },
     });
   } catch (err: any) {
     console.error('Error:', err);
-    const headers = new Headers(corsHeaders);
-    headers.set("Content-Type", "text/html; charset=utf-8");
 
     return new Response(buildThankYouHtml(), {
       status: 200,
-      headers,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+      },
     });
   }
 });
