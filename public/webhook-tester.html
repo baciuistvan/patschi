@@ -18,8 +18,9 @@
           <input
             type="text"
             id="webhookUrl"
-            readonly
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+            placeholder="Enter your Supabase URL"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm"
+            oninput="updateWebhookUrl()"
           >
           <button
             onclick="copyWebhookUrl()"
@@ -28,6 +29,7 @@
             Copy
           </button>
         </div>
+        <p class="text-sm text-gray-500 mt-2">Format: https://your-project.supabase.co/functions/v1/handle-payment-link-webhook</p>
       </div>
 
       <!-- Test Section -->
@@ -123,18 +125,23 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('supabaseUrl');
-    const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabaseKey');
+    // Try to get from environment or localStorage
+    const supabaseUrl = localStorage.getItem('supabaseUrl') || 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    const supabaseKey = localStorage.getItem('supabaseKey') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
 
-    window.supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+    window.supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Set webhook URL
-    if (supabaseUrl) {
-      const webhookUrl = `${supabaseUrl}/functions/v1/handle-payment-link-webhook`;
-      document.getElementById('webhookUrl').value = webhookUrl;
-      document.getElementById('stripeForwardCmd').textContent = `stripe listen --forward-to ${webhookUrl}`;
-      window.webhookUrl = webhookUrl;
-    }
+    // Set initial webhook URL
+    const webhookUrl = `${supabaseUrl}/functions/v1/handle-payment-link-webhook`;
+    document.getElementById('webhookUrl').value = webhookUrl;
+    document.getElementById('stripeForwardCmd').textContent = `stripe listen --forward-to ${webhookUrl}`;
+    window.webhookUrl = webhookUrl;
+
+    window.updateWebhookUrl = function() {
+      const input = document.getElementById('webhookUrl');
+      window.webhookUrl = input.value;
+      document.getElementById('stripeForwardCmd').textContent = `stripe listen --forward-to ${input.value}`;
+    };
 
     window.copyWebhookUrl = function() {
       const input = document.getElementById('webhookUrl');
