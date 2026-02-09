@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
     const { data: settingsArray } = await supabase
       .from('settings')
       .select('key, value')
-      .in('key', ['stripe_mode', 'stripe_live_secret_key', 'stripe_test_secret_key', 'success_page_url']);
+      .in('key', ['stripe_mode', 'stripe_live_secret_key', 'stripe_test_secret_key', 'success_page_url', 'deposit_amount']);
 
     const settings: Record<string, string> = {};
     settingsArray?.forEach((s: any) => {
@@ -135,8 +135,9 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Create Stripe payment link
-    const amount = Math.round((party_size * 10) * 100); // €10 per person in cents
+    // Create Stripe payment link - use deposit_amount from settings
+    const depositAmount = parseFloat(settings['deposit_amount'] || '350');
+    const amount = Math.round(depositAmount * 100); // Convert to cents
 
     const paymentLink = await stripe.paymentLinks.create({
       line_items: [
