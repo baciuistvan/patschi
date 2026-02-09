@@ -505,16 +505,23 @@
       }
 
       .sidebar-mobile {
-        max-height: 60vh;
+        max-height: 55vh;
         min-height: 400px;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Fixed header on iPad portrait */
+      .sidebar-mobile > div:first-child {
+        flex-shrink: 0;
       }
 
       /* Ensure calendar doesn't take too much space on iPad portrait */
       .sidebar-mobile > div:nth-child(2) {
         flex-shrink: 0;
-        max-height: 180px;
+        max-height: 160px;
+        overflow: hidden;
       }
 
       /* Give more space to reservations list on iPad portrait */
@@ -522,7 +529,8 @@
         flex: 1 1 auto;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        min-height: 150px;
+        min-height: 200px;
+        max-height: 100%;
       }
     }
 
