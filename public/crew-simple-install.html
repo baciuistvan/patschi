@@ -501,56 +501,70 @@
     /* iPad portrait */
     @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
       .main-container {
-        flex-direction: column-reverse;
+        flex-direction: column !important;
       }
 
       .sidebar-mobile {
-        max-height: 50vh;
-        min-height: 380px;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 45vh !important;
+        max-height: 45vh !important;
+        min-height: 0 !important;
+        flex-shrink: 0 !important;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        order: 1 !important;
       }
 
-      /* Fixed header on iPad portrait - tighter spacing */
+      .floor-plan-container {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: auto !important;
+        order: 2 !important;
+      }
+
       .sidebar-mobile > div:first-child {
         flex-shrink: 0;
-        padding: 0.75rem 1rem !important;
+        padding: 0.5rem 0.75rem !important;
       }
 
-      /* Ensure calendar doesn't take too much space on iPad portrait */
+      .sidebar-mobile > div:first-child h2 {
+        font-size: 1rem !important;
+        margin-bottom: 0 !important;
+      }
+
+      .sidebar-mobile > div:first-child p {
+        font-size: 0.7rem !important;
+      }
+
       .sidebar-mobile > div:nth-child(2) {
         flex-shrink: 0;
-        max-height: 140px;
+        max-height: 130px;
         overflow: hidden;
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.5rem !important;
+        padding: 0.25rem 0.5rem !important;
       }
 
-      /* Compact calendar styling on iPad portrait */
       .sidebar-mobile > div:nth-child(2) .bg-slate-900\/95 {
-        padding: 0.5rem !important;
+        padding: 0.375rem !important;
       }
 
-      /* Compact calendar cells on iPad portrait */
-      .sidebar-mobile .grid-cols-7 > div {
-        padding: 0.15rem !important;
-        min-height: 20px !important;
-        font-size: 10px !important;
+      .sidebar-mobile .hidden.md\\:block .grid-cols-7 > div {
+        padding: 0.1rem !important;
+        min-height: 18px !important;
       }
 
-      /* Smaller calendar month header on iPad portrait */
-      .sidebar-mobile > div:nth-child(2) h3 {
-        font-size: 0.875rem !important;
+      .sidebar-mobile .hidden.md\\:block .grid-cols-7 > div div {
+        font-size: 9px !important;
       }
 
-      /* Give more space to reservations list on iPad portrait */
       .sidebar-mobile > div:last-child {
-        flex: 1 1 auto;
-        overflow-y: auto;
+        flex: 1 1 0 !important;
+        overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
-        min-height: 180px;
-        max-height: calc(100% - 240px);
+        min-height: 0 !important;
+        padding: 0.5rem !important;
       }
     }
 
