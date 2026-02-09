@@ -845,7 +845,7 @@ export function ReservationManager() {
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
-            Link gesendet
+            Wartet auf Zahlung
           </button>
           <div className="relative flex-1 sm:flex-none">
             <button
