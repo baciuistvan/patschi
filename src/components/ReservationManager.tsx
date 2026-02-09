@@ -170,30 +170,72 @@ export function ReservationManager() {
 
     console.log('Reservations query result:', { data, error, count: data?.length });
 
+    let formatted: any[] = [];
+
     if (!error && data) {
-      const formatted = data.map(r => ({
+      formatted = data.map(r => ({
         ...r,
         reservation_tables: r.reservation_tables as any,
       }));
-      setReservations(formatted);
-
-      // Count unpaid payment link reservations
-      const unpaidCount = formatted.filter(r =>
-        (r as any).booking_method === 'payment_link' && r.payment_status !== 'paid'
-      ).length;
-      setUnpaidPaymentLinkCount(unpaidCount);
-
-      if (filter === 'monthly' && formatted.length > 0) {
-        const monthKeys = new Set<string>();
-        formatted.forEach(reservation => {
-          const date = new Date(reservation.reservation_date);
-          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          monthKeys.add(monthKey);
-        });
-        setExpandedMonths(monthKeys);
-      }
     } else if (error) {
       console.error('Error loading reservations:', error);
+    }
+
+    // For payment_link filter, also load abandoned reservations with payment links sent
+    if (filter === 'payment_link') {
+      const { data: abandonedData, error: abandonedError } = await supabase
+        .from('abandoned_reservations')
+        .select('*')
+        .eq('payment_link_sent', true)
+        .is('recovery_reservation_id', null)
+        .order('reservation_date', { ascending: true });
+
+      if (!abandonedError && abandonedData) {
+        // Convert abandoned reservations to reservation format
+        const abandonedFormatted = abandonedData.map(a => ({
+          id: a.id,
+          customer_name: a.customer_name,
+          customer_email: a.customer_email,
+          customer_phone: a.customer_phone,
+          reservation_date: a.reservation_date,
+          reservation_time: a.reservation_time,
+          party_size: a.party_size,
+          room_id: a.room_id,
+          status: 'pending' as const,
+          payment_status: 'unpaid',
+          booking_method: 'payment_link',
+          created_at: a.created_at,
+          notes: 'Zahlungslink gesendet - wartet auf Zahlung',
+          reservation_tables: [],
+          is_abandoned: true, // Flag to identify abandoned reservations
+        }));
+        formatted = [...formatted, ...abandonedFormatted];
+
+        // Sort by date and time
+        formatted.sort((a, b) => {
+          const dateCompare = a.reservation_date.localeCompare(b.reservation_date);
+          if (dateCompare !== 0) return dateCompare;
+          return a.reservation_time.localeCompare(b.reservation_time);
+        });
+      }
+    }
+
+    setReservations(formatted);
+
+    // Count unpaid payment link reservations (including abandoned)
+    const unpaidCount = formatted.filter(r =>
+      (r.booking_method === 'payment_link' && r.payment_status !== 'paid') || r.is_abandoned
+    ).length;
+    setUnpaidPaymentLinkCount(unpaidCount);
+
+    if (filter === 'monthly' && formatted.length > 0) {
+      const monthKeys = new Set<string>();
+      formatted.forEach(reservation => {
+        const date = new Date(reservation.reservation_date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthKeys.add(monthKey);
+      });
+      setExpandedMonths(monthKeys);
     }
   };
 
