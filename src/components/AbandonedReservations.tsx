@@ -30,6 +30,7 @@ interface Stats {
   paymentInitiated: number;
   paymentFailed: number;
   cancelledBeforePayment: number;
+  withPaymentLinkSent: number;
 }
 
 const stageLabels: Record<string, string> = {
@@ -55,6 +56,7 @@ export function AbandonedReservations() {
     paymentInitiated: 0,
     paymentFailed: 0,
     cancelledBeforePayment: 0,
+    withPaymentLinkSent: 0,
   });
   const [selectedReservation, setSelectedReservation] = useState<AbandonedReservation | null>(null);
   const [filterStage, setFilterStage] = useState<string>('all');
@@ -99,13 +101,30 @@ export function AbandonedReservations() {
       paymentInitiated: data.filter(r => r.abandonment_stage === 'payment_initiated').length,
       paymentFailed: data.filter(r => r.abandonment_stage === 'payment_failed').length,
       cancelledBeforePayment: data.filter(r => r.abandonment_stage === 'cancelled_before_payment').length,
+      withPaymentLinkSent: data.filter(r => r.payment_link_sent === true).length,
     };
     setStats(stats);
   };
 
-  const filteredReservations = filterStage === 'all'
-    ? reservations
-    : reservations.filter(r => r.abandonment_stage === filterStage);
+  const filteredReservations = (() => {
+    let filtered: AbandonedReservation[];
+
+    if (filterStage === 'all') {
+      filtered = reservations;
+    } else if (filterStage === 'with_payment_link') {
+      filtered = reservations.filter(r => r.payment_link_sent === true);
+      // Sort by payment_link_sent_at descending (newest first)
+      filtered.sort((a, b) => {
+        const dateA = a.payment_link_sent_at ? new Date(a.payment_link_sent_at).getTime() : 0;
+        const dateB = b.payment_link_sent_at ? new Date(b.payment_link_sent_at).getTime() : 0;
+        return dateB - dateA;
+      });
+    } else {
+      filtered = reservations.filter(r => r.abandonment_stage === filterStage);
+    }
+
+    return filtered;
+  })();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -316,6 +335,16 @@ export function AbandonedReservations() {
           }`}
         >
           Abgebrochen ({stats.cancelledBeforePayment})
+        </button>
+        <button
+          onClick={() => setFilterStage('with_payment_link')}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filterStage === 'with_payment_link'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+          }`}
+        >
+          Link gesendet ({stats.withPaymentLinkSent})
         </button>
       </div>
 
