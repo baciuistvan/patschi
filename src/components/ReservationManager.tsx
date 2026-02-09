@@ -163,7 +163,7 @@ export function ReservationManager() {
     } else if (filter === 'date' && selectedDate) {
       query = query.eq('reservation_date', selectedDate);
     } else if (filter === 'payment_link') {
-      query = query.eq('booking_method', 'payment_link').neq('payment_status', 'paid');
+      query = query.not('payment_link_url', 'is', null).neq('payment_status', 'paid');
     }
 
     const { data, error } = await query;
@@ -224,7 +224,7 @@ export function ReservationManager() {
 
     // Count unpaid payment link reservations (including abandoned)
     const unpaidCount = formatted.filter(r =>
-      (r.booking_method === 'payment_link' && r.payment_status !== 'paid') || r.is_abandoned
+      (r.payment_link_url && r.payment_status !== 'paid') || r.is_abandoned
     ).length;
     setUnpaidPaymentLinkCount(unpaidCount);
 
