@@ -304,10 +304,13 @@ export function ReservationManager() {
     setIsUpdating(true);
 
     try {
-      console.log('Deleting reservation:', reservationId, isOnlineBooking ? '(PAID ONLINE BOOKING)' : '(regular booking)');
+      const isAbandoned = (reservation as any).is_abandoned;
+      console.log('Deleting reservation:', reservationId, isAbandoned ? '(ABANDONED)' : isOnlineBooking ? '(PAID ONLINE BOOKING)' : '(regular booking)');
 
+      // Delete from the appropriate table
+      const tableName = isAbandoned ? 'abandoned_reservations' : 'reservations';
       const { error: deleteError } = await supabase
-        .from('reservations')
+        .from(tableName)
         .delete()
         .eq('id', reservationId);
 
@@ -317,7 +320,7 @@ export function ReservationManager() {
         return;
       }
 
-      console.log('Reservation deleted successfully');
+      console.log('Reservation deleted successfully from', tableName);
 
       // Show different success messages
       if (isOnlineBooking) {
