@@ -161,7 +161,7 @@ export function ReservationManager() {
     } else if (filter === 'date' && selectedDate) {
       query = query.eq('reservation_date', selectedDate);
     } else if (filter === 'payment_link') {
-      query = query.eq('booking_method', 'payment_link');
+      query = query.eq('booking_method', 'payment_link').neq('payment_status', 'paid');
     }
 
     const { data, error } = await query;
