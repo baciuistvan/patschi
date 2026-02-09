@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Reservation, Table, Room } from '../lib/supabase';
-import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type ReservationWithTable = Reservation & {
@@ -54,6 +54,8 @@ export function ReservationManager() {
   const [resendingEmailFor, setResendingEmailFor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [unpaidPaymentLinkCount, setUnpaidPaymentLinkCount] = useState(0);
+  const [copyingLinkFor, setCopyingLinkFor] = useState<string | null>(null);
 
   const createFormRef = useRef<HTMLDivElement>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
@@ -174,6 +176,12 @@ export function ReservationManager() {
         reservation_tables: r.reservation_tables as any,
       }));
       setReservations(formatted);
+
+      // Count unpaid payment link reservations
+      const unpaidCount = formatted.filter(r =>
+        (r as any).booking_method === 'payment_link' && r.payment_status !== 'paid'
+      ).length;
+      setUnpaidPaymentLinkCount(unpaidCount);
 
       if (filter === 'monthly' && formatted.length > 0) {
         const monthKeys = new Set<string>();
@@ -773,6 +781,36 @@ export function ReservationManager() {
     setExpandedMonths(newExpanded);
   };
 
+  const copyPaymentLink = async (paymentLinkUrl: string, reservationId: string) => {
+    try {
+      setCopyingLinkFor(reservationId);
+      await navigator.clipboard.writeText(paymentLinkUrl);
+      setTimeout(() => setCopyingLinkFor(null), 2000);
+    } catch (error) {
+      console.error('Error copying payment link:', error);
+      alert('Fehler beim Kopieren des Zahlungslinks');
+    }
+  };
+
+  const resendPaymentLinkEmail = async (reservationId: string) => {
+    try {
+      setResendingEmailFor(reservationId);
+
+      const { data, error } = await supabase.functions.invoke('resend-payment-link-email', {
+        body: { reservationId }
+      });
+
+      if (error) throw error;
+
+      alert('Zahlungslink-E-Mail erfolgreich erneut gesendet!');
+    } catch (error) {
+      console.error('Error resending payment link email:', error);
+      alert('Fehler beim erneuten Senden der E-Mail');
+    } finally {
+      setResendingEmailFor(null);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 no-print">
@@ -839,13 +877,18 @@ export function ReservationManager() {
           </button>
           <button
             onClick={() => setFilter('payment_link')}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
+            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap relative ${
               filter === 'payment_link'
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             Wartet auf Zahlung
+            {unpaidPaymentLinkCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                {unpaidPaymentLinkCount}
+              </span>
+            )}
           </button>
           <div className="relative flex-1 sm:flex-none">
             <button
@@ -906,6 +949,21 @@ export function ReservationManager() {
           </button>
         )}
       </div>
+
+      {/* Unpaid Payment Link Header */}
+      {filter === 'payment_link' && (
+        <div className="bg-orange-900/20 border-2 border-orange-500/50 rounded-xl p-4 mb-4 flex items-start space-x-3">
+          <AlertCircle className="w-6 h-6 text-orange-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-orange-400 mb-1">
+              {unpaidPaymentLinkCount} {unpaidPaymentLinkCount === 1 ? 'Reservierung wartet' : 'Reservierungen warten'} auf Zahlung
+            </h3>
+            <p className="text-sm text-orange-300/80">
+              Diese Reservierungen wurden mit einem Zahlungslink erstellt, aber noch nicht bezahlt. Verwenden Sie die Aktionsschaltflächen, um den Zahlungslink zu kopieren oder die E-Mail erneut zu senden.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 printable-reservations">
         {filter === 'monthly' ? (
@@ -1011,13 +1069,34 @@ export function ReservationManager() {
                           )}
                           {(reservation as any).payment_link_url && reservation.payment_status === 'unpaid' && (
                             <>
-                              <span className="px-2 py-1 bg-amber-900/30 text-amber-400 rounded border border-amber-500/30">
+                              <span className="px-2 py-1 bg-amber-900/30 text-amber-400 rounded border border-amber-500/30 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
                                 Wartet auf Zahlung
                               </span>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleResendPaymentEmail(reservation.id);
+                                  copyPaymentLink((reservation as any).payment_link_url, reservation.id);
+                                }}
+                                className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded border border-green-500 flex items-center gap-1 transition text-xs"
+                                title="Zahlungslink kopieren"
+                              >
+                                {copyingLinkFor === reservation.id ? (
+                                  <>
+                                    <CheckCircle className="w-3 h-3" />
+                                    <span>Kopiert!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    <span>Link kopieren</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  resendPaymentLinkEmail(reservation.id);
                                 }}
                                 disabled={resendingEmailFor === reservation.id}
                                 className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded border border-blue-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
@@ -1030,8 +1109,8 @@ export function ReservationManager() {
                                   </>
                                 ) : (
                                   <>
-                                    <Mail className="w-3 h-3" />
-                                    <span>E-Mail resend</span>
+                                    <Send className="w-3 h-3" />
+                                    <span>E-Mail senden</span>
                                   </>
                                 )}
                               </button>
@@ -1180,13 +1259,34 @@ export function ReservationManager() {
                   )}
                   {(reservation as any).payment_link_url && reservation.payment_status === 'unpaid' && (
                     <>
-                      <span className="px-2 py-1 bg-amber-900/30 text-amber-400 rounded border border-amber-500/30">
+                      <span className="px-2 py-1 bg-amber-900/30 text-amber-400 rounded border border-amber-500/30 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
                         Wartet auf Zahlung
                       </span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleResendPaymentEmail(reservation.id);
+                          copyPaymentLink((reservation as any).payment_link_url, reservation.id);
+                        }}
+                        className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded border border-green-500 flex items-center gap-1 transition text-xs"
+                        title="Zahlungslink kopieren"
+                      >
+                        {copyingLinkFor === reservation.id ? (
+                          <>
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Kopiert!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Link kopieren</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          resendPaymentLinkEmail(reservation.id);
                         }}
                         disabled={resendingEmailFor === reservation.id}
                         className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded border border-blue-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
@@ -1199,8 +1299,8 @@ export function ReservationManager() {
                           </>
                         ) : (
                           <>
-                            <Mail className="w-3 h-3" />
-                            <span>E-Mail resend</span>
+                            <Send className="w-3 h-3" />
+                            <span>E-Mail senden</span>
                           </>
                         )}
                       </button>
