@@ -19,7 +19,7 @@ export function ReservationManager() {
   };
 
   const [reservations, setReservations] = useState<ReservationWithTable[]>([]);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly'>('monthly');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly' | 'payment_link'>('monthly');
   const [selectedReservation, setSelectedReservation] = useState<ReservationWithTable | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -160,6 +160,8 @@ export function ReservationManager() {
       query = query.gte('reservation_date', today);
     } else if (filter === 'date' && selectedDate) {
       query = query.eq('reservation_date', selectedDate);
+    } else if (filter === 'payment_link') {
+      query = query.eq('payment_link_sent', true);
     }
 
     const { data, error } = await query;
@@ -834,6 +836,16 @@ export function ReservationManager() {
             }`}
           >
             {t('reservations.all')}
+          </button>
+          <button
+            onClick={() => setFilter('payment_link')}
+            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
+              filter === 'payment_link'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Link gesendet
           </button>
           <div className="relative flex-1 sm:flex-none">
             <button
