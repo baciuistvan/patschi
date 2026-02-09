@@ -1230,16 +1230,6 @@
                   }
                 </style>
                 <div class="mb-2 sm:mb-4">
-                  <!-- Date badge (desktop only - mobile shows in daily nav) -->
-                  <div class="hidden md:block text-center mb-8 sm:mb-10">
-                    <div class="inline-flex items-center px-4 py-2 bg-blue-900/80 border border-blue-700/40 rounded-lg mb-2 sm:mb-3">
-                      <svg class="w-4 h-4 text-blue-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                      </svg>
-                      <span class="text-sm text-blue-100 font-medium">${selectedDate}</span>
-                    </div>
-                  </div>
-
                   ${getFilteredReservations().length === 0 ? `
                     <div class="bg-slate-900/50 rounded-xl p-3 sm:p-4 backdrop-blur-sm shadow-inner">
                       <div class="flex flex-col items-center justify-center py-6 sm:py-8 space-y-3 sm:space-y-4">
@@ -1252,6 +1242,16 @@
                           <p class="text-slate-400 font-medium text-sm sm:text-base mb-1">Keine Reservierungen</p>
                           <p class="text-slate-500 text-xs sm:text-sm">Für diesen Tag sind keine Buchungen vorhanden</p>
                         </div>
+                      </div>
+                    </div>
+
+                    <!-- Date badge at end of scrolling -->
+                    <div class="hidden md:block text-center mt-8 pt-8 border-t border-slate-700/50">
+                      <div class="inline-flex items-center px-4 py-2 bg-blue-900/80 border border-blue-700/40 rounded-lg">
+                        <svg class="w-4 h-4 text-blue-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-sm text-blue-100 font-medium">${selectedDate}</span>
                       </div>
                     </div>
                   ` : `
@@ -1353,6 +1353,16 @@
                           </div>
                         `;
                       }).join('')}
+                    </div>
+
+                    <!-- Date badge at end of scrolling -->
+                    <div class="hidden md:block text-center mt-8 pt-8 border-t border-slate-700/50">
+                      <div class="inline-flex items-center px-4 py-2 bg-blue-900/80 border border-blue-700/40 rounded-lg">
+                        <svg class="w-4 h-4 text-blue-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-sm text-blue-100 font-medium">${selectedDate}</span>
+                      </div>
                     </div>
                   `}
                 </div>
