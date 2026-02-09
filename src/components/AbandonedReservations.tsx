@@ -19,6 +19,9 @@ interface AbandonedReservation {
   amount: number | null;
   created_at: string;
   updated_at: string;
+  payment_link_sent_at: string | null;
+  payment_link_sent: boolean | null;
+  recovery_reservation_id: string | null;
 }
 
 interface Stats {
@@ -164,6 +167,18 @@ export function AbandonedReservations() {
       }
 
       const result = await response.json();
+
+      // Update abandoned reservation with payment link sent status
+      if (result.reservation_id) {
+        await supabase
+          .from('abandoned_reservations')
+          .update({
+            payment_link_sent: true,
+            payment_link_sent_at: new Date().toISOString(),
+            recovery_reservation_id: result.reservation_id,
+          })
+          .eq('id', selectedReservation.id);
+      }
 
       setSendSuccess(true);
       setTimeout(() => {
@@ -321,6 +336,9 @@ export function AbandonedReservations() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  Link gesendet
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                   Betrag
                 </th>
@@ -329,7 +347,7 @@ export function AbandonedReservations() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {filteredReservations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
                     Keine abgebrochenen Reservierungen
                   </td>
                 </tr>
@@ -375,6 +393,15 @@ export function AbandonedReservations() {
                       }`}>
                         {stageLabels[reservation.abandonment_stage] || reservation.abandonment_stage}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {reservation.payment_link_sent ? (
+                        <div className="flex items-center justify-center" title={reservation.payment_link_sent_at ? formatDateTime(reservation.payment_link_sent_at) : ''}>
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">
                       {reservation.amount ? `€${(reservation.amount / 100).toFixed(2)}` : '-'}
@@ -478,6 +505,17 @@ export function AbandonedReservations() {
                       {formatDateTime(selectedReservation.created_at)}
                     </span>
                   </div>
+                  {selectedReservation.payment_link_sent && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-600 dark:text-slate-400">Zahlungslink gesendet:</span>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <span className="text-slate-900 dark:text-white font-medium">
+                          {selectedReservation.payment_link_sent_at ? formatDateTime(selectedReservation.payment_link_sent_at) : 'Ja'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {selectedReservation.abandonment_reason && (
                     <div className="flex justify-between">
                       <span className="text-slate-600 dark:text-slate-400">Grund:</span>
@@ -516,15 +554,28 @@ export function AbandonedReservations() {
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                {selectedReservation.payment_link_sent && (
+                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
+                      Zahlungslink wurde bereits am {selectedReservation.payment_link_sent_at ? formatDateTime(selectedReservation.payment_link_sent_at) : 'unbekanntem Datum'} gesendet.
+                    </p>
+                  </div>
+                )}
                 <button
                   onClick={handleSendPaymentLink}
-                  disabled={sending || !selectedReservation.customer_email}
+                  disabled={sending || !selectedReservation.customer_email || selectedReservation.payment_link_sent}
                   className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition"
                 >
                   {sending ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                       <span>Senden...</span>
+                    </>
+                  ) : selectedReservation.payment_link_sent ? (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Bereits gesendet</span>
                     </>
                   ) : (
                     <>
