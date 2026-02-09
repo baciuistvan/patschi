@@ -504,8 +504,24 @@
       }
 
       .sidebar-mobile {
-        max-height: 40vh;
-        min-height: 250px;
+        max-height: 65vh;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Ensure calendar doesn't take too much space on iPad portrait */
+      .sidebar-mobile > div:nth-child(2) {
+        flex-shrink: 0;
+        max-height: 200px;
+      }
+
+      /* Give more space to reservations list on iPad portrait */
+      .sidebar-mobile > div:last-child {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        min-height: 0;
       }
     }
 
