@@ -1032,7 +1032,7 @@ export function ReservationManager() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm print:grid-cols-3 print:gap-2 print:text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm print:grid-cols-4 print:gap-2 print:text-xs">
                           <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
                             <Calendar className="w-4 h-4 print:hidden" />
                             <span className="print:font-medium">{new Date(reservation.reservation_date).toLocaleDateString()}</span>
@@ -1044,6 +1044,18 @@ export function ReservationManager() {
                           <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
                             <Users className="w-4 h-4 print:hidden" />
                             <span className="print:font-medium">{reservation.party_size} Personen</span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
+                            <Calendar className="w-4 h-4 print:hidden" />
+                            <span className="print:font-medium text-xs">
+                              Gebucht am: {new Date(reservation.created_at).toLocaleString('de-DE', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }).replace(',', ' um')}
+                            </span>
                           </div>
                         </div>
 
@@ -1222,7 +1234,7 @@ export function ReservationManager() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm print:grid-cols-3 print:gap-2 print:text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm print:grid-cols-4 print:gap-2 print:text-xs">
                   <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
                     <Calendar className="w-4 h-4 print:hidden" />
                     <span className="print:font-medium">{new Date(reservation.reservation_date).toLocaleDateString()}</span>
@@ -1234,6 +1246,18 @@ export function ReservationManager() {
                   <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
                     <Users className="w-4 h-4 print:hidden" />
                     <span className="print:font-medium">{reservation.party_size} Personen</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
+                    <Calendar className="w-4 h-4 print:hidden" />
+                    <span className="print:font-medium text-xs">
+                      Gebucht am: {new Date(reservation.created_at).toLocaleString('de-DE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }).replace(',', ' um')}
+                    </span>
                   </div>
                 </div>
 
