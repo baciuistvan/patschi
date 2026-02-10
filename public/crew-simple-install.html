@@ -518,30 +518,132 @@
         padding: 0.75rem 1rem !important;
       }
 
-      /* Ensure calendar doesn't take too much space on iPad portrait */
+      /* Horizontal timeline calendar - reduced height */
       .sidebar-mobile > div:nth-child(2) {
         flex-shrink: 0;
-        max-height: 140px;
+        max-height: 90px;
         overflow: hidden;
         padding-top: 0.5rem !important;
         padding-bottom: 0.5rem !important;
       }
 
-      /* Compact calendar styling on iPad portrait */
+      /* Compact calendar container on iPad portrait */
       .sidebar-mobile > div:nth-child(2) .bg-slate-900\/95 {
         padding: 0.5rem !important;
       }
 
-      /* Compact calendar cells on iPad portrait */
-      .sidebar-mobile .grid-cols-7 > div {
-        padding: 0.15rem !important;
-        min-height: 20px !important;
-        font-size: 10px !important;
+      /* Month label centered above timeline */
+      .ipad-timeline-month {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
       }
 
-      /* Smaller calendar month header on iPad portrait */
-      .sidebar-mobile > div:nth-child(2) h3 {
+      .ipad-timeline-month h3 {
         font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+      }
+
+      .ipad-timeline-month button {
+        padding: 0.25rem !important;
+        width: 32px !important;
+        height: 32px !important;
+      }
+
+      /* Horizontal scrollable day strip */
+      .ipad-timeline-container {
+        display: flex !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 0.375rem;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0.25rem 0;
+      }
+
+      .ipad-timeline-container::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Individual day cells in timeline */
+      .ipad-timeline-day {
+        flex-shrink: 0;
+        width: 48px;
+        height: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+      }
+
+      .ipad-timeline-day .day-number {
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      .ipad-timeline-day .day-badge {
+        position: absolute;
+        bottom: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: rgb(251, 146, 60);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        font-weight: bold;
+        color: white;
+      }
+
+      .ipad-timeline-day.selected {
+        background: linear-gradient(to bottom right, rgb(59, 130, 246), rgb(29, 78, 216));
+        color: white;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 2px rgb(147, 197, 253);
+      }
+
+      .ipad-timeline-day.today {
+        background: rgb(51, 65, 85);
+        color: white;
+        box-shadow: 0 0 0 2px rgb(100, 116, 139);
+      }
+
+      .ipad-timeline-day.other-month {
+        color: rgb(100, 116, 139);
+      }
+
+      .ipad-timeline-day:not(.selected):not(.today) {
+        color: rgb(203, 213, 225);
+      }
+
+      .ipad-timeline-day:not(.selected):not(.today):hover {
+        background: rgb(51, 65, 85);
+        transform: scale(1.05);
+      }
+
+      .ipad-timeline-day:active {
+        transform: scale(0.95);
+      }
+
+      /* Hide grid calendar on iPad portrait */
+      .sidebar-mobile .md\:hidden .grid-cols-7 {
+        display: none !important;
+      }
+
+      .sidebar-mobile .md\:hidden .ipad-timeline-month,
+      .sidebar-mobile .md\:hidden .ipad-timeline-container {
+        display: flex !important;
       }
 
       /* Give more space to reservations list on iPad portrait */
@@ -549,8 +651,8 @@
         flex: 1 1 auto;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        min-height: 180px;
-        max-height: calc(100% - 240px);
+        min-height: 200px;
+        max-height: calc(100% - 180px);
       }
     }
 
@@ -755,6 +857,115 @@
       state.selectedDate = new Date(year, month, day);
       await fetchReservations();
       await render();
+    }
+
+    // Get timeline booking counts for 31-day range
+    async function getTimelineBookingCounts() {
+      try {
+        const centerDate = new Date(state.selectedDate);
+        const startDate = new Date(centerDate);
+        startDate.setDate(startDate.getDate() - 15);
+        const endDate = new Date(centerDate);
+        endDate.setDate(endDate.getDate() + 15);
+
+        const startYear = startDate.getFullYear();
+        const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+        const startDay = String(startDate.getDate()).padStart(2, '0');
+        const startDateStr = `${startYear}-${startMonth}-${startDay}`;
+
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        const endDay = String(endDate.getDate()).padStart(2, '0');
+        const endDateStr = `${endYear}-${endMonth}-${endDay}`;
+
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/reservations?reservation_date=gte.${startDateStr}&reservation_date=lte.${endDateStr}&select=reservation_date`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          }
+        );
+        const reservations = await response.json();
+
+        const counts = {};
+        reservations.forEach(res => {
+          counts[res.reservation_date] = (counts[res.reservation_date] || 0) + 1;
+        });
+
+        return counts;
+      } catch (error) {
+        console.error('Error fetching timeline booking counts:', error);
+        return {};
+      }
+    }
+
+    // Get month label for timeline (shows the center month)
+    function getTimelineMonthLabel() {
+      const centerDate = state.selectedDate;
+      return centerDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    }
+
+    // Render timeline days (15 before + current + 15 after)
+    function renderTimelineDays() {
+      const timelineCounts = window.timelineBookingCounts || {};
+      const centerDate = new Date(state.selectedDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const days = [];
+
+      for (let offset = -15; offset <= 15; offset++) {
+        const currentDate = new Date(centerDate);
+        currentDate.setDate(currentDate.getDate() + offset);
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const day = currentDate.getDate();
+
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        const isToday = currentDate.getTime() === today.getTime();
+        const isSelected = currentDate.getTime() === centerDate.getTime();
+        const isOtherMonth = month !== centerDate.getMonth();
+        const count = timelineCounts[dateStr] || 0;
+
+        let classes = 'ipad-timeline-day';
+        if (isSelected) {
+          classes += ' selected';
+        } else if (isToday) {
+          classes += ' today';
+        } else if (isOtherMonth) {
+          classes += ' other-month';
+        }
+
+        days.push(
+          `<div onclick="selectCalendarDate(${year}, ${month}, ${day})" class="${classes}">` +
+            `<div class="day-number">${day}</div>` +
+            (count > 0 ? `<div class="day-badge">${count}</div>` : '') +
+          `</div>`
+        );
+      }
+
+      return days.join('');
+    }
+
+    // Auto-scroll timeline to center selected day
+    function scrollTimelineToCenter() {
+      setTimeout(() => {
+        const container = document.getElementById('timeline-container');
+        if (container && container.style.display !== 'none') {
+          const selectedDay = container.querySelector('.ipad-timeline-day.selected');
+          if (selectedDay) {
+            const containerWidth = container.offsetWidth;
+            const dayLeft = selectedDay.offsetLeft;
+            const dayWidth = selectedDay.offsetWidth;
+            const scrollLeft = dayLeft - (containerWidth / 2) + (dayWidth / 2);
+            container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+          }
+        }
+      }, 100);
     }
 
     // Get shape class based on database shape
@@ -989,6 +1200,7 @@
       const currentMonth = today.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
       const selectedDate = state.selectedDate.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       const bookingCounts = await getMonthBookingCounts();
+      window.timelineBookingCounts = await getTimelineBookingCounts();
 
       return `
         <div class="min-h-screen bg-slate-900">
@@ -1124,6 +1336,26 @@
 
                   <!-- Mobile: Full Month Calendar View -->
                   <div class="md:hidden">
+                    <!-- iPad Portrait: Horizontal Timeline -->
+                    <div class="ipad-timeline-month" style="display: none;">
+                      <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                      </button>
+                      <h3 class="text-white font-bold text-sm">${getTimelineMonthLabel()}</h3>
+                      <button onclick="changeMonth(1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div id="timeline-container" class="ipad-timeline-container" style="display: none;">
+                      ${renderTimelineDays()}
+                    </div>
+
+                    <!-- Mobile Phone: Traditional Calendar Grid -->
                     <!-- Month Navigation -->
                     <div class="flex items-center justify-between mb-2">
                       <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
@@ -1840,6 +2072,7 @@
         app.innerHTML = renderLogin();
       } else {
         app.innerHTML = await renderDashboard();
+        scrollTimelineToCenter();
       }
     }
 
