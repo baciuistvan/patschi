@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.39.0";
-import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,34 +19,6 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get Stripe settings from key-value table
-    const { data: settingsRows } = await supabase
-      .from("settings")
-      .select("key, value")
-      .in("key", ["stripe_live_secret_key", "stripe_test_secret_key", "stripe_mode"]);
-
-    if (!settingsRows || settingsRows.length === 0) {
-      throw new Error("Stripe settings not configured");
-    }
-
-    // Convert key-value pairs to object
-    const settings: any = {};
-    settingsRows.forEach((row: any) => {
-      settings[row.key] = row.value;
-    });
-
-    const stripeKey = settings.stripe_mode === "test"
-      ? settings.stripe_test_secret_key
-      : settings.stripe_live_secret_key;
-
-    if (!stripeKey) {
-      throw new Error("Stripe key not configured");
-    }
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2024-11-20.acacia",
-    });
 
     const { amount, recipientName, recipientEmail, buyerName, buyerEmail, message } = await req.json();
 
