@@ -586,7 +586,15 @@
 
       /* Add space above reservations to prevent overlap with calendar */
       .reservation-list {
-        margin-top: 196px !important;
+        position: relative;
+        top: 180px;
+        background: transparent !important;
+      }
+
+      .reservation-list > div {
+        background: linear-gradient(to bottom, rgb(15 23 42), rgb(15 23 42)) !important;
+        padding-top: 1rem;
+        border-radius: 1rem 1rem 0 0;
       }
     }
   </style>
