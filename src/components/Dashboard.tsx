@@ -60,7 +60,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                 )}
               </div>
 
-              <div className="hidden md:flex space-x-1">
+              <div className="hidden lg:flex space-x-1">
                 <button
                   onClick={() => setCurrentView('home')}
                   className={`px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition text-xs font-medium ${
@@ -195,7 +195,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
               </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+                className="lg:hidden p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
               >
                 {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
@@ -203,7 +203,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
           </div>
 
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 space-y-2">
+            <div className="lg:hidden py-4 space-y-2">
               <button
                 onClick={() => {
                   setCurrentView('home');
