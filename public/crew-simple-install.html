@@ -571,13 +571,20 @@
       opacity: 0.8;
     }
 
-    /* Move reservations cards column down and remove background */
-    .sidebar-mobile > div:last-child {
-      margin-top: 200px;
-    }
+    /* Move reservations cards column down and remove all backgrounds on mobile */
+    @media (max-width: 767px) {
+      .sidebar-mobile {
+        background: transparent !important;
+      }
 
-    .sidebar-mobile {
-      background: transparent !important;
+      .sidebar-mobile > div:last-child {
+        margin-top: 200px;
+      }
+
+      .sidebar-mobile > div:first-child,
+      .sidebar-mobile > div:nth-child(2) {
+        background: transparent !important;
+      }
     }
   </style>
 </head>
