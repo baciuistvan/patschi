@@ -49,6 +49,8 @@ Deno.serve(async (req: Request) => {
         purchaser_email: buyerEmail,
         message: message || null,
         status: "active",
+        payment_status: "paid",
+        purchase_date: new Date().toISOString(),
         expiry_date: expiryDate.toISOString(),
       })
       .select()
@@ -56,7 +58,7 @@ Deno.serve(async (req: Request) => {
 
     if (dbError) {
       console.error("Database error:", dbError);
-      throw new Error("Failed to create gift card");
+      throw new Error(`Failed to create gift card: ${dbError.message || JSON.stringify(dbError)}`);
     }
 
     // Send gift card email immediately (bypassing Stripe webhook)
@@ -77,10 +79,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // Return success with direct redirect (no Stripe checkout)
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || '';
     return new Response(
       JSON.stringify({
         success: true,
-        checkoutUrl: `${req.headers.get("origin")}/gift-card-widget.html?success=true`,
+        checkoutUrl: `${origin}/gift-card-widget.html?success=true`,
         giftCardId: giftCard.id,
       }),
       {
