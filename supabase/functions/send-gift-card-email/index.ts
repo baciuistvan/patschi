@@ -44,11 +44,14 @@ Deno.serve(async (req: Request) => {
     // PDF is optional - if not available, we'll send email without it
     const hasPdf = !!giftCard.pdf_url;
 
-    // Get SMTP settings from key-value table
+    // Get SMTP and email template settings from key-value table
     const { data: settingsRows } = await supabase
       .from("settings")
       .select("key, value")
-      .in("key", ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_email", "smtp_from_name"]);
+      .in("key", [
+        "smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from_email", "smtp_from_name",
+        "gift_card_email_subject", "gift_card_email_body_html", "gift_card_email_body_text", "gift_card_email_from_name"
+      ]);
 
     if (!settingsRows || settingsRows.length === 0) {
       throw new Error("SMTP not configured");
@@ -64,9 +67,37 @@ Deno.serve(async (req: Request) => {
       throw new Error("SMTP host not configured");
     }
 
-    // Prepare email content
-    const subject = "Ihr Geschenkgutschein";
-    const htmlBody = `
+    // Prepare template variables
+    const expiryDate = new Date(giftCard.expiry_date).toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
+    const templateVars = {
+      recipient_name: giftCard.recipient_name || "Kunde",
+      purchaser_name: giftCard.purchaser_name || "Jemand",
+      code: giftCard.code,
+      barcode: giftCard.barcode,
+      amount: Number(giftCard.original_amount).toFixed(2),
+      expiry_date: expiryDate,
+      message: giftCard.message || "",
+      pdf_url: giftCard.pdf_url || "#"
+    };
+
+    // Function to replace template variables
+    const replaceTemplateVars = (template: string, vars: any): string => {
+      let result = template;
+      Object.keys(vars).forEach(key => {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        result = result.replace(regex, vars[key]);
+      });
+      return result;
+    };
+
+    // Get subject from settings or use default
+    const subject = settings.gift_card_email_subject || "Ihr Geschenkgutschein";
+
+    // Get HTML template from settings or use default
+    let htmlBody = settings.gift_card_email_body_html;
+    if (!htmlBody) {
+      // Fallback to default template if not configured
+      htmlBody = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -87,58 +118,52 @@ Deno.serve(async (req: Request) => {
             <h1>🎁 Ihr Geschenkgutschein</h1>
           </div>
           <div class="content">
-            <p>Hallo ${giftCard.recipient_name || ""},</p>
-
-            ${giftCard.purchaser_name ? `<p><strong>${giftCard.purchaser_name}</strong> hat Ihnen einen Geschenkgutschein im Wert von <strong>€${Number(giftCard.original_amount).toFixed(2)}</strong> geschenkt!</p>` : `<p>Sie haben einen Geschenkgutschein im Wert von <strong>€${Number(giftCard.original_amount).toFixed(2)}</strong> erhalten!</p>`}
-
-            ${giftCard.message ? `<div class="details"><p><em>"${giftCard.message}"</em></p></div>` : ""}
-
+            <p>Hallo {{recipient_name}},</p>
+            <p><strong>{{purchaser_name}}</strong> hat Ihnen einen Geschenkgutschein im Wert von <strong>€{{amount}}</strong> geschenkt!</p>
             <div class="details">
-              <p><strong>Gutschein-Code:</strong> ${giftCard.code}</p>
-              <p><strong>Barcode:</strong> ${giftCard.barcode}</p>
-              <p><strong>Gültig bis:</strong> ${new Date(giftCard.expiry_date).toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" })}</p>
+              <p><strong>Gutschein-Code:</strong> {{code}}</p>
+              <p><strong>Barcode:</strong> {{barcode}}</p>
+              <p><strong>Gültig bis:</strong> {{expiry_date}}</p>
             </div>
-
-            ${hasPdf ? `
-              <p>Ihr Gutschein ist im Anhang als PDF beigefügt. Sie können den Gutschein ausdrucken oder digital bei uns einlösen.</p>
-              <a href="${giftCard.pdf_url}" class="button">Gutschein herunterladen</a>
-            ` : `
-              <p>Bewahren Sie diese E-Mail auf und zeigen Sie den Gutschein-Code bei uns vor, um ihn einzulösen.</p>
-            `}
-
+            <p>Ihr Gutschein ist als PDF verfügbar.</p>
+            <a href="{{pdf_url}}" class="button">Gutschein herunterladen</a>
             <p>Wir freuen uns auf Ihren Besuch!</p>
-
-            <div class="footer">
-              <p>Dies ist eine automatisch generierte E-Mail.</p>
-            </div>
           </div>
         </div>
       </body>
       </html>
-    `;
+      `;
+    }
+    htmlBody = replaceTemplateVars(htmlBody, templateVars);
 
-    const textBody = `
-Hallo ${giftCard.recipient_name || ""},
+    // Get text template from settings or use default
+    let textBody = settings.gift_card_email_body_text;
+    if (!textBody) {
+      textBody = `
+Hallo {{recipient_name}},
 
-${giftCard.purchaser_name ? `${giftCard.purchaser_name} hat Ihnen einen Geschenkgutschein im Wert von €${Number(giftCard.original_amount).toFixed(2)} geschenkt!` : `Sie haben einen Geschenkgutschein im Wert von €${Number(giftCard.original_amount).toFixed(2)} erhalten!`}
+{{purchaser_name}} hat Ihnen einen Geschenkgutschein im Wert von €{{amount}} geschenkt!
 
-${giftCard.message ? `Nachricht: "${giftCard.message}"` : ""}
+Gutschein-Code: {{code}}
+Barcode: {{barcode}}
+Gültig bis: {{expiry_date}}
 
-Gutschein-Code: ${giftCard.code}
-Barcode: ${giftCard.barcode}
-Gültig bis: ${new Date(giftCard.expiry_date).toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" })}
-
-${hasPdf ? `Laden Sie Ihren Gutschein herunter: ${giftCard.pdf_url}` : `Bewahren Sie diese E-Mail auf und zeigen Sie den Gutschein-Code bei uns vor, um ihn einzulösen.`}
+Laden Sie Ihren Gutschein herunter: {{pdf_url}}
 
 Wir freuen uns auf Ihren Besuch!
-    `.trim();
+      `.trim();
+    }
+    textBody = replaceTemplateVars(textBody, templateVars);
+
+    // Use gift card specific from name if configured
+    const fromName = settings.gift_card_email_from_name || settings.smtp_from_name || "Reservierungssystem";
 
     // Send email using SMTP
     const emailPayload = {
       to: giftCard.recipient_email,
       from: {
         email: settings.smtp_from_email,
-        name: settings.smtp_from_name || "Reservierungssystem",
+        name: fromName,
       },
       subject,
       html: htmlBody,

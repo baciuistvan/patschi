@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gutscheinverwaltung - Patschi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .editor-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      height: 600px;
+    }
+    .code-editor {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-y: auto;
+      background: #1e293b;
+      color: #e2e8f0;
+      resize: vertical;
+    }
+    .preview-frame {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow-y: auto;
+      background: white;
+      padding: 20px;
+    }
+    .tab-active {
+      border-bottom: 3px solid #10b981;
+      color: #10b981;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 1px solid #86efac;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation Bar -->
+  <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <h1 class="text-2xl font-bold text-gray-900">🎁 Gutscheinverwaltung</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span class="text-sm text-gray-600" id="userEmail"></span>
+          <button onclick="logout()" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">Abmelden</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Tabs -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex space-x-8">
+        <button onclick="showTab('dashboard')" id="tab-dashboard" class="tab-active py-4 px-2 font-medium text-sm transition-colors">
+          Dashboard
+        </button>
+        <button onclick="showTab('gutscheine')" id="tab-gutscheine" class="py-4 px-2 font-medium text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          Gutscheine
+        </button>
+        <button onclick="showTab('einstellungen')" id="tab-einstellungen" class="py-4 px-2 font-medium text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          Einstellungen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Dashboard Tab -->
+    <div id="content-dashboard" class="tab-content">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Stat Cards -->
+        <div class="stat-card rounded-lg p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Gesamt Gutscheine</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2" id="stat-total">0</p>
+            </div>
+            <div class="text-4xl">🎁</div>
+          </div>
+        </div>
+
+        <div class="stat-card rounded-lg p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Aktive Gutscheine</p>
+              <p class="text-3xl font-bold text-green-600 mt-2" id="stat-active">0</p>
+            </div>
+            <div class="text-4xl">✅</div>
+          </div>
+        </div>
+
+        <div class="stat-card rounded-lg p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Eingelöst</p>
+              <p class="text-3xl font-bold text-gray-600 mt-2" id="stat-redeemed">0</p>
+            </div>
+            <div class="text-4xl">💰</div>
+          </div>
+        </div>
+
+        <div class="stat-card rounded-lg p-6 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Gesamtwert</p>
+              <p class="text-3xl font-bold text-green-700 mt-2" id="stat-revenue">€0</p>
+            </div>
+            <div class="text-4xl">📊</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Gift Cards -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Neueste Gutscheine</h2>
+        <div id="recent-gift-cards" class="space-y-4">
+          <p class="text-gray-500">Lade Gutscheine...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gutscheine Tab -->
+    <div id="content-gutscheine" class="tab-content hidden">
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-semibold text-gray-900">Alle Gutscheine</h2>
+          <div class="flex space-x-4">
+            <input type="text" id="search-input" placeholder="Suchen..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            <select id="filter-status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+              <option value="all">Alle Status</option>
+              <option value="active">Aktiv</option>
+              <option value="redeemed">Eingelöst</option>
+              <option value="expired">Abgelaufen</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empfänger</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Käufer</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wert</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gültig bis</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="gift-cards-table" class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">Lade Gutscheine...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Einstellungen Tab -->
+    <div id="content-einstellungen" class="tab-content hidden">
+      <div class="space-y-6">
+
+        <!-- Email Template Editor -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">E-Mail Vorlage bearbeiten</h2>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Betreff</label>
+            <input type="text" id="email-subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Betreff der E-Mail">
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Absendername</label>
+            <input type="text" id="email-from-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Name des Absenders">
+          </div>
+
+          <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-2">Verfügbare Template-Variablen (zum Einfügen klicken):</p>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="insertVariable('{{recipient_name}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{recipient_name}}</button>
+              <button onclick="insertVariable('{{purchaser_name}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{purchaser_name}}</button>
+              <button onclick="insertVariable('{{code}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{code}}</button>
+              <button onclick="insertVariable('{{barcode}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{barcode}}</button>
+              <button onclick="insertVariable('{{amount}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{amount}}</button>
+              <button onclick="insertVariable('{{expiry_date}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{expiry_date}}</button>
+              <button onclick="insertVariable('{{message}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{message}}</button>
+              <button onclick="insertVariable('{{pdf_url}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">{{pdf_url}}</button>
+            </div>
+          </div>
+
+          <div class="editor-container">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">HTML Editor</label>
+              <textarea id="html-editor" class="code-editor w-full" spellcheck="false"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Vorschau</label>
+              <div id="html-preview" class="preview-frame"></div>
+            </div>
+          </div>
+
+          <div class="flex space-x-4 mt-6">
+            <button onclick="saveTemplate()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+              Vorlage speichern
+            </button>
+            <button onclick="sendTestEmail()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+              Test-E-Mail senden
+            </button>
+            <button onclick="resetToDefault()" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
+              Auf Standard zurücksetzen
+            </button>
+          </div>
+        </div>
+
+        <!-- SMTP Settings -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">SMTP-Einstellungen</h2>
+          <p class="text-sm text-gray-600 mb-4">Die SMTP-Einstellungen werden in den allgemeinen Einstellungen verwaltet.</p>
+          <a href="/admin.html" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Zu den Einstellungen
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || window.location.origin.includes('localhost')
+      ? 'https://dzepjqklrifykuungboo.supabase.co'
+      : 'https://dzepjqklrifykuungboo.supabase.co';
+    const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6ZXBqcWtscmlmeWt1dW5nYm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMyNTUwNzQsImV4cCI6MjA0ODgzMTA3NH0.gtzAUU56qly8IO8kMZmP89zMAGOLjZ1yUaVcWN-Il0o';
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    let currentUser = null;
+
+    // Check authentication
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/admin.html';
+        return false;
+      }
+      currentUser = user;
+      document.getElementById('userEmail').textContent = user.email;
+      return true;
+    }
+
+    window.logout = async function() {
+      await supabase.auth.signOut();
+      window.location.href = '/admin.html';
+    };
+
+    // Tab management
+    window.showTab = function(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('[id^="tab-"]').forEach(el => {
+        el.classList.remove('tab-active', 'text-green-600');
+        el.classList.add('text-gray-500');
+      });
+
+      document.getElementById(`content-${tabName}`).classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${tabName}`);
+      activeTab.classList.add('tab-active', 'text-green-600');
+      activeTab.classList.remove('text-gray-500');
+
+      if (tabName === 'dashboard') loadDashboard();
+      if (tabName === 'gutscheine') loadGiftCards();
+      if (tabName === 'einstellungen') loadSettings();
+    };
+
+    // Load dashboard statistics
+    async function loadDashboard() {
+      try {
+        const { data: giftCards, error } = await supabase
+          .from('gift_cards')
+          .select('*');
+
+        if (error) throw error;
+
+        const total = giftCards.length;
+        const active = giftCards.filter(gc => gc.status === 'active').length;
+        const redeemed = giftCards.filter(gc => gc.status === 'redeemed').length;
+        const totalRevenue = giftCards.reduce((sum, gc) => sum + parseFloat(gc.amount || 0), 0);
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-active').textContent = active;
+        document.getElementById('stat-redeemed').textContent = redeemed;
+        document.getElementById('stat-revenue').textContent = `€${totalRevenue.toFixed(2)}`;
+
+        // Load recent gift cards
+        const recent = giftCards
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
+
+        const recentHTML = recent.map(gc => `
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div class="flex-1">
+              <p class="font-medium text-gray-900">${gc.code}</p>
+              <p class="text-sm text-gray-600">${gc.recipient_name} (von ${gc.purchaser_name})</p>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-green-600">€${parseFloat(gc.amount).toFixed(2)}</p>
+              <p class="text-sm text-gray-500">${gc.status === 'active' ? 'Aktiv' : gc.status === 'redeemed' ? 'Eingelöst' : 'Abgelaufen'}</p>
+            </div>
+          </div>
+        `).join('');
+
+        document.getElementById('recent-gift-cards').innerHTML = recentHTML || '<p class="text-gray-500">Keine Gutscheine vorhanden</p>';
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+        document.getElementById('recent-gift-cards').innerHTML = '<p class="text-red-500">Fehler beim Laden der Daten</p>';
+      }
+    }
+
+    // Load all gift cards
+    async function loadGiftCards() {
+      try {
+        const { data: giftCards, error } = await supabase
+          .from('gift_cards')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const tableHTML = giftCards.map(gc => {
+          const statusColors = {
+            active: 'bg-green-100 text-green-800',
+            redeemed: 'bg-gray-100 text-gray-800',
+            expired: 'bg-red-100 text-red-800'
+          };
+          const statusLabels = {
+            active: 'Aktiv',
+            redeemed: 'Eingelöst',
+            expired: 'Abgelaufen'
+          };
+
+          return `
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${gc.code}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${gc.recipient_name}<br><span class="text-xs text-gray-400">${gc.recipient_email}</span></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${gc.purchaser_name}<br><span class="text-xs text-gray-400">${gc.purchaser_email}</span></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">€${parseFloat(gc.amount).toFixed(2)}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColors[gc.status]}">${statusLabels[gc.status]}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${new Date(gc.expiry_date).toLocaleDateString('de-DE')}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                ${gc.pdf_url ? `<a href="${gc.pdf_url}" target="_blank" class="text-blue-600 hover:text-blue-800">PDF</a>` : '-'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('gift-cards-table').innerHTML = tableHTML || '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Keine Gutscheine vorhanden</td></tr>';
+      } catch (error) {
+        console.error('Error loading gift cards:', error);
+        document.getElementById('gift-cards-table').innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Fehler beim Laden der Gutscheine</td></tr>';
+      }
+    }
+
+    // Load email template settings
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('key, value')
+          .in('key', ['gift_card_email_subject', 'gift_card_email_body_html', 'gift_card_email_from_name']);
+
+        if (error) throw error;
+
+        const settings = {};
+        data.forEach(setting => {
+          settings[setting.key] = setting.value;
+        });
+
+        document.getElementById('email-subject').value = settings.gift_card_email_subject || '';
+        document.getElementById('email-from-name').value = settings.gift_card_email_from_name || '';
+        document.getElementById('html-editor').value = settings.gift_card_email_body_html || '';
+
+        updatePreview();
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        alert('Fehler beim Laden der Einstellungen');
+      }
+    }
+
+    // Update preview in real-time
+    window.updatePreview = function() {
+      const html = document.getElementById('html-editor').value;
+      const sampleData = {
+        recipient_name: 'Maria Müller',
+        purchaser_name: 'Hans Schmidt',
+        code: 'GIFT-2024-ABCD1234',
+        barcode: '123456789012',
+        amount: '50.00',
+        expiry_date: '31.12.2024',
+        message: 'Alles Gute zum Geburtstag! Genieße einen schönen Abend bei Patschi.',
+        pdf_url: 'https://example.com/gift-card.pdf'
+      };
+
+      let previewHTML = html;
+      Object.keys(sampleData).forEach(key => {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        previewHTML = previewHTML.replace(regex, sampleData[key]);
+      });
+
+      document.getElementById('html-preview').innerHTML = previewHTML;
+    };
+
+    // Auto-update preview when typing
+    document.addEventListener('DOMContentLoaded', () => {
+      const editor = document.getElementById('html-editor');
+      if (editor) {
+        editor.addEventListener('input', updatePreview);
+      }
+    });
+
+    // Insert variable at cursor
+    window.insertVariable = function(variable) {
+      const editor = document.getElementById('html-editor');
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const text = editor.value;
+      editor.value = text.substring(0, start) + variable + text.substring(end);
+      editor.focus();
+      editor.selectionStart = editor.selectionEnd = start + variable.length;
+      updatePreview();
+    };
+
+    // Save template
+    window.saveTemplate = async function() {
+      const subject = document.getElementById('email-subject').value;
+      const fromName = document.getElementById('email-from-name').value;
+      const htmlBody = document.getElementById('html-editor').value;
+
+      try {
+        const updates = [
+          { key: 'gift_card_email_subject', value: subject },
+          { key: 'gift_card_email_from_name', value: fromName },
+          { key: 'gift_card_email_body_html', value: htmlBody }
+        ];
+
+        for (const update of updates) {
+          const { error } = await supabase
+            .from('settings')
+            .upsert(update, { onConflict: 'key' });
+
+          if (error) throw error;
+        }
+
+        alert('Vorlage erfolgreich gespeichert!');
+      } catch (error) {
+        console.error('Error saving template:', error);
+        alert('Fehler beim Speichern der Vorlage');
+      }
+    };
+
+    // Send test email
+    window.sendTestEmail = async function() {
+      if (!currentUser?.email) {
+        alert('Kein Benutzer angemeldet');
+        return;
+      }
+
+      const confirmed = confirm(`Test-E-Mail an ${currentUser.email} senden?`);
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/send-test-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            to: currentUser.email,
+            type: 'gift_card'
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to send test email');
+
+        alert('Test-E-Mail wurde gesendet!');
+      } catch (error) {
+        console.error('Error sending test email:', error);
+        alert('Fehler beim Senden der Test-E-Mail');
+      }
+    };
+
+    // Reset to default template
+    window.resetToDefault = async function() {
+      const confirmed = confirm('Möchten Sie wirklich die Standard-Vorlage wiederherstellen? Ihre aktuellen Änderungen gehen verloren.');
+      if (!confirmed) return;
+
+      try {
+        // Delete current templates to trigger default insertion
+        await supabase
+          .from('settings')
+          .delete()
+          .in('key', ['gift_card_email_subject', 'gift_card_email_body_html', 'gift_card_email_from_name']);
+
+        // Reload settings
+        await loadSettings();
+        alert('Vorlage auf Standard zurückgesetzt!');
+      } catch (error) {
+        console.error('Error resetting template:', error);
+        alert('Fehler beim Zurücksetzen der Vorlage');
+      }
+    };
+
+    // Search and filter
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('search-input');
+      const filterStatus = document.getElementById('filter-status');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', filterGiftCards);
+      }
+      if (filterStatus) {
+        filterStatus.addEventListener('change', filterGiftCards);
+      }
+    });
+
+    async function filterGiftCards() {
+      const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('filter-status')?.value || 'all';
+
+      try {
+        let query = supabase.from('gift_cards').select('*').order('created_at', { ascending: false });
+
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter);
+        }
+
+        const { data: giftCards, error } = await query;
+        if (error) throw error;
+
+        const filtered = giftCards.filter(gc =>
+          gc.code.toLowerCase().includes(searchTerm) ||
+          gc.recipient_name.toLowerCase().includes(searchTerm) ||
+          gc.recipient_email.toLowerCase().includes(searchTerm) ||
+          gc.purchaser_name.toLowerCase().includes(searchTerm) ||
+          gc.purchaser_email.toLowerCase().includes(searchTerm)
+        );
+
+        const tableHTML = filtered.map(gc => {
+          const statusColors = {
+            active: 'bg-green-100 text-green-800',
+            redeemed: 'bg-gray-100 text-gray-800',
+            expired: 'bg-red-100 text-red-800'
+          };
+          const statusLabels = {
+            active: 'Aktiv',
+            redeemed: 'Eingelöst',
+            expired: 'Abgelaufen'
+          };
+
+          return `
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${gc.code}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${gc.recipient_name}<br><span class="text-xs text-gray-400">${gc.recipient_email}</span></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${gc.purchaser_name}<br><span class="text-xs text-gray-400">${gc.purchaser_email}</span></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">€${parseFloat(gc.amount).toFixed(2)}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColors[gc.status]}">${statusLabels[gc.status]}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${new Date(gc.expiry_date).toLocaleDateString('de-DE')}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                ${gc.pdf_url ? `<a href="${gc.pdf_url}" target="_blank" class="text-blue-600 hover:text-blue-800">PDF</a>` : '-'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('gift-cards-table').innerHTML = tableHTML || '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Keine Gutscheine gefunden</td></tr>';
+      } catch (error) {
+        console.error('Error filtering gift cards:', error);
+      }
+    }
+
+    // Initialize
+    checkAuth().then(authenticated => {
+      if (authenticated) {
+        loadDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -61,7 +61,33 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to create gift card: ${dbError.message || JSON.stringify(dbError)}`);
     }
 
-    // Send gift card email immediately (without PDF)
+    // Generate PDF for the gift card
+    try {
+      console.log("Generating PDF for gift card ID:", giftCard.id);
+      const pdfResponse = await fetch(`${supabaseUrl}/functions/v1/generate-gift-card-pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          giftCardId: giftCard.id,
+        }),
+      });
+
+      if (!pdfResponse.ok) {
+        const pdfError = await pdfResponse.text();
+        console.error("PDF generation error:", pdfError);
+      } else {
+        const pdfResult = await pdfResponse.json();
+        console.log("PDF generated successfully:", pdfResult.pdfUrl);
+      }
+    } catch (pdfError) {
+      console.error("Error generating PDF:", pdfError);
+      // Continue even if PDF generation fails
+    }
+
+    // Send gift card email with PDF
     try {
       await fetch(`${supabaseUrl}/functions/v1/send-gift-card-email`, {
         method: "POST",
