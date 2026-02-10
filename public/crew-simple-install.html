@@ -496,6 +496,12 @@
       .main-container {
         height: calc(var(--vh, 1vh) * 100 - 60px);
       }
+
+      /* Hide timeline by default on mobile - shown only on iPad portrait */
+      .ipad-timeline-month,
+      .ipad-timeline-container {
+        display: none;
+      }
     }
 
     /* iPad portrait */
@@ -672,12 +678,6 @@
 
     .date-selector-clickable:active {
       opacity: 0.8;
-    }
-
-    /* Hide timeline by default (shown only on iPad portrait) */
-    .ipad-timeline-month,
-    .ipad-timeline-container {
-      display: none;
     }
 
     /* Mobile and tablet calendar and reservations layout */
