@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, Palette, Gift, Download, Upload, Mail, Bell } from 'lucide-react';
-import { GiftCardTemplates } from './GiftCardTemplates';
+import { GiftCardEmailSettings } from './GiftCardEmailSettings';
 import { WordPressWidgetSettings } from './WordPressWidgetSettings';
 import HostingConfiguration from './HostingConfiguration';
 import FileUploadManager from './FileUploadManager';
@@ -32,11 +32,11 @@ export function SettingsPage() {
           >
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <Palette className="w-5 h-5 text-green-600" />
+                <Mail className="w-5 h-5 text-green-600" />
               </div>
               <div className="text-left">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Gift Card Templates</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Manage gift card designs and templates</p>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Gift Card Email Template</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Customize gift card email content and design</p>
               </div>
             </div>
             <ChevronDown
@@ -47,7 +47,7 @@ export function SettingsPage() {
           </button>
           {expandedSection === 'templates' && (
             <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
-              <GiftCardTemplates />
+              <GiftCardEmailSettings />
             </div>
           )}
         </div>
@@ -160,8 +160,8 @@ export function SettingsPage() {
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
           >
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Mail className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                <Mail className="w-5 h-5 text-orange-600" />
               </div>
               <div className="text-left">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">SMTP Email Configuration</h3>
@@ -187,8 +187,8 @@ export function SettingsPage() {
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
           >
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Bell className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                <Bell className="w-5 h-5 text-yellow-600" />
               </div>
               <div className="text-left">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Push Notifications</h3>
