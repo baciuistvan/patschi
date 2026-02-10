@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gift Card Purchase</title>
+    <title>Gift Card Verification</title>
     <style>
         * {
             box-sizing: border-box;
@@ -46,147 +46,7 @@
             color: #64748b;
             font-size: 16px;
             margin: 0;
-        }
-
-        .gc-amounts {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .gc-amount-btn {
-            padding: 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            background: white;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: #334155;
-        }
-
-        .gc-amount-btn:hover {
-            border-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .gc-amount-btn.active {
-            border-color: #10b981;
-            background: #ecfdf5;
-            color: #059669;
-        }
-
-        .gc-form-group {
-            margin-bottom: 25px;
-        }
-
-        .gc-form-group label {
-            display: block;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .gc-form-group input,
-        .gc-form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
-            box-sizing: border-box;
-        }
-
-        .gc-form-group input:focus,
-        .gc-form-group textarea:focus {
-            outline: none;
-            border-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .gc-form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-            font-family: inherit;
-        }
-
-        .gc-row {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .gc-section {
-            border-top: 2px solid #e2e8f0;
-            padding-top: 30px;
-            margin-top: 30px;
-        }
-
-        .gc-section h3 {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1e293b;
-            margin: 0 0 20px 0;
-        }
-
-        .gc-total {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 30px 0;
-        }
-
-        .gc-total-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .gc-total-label {
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .gc-total-amount {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1e293b;
-        }
-
-        .gc-total-note {
-            font-size: 12px;
-            color: #64748b;
-            margin: 0;
-        }
-
-        .gc-submit-btn {
-            width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .gc-submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-        }
-
-        .gc-submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+            margin-bottom: 30px;
         }
 
         .gc-error {
@@ -195,15 +55,8 @@
             border-radius: 8px;
             padding: 15px;
             color: #991b1b;
-            margin-bottom: 20px;
+            margin-top: 20px;
             font-weight: 600;
-        }
-
-        .gc-footer {
-            text-align: center;
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 30px;
         }
 
         .gc-config-error {
@@ -215,26 +68,13 @@
             border-radius: 12px;
         }
 
-        .gc-verify-section {
-            margin-top: 40px;
-            padding-top: 40px;
-            border-top: 2px solid #e2e8f0;
-        }
-
         .gc-verify-title {
             text-align: center;
             margin-bottom: 20px;
         }
 
-        .gc-verify-title h3 {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1e293b;
-            margin: 0 0 8px 0;
-        }
-
         .gc-verify-title p {
-            font-size: 13px;
+            font-size: 15px;
             color: #64748b;
             margin: 0;
         }
@@ -392,66 +232,9 @@
             color: #dc2626;
         }
 
-        .gc-success {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .gc-success-icon {
-            width: 80px;
-            height: 80px;
-            background: #d1fae5;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-        }
-
-        .gc-success-icon svg {
-            width: 40px;
-            height: 40px;
-            stroke: #059669;
-        }
-
-        .gc-success-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1e293b;
-            margin: 0 0 10px 0;
-        }
-
-        .gc-success-message {
-            color: #64748b;
-            font-size: 16px;
-            margin: 0 0 30px 0;
-        }
-
-        .gc-success-btn {
-            padding: 12px 30px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .gc-success-btn:hover {
-            background: #059669;
-        }
-
         @media (max-width: 768px) {
             .gc-widget {
                 padding: 20px;
-            }
-            .gc-amounts {
-                grid-template-columns: 1fr;
-            }
-            .gc-row {
-                grid-template-columns: 1fr;
             }
             .gc-card-info {
                 grid-template-columns: 1fr;
@@ -519,19 +302,10 @@
 
                 try {
 
-                let selectedAmount = 50;
-                let isCustomAmount = false;
                 let verifyCode = '';
                 let verifyLoading = false;
                 let verifyResult = null;
                 let giftCardDetails = null;
-                let showSuccess = false;
-
-                // Check for success parameter in URL
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('success') === 'true') {
-                    showSuccess = true;
-                }
 
                 function isExpired(expiryDate) {
                     return new Date(expiryDate) < new Date();
@@ -683,128 +457,38 @@
                 }
 
                 function render() {
-                    if (showSuccess) {
-                        root.innerHTML = `
-                            <div class="gc-widget">
-                                <div class="gc-success">
-                                    <div class="gc-success-icon">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                    </div>
-                                    <h2 class="gc-success-title">Zahlung erfolgreich!</h2>
-                                    <p class="gc-success-message">
-                                        Ihr Gutschein wurde erfolgreich gekauft.<br>
-                                        Sie erhalten in Kürze eine E-Mail mit dem Gutschein-PDF.
-                                    </p>
-                                    <button class="gc-success-btn" onclick="window.location.href = window.location.pathname">
-                                        Weiteren Gutschein kaufen
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                        return;
-                    }
-
                     root.innerHTML = `
                         <div class="gc-widget">
                             <div class="gc-header">
-                                <h2>🎁 Gutschein Kaufen</h2>
-                                <p>Schenken Sie Freude</p>
+                                <h2>🎁 Gutschein Prüfen</h2>
+                                <p>Überprüfen Sie die Gültigkeit und den Restbetrag Ihres Gutscheins</p>
                             </div>
 
-                            <form id="gift-card-form">
-                                <div class="gc-form-group">
-                                    <label>Betrag auswählen</label>
-                                    <div class="gc-amounts">
-                                        <button type="button" class="gc-amount-btn ${!isCustomAmount && selectedAmount === 50 ? 'active' : ''}" data-amount="50">€50</button>
-                                        <button type="button" class="gc-amount-btn ${!isCustomAmount && selectedAmount === 100 ? 'active' : ''}" data-amount="100">€100</button>
-                                        <button type="button" class="gc-amount-btn ${!isCustomAmount && selectedAmount === 200 ? 'active' : ''}" data-amount="200">€200</button>
-                                    </div>
-                                    <label style="margin-top: 15px;">Individueller Betrag (mind. €10)</label>
-                                    <input type="number" id="custom-amount" min="10" step="1" placeholder="€10" />
-                                </div>
+                            <div class="gc-verify-title">
+                                <p>Geben Sie die Barcode-Nummer Ihres Gutscheins ein, um die Gültigkeit und den Restbetrag zu überprüfen</p>
+                            </div>
 
-                                <div class="gc-section">
-                                    <h3>Empfänger-Informationen</h3>
-                                    <div class="gc-row">
-                                        <div class="gc-form-group">
-                                            <label>Name des Empfängers *</label>
-                                            <input type="text" id="recipient-name" required />
-                                        </div>
-                                        <div class="gc-form-group">
-                                            <label>E-Mail des Empfängers *</label>
-                                            <input type="email" id="recipient-email" required />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="gc-section">
-                                    <h3>Ihre Informationen</h3>
-                                    <div class="gc-row">
-                                        <div class="gc-form-group">
-                                            <label>Ihr Name *</label>
-                                            <input type="text" id="buyer-name" required />
-                                        </div>
-                                        <div class="gc-form-group">
-                                            <label>Ihre E-Mail *</label>
-                                            <input type="email" id="buyer-email" required />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="gc-form-group">
-                                    <label>Persönliche Nachricht (Optional)</label>
-                                    <textarea id="message" maxlength="500" placeholder="Fügen Sie eine persönliche Nachricht hinzu..."></textarea>
-                                </div>
-
-                                <div id="error-message"></div>
-
-                                <div class="gc-total">
-                                    <div class="gc-total-row">
-                                        <span class="gc-total-label">Gesamtbetrag:</span>
-                                        <span class="gc-total-amount" id="total-amount">€${selectedAmount.toFixed(2)}</span>
-                                    </div>
-                                    <p class="gc-total-note">Der Gutschein wird unmittelbar nach Zahlung per E-Mail zugestellt</p>
-                                </div>
-
-                                <button type="submit" class="gc-submit-btn" id="submit-btn">
-                                    🎁 Gutschein Kaufen
+                            <form id="verify-form" class="gc-verify-form">
+                                <input
+                                    type="text"
+                                    id="verify-code"
+                                    class="gc-verify-input"
+                                    placeholder="Barcode-Nummer eingeben"
+                                    value="${verifyCode}"
+                                    required
+                                />
+                                <button type="submit" class="gc-verify-btn" ${verifyLoading ? 'disabled' : ''}>
+                                    ${verifyLoading ? '⏳ Prüfen...' : '🔍 Prüfen'}
                                 </button>
-
-                                <div class="gc-footer">
-                                    Mit dem Kauf stimmen Sie unseren Allgemeinen Geschäftsbedingungen zu. Gutscheine sind 1 Jahr ab Kaufdatum gültig.
-                                </div>
                             </form>
 
-                            <div class="gc-verify-section">
-                                <div class="gc-verify-title">
-                                    <h3>Gutschein prüfen</h3>
-                                    <p>Geben Sie die Barcode-Nummer Ihres Gutscheins ein, um die Gültigkeit und den Restbetrag zu überprüfen</p>
+                            ${renderGiftCardDetails()}
+
+                            ${verifyResult && !giftCardDetails ? `
+                                <div class="gc-error">
+                                    ${verifyResult.error || 'Ungültiger oder abgelaufener Gutschein'}
                                 </div>
-
-                                <form id="verify-form" class="gc-verify-form">
-                                    <input
-                                        type="text"
-                                        id="verify-code"
-                                        class="gc-verify-input"
-                                        placeholder="Barcode-Nummer eingeben"
-                                        value="${verifyCode}"
-                                        required
-                                    />
-                                    <button type="submit" class="gc-verify-btn" ${verifyLoading ? 'disabled' : ''}>
-                                        ${verifyLoading ? '⏳ Prüfen...' : '🔍 Prüfen'}
-                                    </button>
-                                </form>
-
-                                ${renderGiftCardDetails()}
-
-                                ${verifyResult && !giftCardDetails ? `
-                                    <div class="gc-error">
-                                        ${verifyResult.error || 'Ungültiger oder abgelaufener Gutschein'}
-                                    </div>
-                                ` : ''}
-                            </div>
+                            ` : ''}
                         </div>
                     `;
 
@@ -812,80 +496,14 @@
                 }
 
                 function attachEventListeners() {
-                    const amountBtns = root.querySelectorAll('.gc-amount-btn');
-                    const customAmountInput = root.querySelector('#custom-amount');
-                    const form = root.querySelector('#gift-card-form');
-                    const totalDisplay = root.querySelector('#total-amount');
                     const verifyForm = root.querySelector('#verify-form');
                     const verifyCodeInput = root.querySelector('#verify-code');
-
-                    amountBtns.forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            selectedAmount = parseInt(this.dataset.amount);
-                            isCustomAmount = false;
-                            customAmountInput.value = '';
-                            totalDisplay.textContent = '€' + selectedAmount.toFixed(2);
-                            render();
-                        });
-                    });
-
-                    customAmountInput.addEventListener('input', function() {
-                        const value = parseFloat(this.value);
-                        if (!isNaN(value) && value >= 10) {
-                            selectedAmount = value;
-                            isCustomAmount = true;
-                            totalDisplay.textContent = '€' + selectedAmount.toFixed(2);
-                        }
-                    });
 
                     verifyCodeInput.addEventListener('input', function() {
                         verifyCode = this.value;
                     });
 
                     verifyForm.addEventListener('submit', handleVerifyGiftCard);
-
-                    form.addEventListener('submit', async function(e) {
-                        e.preventDefault();
-
-                        const submitBtn = root.querySelector('#submit-btn');
-                        const errorDiv = root.querySelector('#error-message');
-
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = '⏳ Wird bearbeitet...';
-                        errorDiv.innerHTML = '';
-
-                        try {
-                            const response = await fetch(config.supabaseUrl + '/functions/v1/purchase-gift-card', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer ' + config.supabaseAnonKey
-                                },
-                                body: JSON.stringify({
-                                    amount: selectedAmount,
-                                    recipientName: root.querySelector('#recipient-name').value,
-                                    recipientEmail: root.querySelector('#recipient-email').value,
-                                    buyerName: root.querySelector('#buyer-name').value,
-                                    buyerEmail: root.querySelector('#buyer-email').value,
-                                    message: root.querySelector('#message').value
-                                })
-                            });
-
-                            const data = await response.json();
-
-                            if (!response.ok) {
-                                throw new Error(data.error || 'Zahlung konnte nicht verarbeitet werden');
-                            }
-
-                            if (data.checkoutUrl) {
-                                window.location.href = data.checkoutUrl;
-                            }
-                        } catch (error) {
-                            errorDiv.innerHTML = '<div class="gc-error">' + error.message + '</div>';
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = '🎁 Gutschein Kaufen';
-                        }
-                    });
                 }
 
                 render();
