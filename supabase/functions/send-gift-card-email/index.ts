@@ -41,9 +41,8 @@ Deno.serve(async (req: Request) => {
       throw new Error("No recipient email address");
     }
 
-    if (!giftCard.pdf_url) {
-      throw new Error("Gift card PDF not yet generated");
-    }
+    // PDF is optional - if not available, we'll send email without it
+    const hasPdf = !!giftCard.pdf_url;
 
     // Get SMTP settings from key-value table
     const { data: settingsRows } = await supabase
@@ -100,9 +99,12 @@ Deno.serve(async (req: Request) => {
               <p><strong>Gültig bis:</strong> ${new Date(giftCard.expiry_date).toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" })}</p>
             </div>
 
-            <p>Ihr Gutschein ist im Anhang als PDF beigefügt. Sie können den Gutschein ausdrucken oder digital bei uns einlösen.</p>
-
-            <a href="${giftCard.pdf_url}" class="button">Gutschein herunterladen</a>
+            ${hasPdf ? `
+              <p>Ihr Gutschein ist im Anhang als PDF beigefügt. Sie können den Gutschein ausdrucken oder digital bei uns einlösen.</p>
+              <a href="${giftCard.pdf_url}" class="button">Gutschein herunterladen</a>
+            ` : `
+              <p>Bewahren Sie diese E-Mail auf und zeigen Sie den Gutschein-Code bei uns vor, um ihn einzulösen.</p>
+            `}
 
             <p>Wir freuen uns auf Ihren Besuch!</p>
 
@@ -126,7 +128,7 @@ Gutschein-Code: ${giftCard.code}
 Barcode: ${giftCard.barcode}
 Gültig bis: ${new Date(giftCard.expiry_date).toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" })}
 
-Laden Sie Ihren Gutschein herunter: ${giftCard.pdf_url}
+${hasPdf ? `Laden Sie Ihren Gutschein herunter: ${giftCard.pdf_url}` : `Bewahren Sie diese E-Mail auf und zeigen Sie den Gutschein-Code bei uns vor, um ihn einzulösen.`}
 
 Wir freuen uns auf Ihren Besuch!
     `.trim();

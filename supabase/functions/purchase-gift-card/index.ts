@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to create gift card: ${dbError.message || JSON.stringify(dbError)}`);
     }
 
-    // Send gift card email immediately (bypassing Stripe webhook)
+    // Send gift card email immediately (without PDF)
     try {
       await fetch(`${supabaseUrl}/functions/v1/send-gift-card-email`, {
         method: "POST",
@@ -73,6 +73,7 @@ Deno.serve(async (req: Request) => {
           giftCardId: giftCard.id,
         }),
       });
+      console.log("Gift card email sent successfully for ID:", giftCard.id);
     } catch (emailError) {
       console.error("Error sending gift card email:", emailError);
       // Don't fail the request if email fails
