@@ -1,4 +1,4 @@
-import { Calendar, Gift } from 'lucide-react';
+import { Calendar, Gift, Menu, Settings } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +15,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
   const { theme, setTheme } = useTheme();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -30,6 +31,32 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowSettingsMenu(!showSettingsMenu);
+                    setShowLanguageMenu(false);
+                    setShowThemeMenu(false);
+                  }}
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+                  title="Menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                {showSettingsMenu && (
+                  <div className="absolute left-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 min-w-48">
+                    <button
+                      onClick={() => {
+                        setShowSettingsMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-2 text-slate-700 dark:text-slate-300"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>{t('nav.settings')}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm sm:text-lg">PB</span>
               </div>
@@ -49,6 +76,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
                   onClick={() => {
                     setShowThemeMenu(!showThemeMenu);
                     setShowLanguageMenu(false);
+                    setShowSettingsMenu(false);
                   }}
                   className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
                   title="Theme"
@@ -89,6 +117,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
                   onClick={() => {
                     setShowLanguageMenu(!showLanguageMenu);
                     setShowThemeMenu(false);
+                    setShowSettingsMenu(false);
                   }}
                   className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition flex items-center space-x-1"
                   title="Language"
