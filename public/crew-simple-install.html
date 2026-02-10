@@ -510,6 +510,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        background: transparent !important;
       }
 
       /* Fixed header on iPad portrait - tighter spacing */
@@ -578,23 +579,22 @@
         background: transparent !important;
       }
 
-      /* Make header and calendar transparent */
+      /* Keep header and calendar with their backgrounds but position absolutely */
       .sidebar-mobile > div:first-child,
       .sidebar-mobile > div:nth-child(2) {
-        background: transparent !important;
-      }
-
-      /* Add space above reservations to prevent overlap with calendar */
-      .reservation-list {
         position: relative;
-        top: 180px;
-        background: transparent !important;
+        z-index: 10;
       }
 
-      .reservation-list > div {
-        background: linear-gradient(to bottom, rgb(15 23 42), rgb(15 23 42)) !important;
-        padding-top: 1rem;
-        border-radius: 1rem 1rem 0 0;
+      /* Position reservations list to start below calendar */
+      .reservation-list {
+        position: absolute;
+        top: 240px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgb(15 23 42), rgb(30 41 59)) !important;
+        border-radius: 1.5rem 1.5rem 0 0;
       }
     }
   </style>
