@@ -497,10 +497,14 @@
         height: calc(var(--vh, 1vh) * 100 - 60px);
       }
 
-      /* Hide timeline by default on mobile - shown only on iPad portrait */
-      .ipad-timeline-month,
-      .ipad-timeline-container {
+      /* Hide timeline wrapper by default on mobile */
+      .ipad-timeline-wrapper {
         display: none;
+      }
+
+      /* Show mobile calendar grid by default */
+      .mobile-calendar-grid {
+        display: block;
       }
     }
 
@@ -642,15 +646,19 @@
         transform: scale(0.95);
       }
 
+      /* Show timeline on iPad portrait */
+      .ipad-timeline-wrapper {
+        display: block !important;
+      }
+
       /* Hide traditional grid calendar on iPad portrait */
-      .sidebar-mobile .md\:hidden > div:not(.ipad-timeline-month):not(.ipad-timeline-container) {
+      .mobile-calendar-grid {
         display: none !important;
       }
 
-      /* Show timeline on iPad portrait */
-      .sidebar-mobile .md\:hidden .ipad-timeline-month,
-      .sidebar-mobile .md\:hidden .ipad-timeline-container {
-        display: flex !important;
+      /* Also hide desktop calendar on iPad portrait */
+      .sidebar-mobile .hidden.md\:block {
+        display: none !important;
       }
 
       /* Give more space to reservations list on iPad portrait */
@@ -1341,9 +1349,8 @@
               <div class="flex-shrink-0 px-3 pt-3 pb-4 md:px-4 md:pt-3 md:pb-5 border-b border-slate-700/50 bg-gradient-to-b from-slate-800 to-slate-900 shadow-lg">
                 <div class="bg-slate-900/95 rounded-xl p-2.5 md:p-3 backdrop-blur-md shadow-2xl border border-slate-700/30 ring-1 ring-slate-600/20">
 
-                  <!-- Mobile: Full Month Calendar View -->
-                  <div class="md:hidden">
-                    <!-- iPad Portrait: Horizontal Timeline -->
+                  <!-- iPad Portrait: Horizontal Timeline (Outside md:hidden) -->
+                  <div class="ipad-timeline-wrapper">
                     <div class="ipad-timeline-month">
                       <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1361,7 +1368,10 @@
                     <div id="timeline-container" class="ipad-timeline-container">
                       ${renderTimelineDays()}
                     </div>
+                  </div>
 
+                  <!-- Mobile: Full Month Calendar View -->
+                  <div class="mobile-calendar-grid">
                     <!-- Mobile Phone: Traditional Calendar Grid -->
                     <!-- Month Navigation -->
                     <div class="flex items-center justify-between mb-2">
