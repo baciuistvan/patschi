@@ -105,6 +105,14 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                   <SettingsIcon className="w-3.5 h-3.5" />
                   <span>{t('nav.settings')}</span>
                 </button>
+                <button
+                  onClick={() => window.open('/gutscheinverwaltung.html', '_blank')}
+                  className="px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition text-xs font-medium bg-green-600 text-white hover:bg-green-700"
+                  title="Gutscheinverwaltung öffnen"
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  <span>Gutscheine</span>
+                </button>
               </div>
             </div>
 
@@ -259,6 +267,16 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
               >
                 <SettingsIcon className="w-5 h-5" />
                 <span>{t('nav.settings')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  window.open('/gutscheinverwaltung.html', '_blank');
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full px-4 py-3 rounded-lg flex items-center space-x-2 transition bg-green-600 text-white hover:bg-green-700"
+              >
+                <Gift className="w-5 h-5" />
+                <span>Gutscheinverwaltung</span>
               </button>
               <div className="sm:hidden border-t border-slate-700 pt-3 mt-3">
                 <p className="text-sm font-medium text-white px-4">{adminUser?.full_name}</p>
