@@ -1937,6 +1937,13 @@
         return;
       }
 
+      // Check authentication
+      const token = localStorage.getItem('crew_token');
+      if (!token) {
+        alert('Nicht angemeldet. Bitte melden Sie sich erneut an.');
+        return;
+      }
+
       // Show loading
       document.getElementById('giftCardResult').classList.add('hidden');
       document.getElementById('giftCardLoading').classList.remove('hidden');
@@ -1947,12 +1954,14 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ code: code.toUpperCase() })
         });
 
         const data = await response.json();
+
+        console.log('Verify response:', data);
 
         // Hide loading
         document.getElementById('giftCardLoading').classList.add('hidden');
@@ -1973,11 +1982,12 @@
           document.getElementById('gcExpiry').textContent = expiryDate.toLocaleDateString('de-DE');
         } else {
           // Show invalid gift card
+          console.error('Verification failed:', data.message || data.error);
           currentGiftCard = null;
           document.getElementById('validGiftCard').classList.add('hidden');
           document.getElementById('invalidGiftCard').classList.remove('hidden');
 
-          document.getElementById('gcErrorMessage').textContent = data.message;
+          document.getElementById('gcErrorMessage').textContent = data.message || data.error || 'Ungültiger Gutschein Code';
 
           // Show details if available
           if (data.giftCard) {
@@ -2022,6 +2032,13 @@
         return;
       }
 
+      // Check authentication
+      const token = localStorage.getItem('crew_token');
+      if (!token) {
+        alert('Nicht angemeldet. Bitte melden Sie sich erneut an.');
+        return;
+      }
+
       // Confirmation dialog
       const confirmRedeem = confirm(`Möchten Sie den Gutschein über €${parseFloat(currentGiftCard.original_amount).toFixed(2)} wirklich einlösen?`);
       if (!confirmRedeem) {
@@ -2038,7 +2055,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             code: currentGiftCard.code,
@@ -2047,6 +2064,8 @@
         });
 
         const data = await response.json();
+
+        console.log('Redeem response:', data);
 
         // Hide loading
         document.getElementById('giftCardLoading').classList.add('hidden');
@@ -2062,10 +2081,11 @@
           document.getElementById('gcAmountSuccess').textContent = `€${parseFloat(data.giftCard.original_amount).toFixed(2)}`;
         } else {
           // Show error
+          console.error('Redemption failed:', data.message || data.error);
           document.getElementById('validGiftCard').classList.add('hidden');
           document.getElementById('invalidGiftCard').classList.remove('hidden');
           document.getElementById('successMessage').classList.add('hidden');
-          document.getElementById('gcErrorMessage').textContent = data.message || 'Fehler beim Einlösen des Gutscheins';
+          document.getElementById('gcErrorMessage').textContent = data.message || data.error || 'Fehler beim Einlösen des Gutscheins';
           document.getElementById('gcDetails').classList.add('hidden');
         }
       } catch (error) {
