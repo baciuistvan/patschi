@@ -636,11 +636,12 @@
         transform: scale(0.95);
       }
 
-      /* Hide grid calendar on iPad portrait */
-      .sidebar-mobile .md\:hidden .grid-cols-7 {
+      /* Hide traditional grid calendar on iPad portrait */
+      .sidebar-mobile .md\:hidden > div:not(.ipad-timeline-month):not(.ipad-timeline-container) {
         display: none !important;
       }
 
+      /* Show timeline on iPad portrait */
       .sidebar-mobile .md\:hidden .ipad-timeline-month,
       .sidebar-mobile .md\:hidden .ipad-timeline-container {
         display: flex !important;
@@ -671,6 +672,12 @@
 
     .date-selector-clickable:active {
       opacity: 0.8;
+    }
+
+    /* Hide timeline by default (shown only on iPad portrait) */
+    .ipad-timeline-month,
+    .ipad-timeline-container {
+      display: none;
     }
 
     /* Mobile and tablet calendar and reservations layout */
@@ -1337,7 +1344,7 @@
                   <!-- Mobile: Full Month Calendar View -->
                   <div class="md:hidden">
                     <!-- iPad Portrait: Horizontal Timeline -->
-                    <div class="ipad-timeline-month" style="display: none;">
+                    <div class="ipad-timeline-month">
                       <button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-1.5 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -1351,7 +1358,7 @@
                       </button>
                     </div>
 
-                    <div id="timeline-container" class="ipad-timeline-container" style="display: none;">
+                    <div id="timeline-container" class="ipad-timeline-container">
                       ${renderTimelineDays()}
                     </div>
 
