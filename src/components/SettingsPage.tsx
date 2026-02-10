@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Palette, Gift, Download, Upload, Mail, Bell } from 'lucide-react';
+import { ChevronDown, Palette, Gift, Upload, Mail, Bell } from 'lucide-react';
 import { GiftCardEmailSettings } from './GiftCardEmailSettings';
 import { WordPressWidgetSettings } from './WordPressWidgetSettings';
 import HostingConfiguration from './HostingConfiguration';
@@ -7,7 +7,7 @@ import FileUploadManager from './FileUploadManager';
 import { SMTPSettings } from './SMTPSettings';
 import { NotificationSettings } from './NotificationSettings';
 
-type SettingsSection = 'templates' | 'widget' | 'download' | 'hosting' | 'smtp' | 'notifications' | null;
+type SettingsSection = 'templates' | 'widget' | 'hosting' | 'smtp' | 'notifications' | null;
 
 export function SettingsPage() {
   const [expandedSection, setExpandedSection] = useState<SettingsSection>(null);
@@ -75,46 +75,6 @@ export function SettingsPage() {
           {expandedSection === 'widget' && (
             <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
               <WordPressWidgetSettings />
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <button
-            onClick={() => toggleSection('download')}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-          >
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <Download className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Download Standalone App</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Get complete system for your website</p>
-              </div>
-            </div>
-            <ChevronDown
-              className={`w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform ${
-                expandedSection === 'download' ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-          {expandedSection === 'download' && (
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
-              <div className="space-y-4">
-                <p className="text-slate-600 dark:text-slate-400">
-                  Download the complete standalone application with all features, database migrations, and documentation.
-                </p>
-                <a
-                  href="/download-standalone.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  <Download className="w-5 h-5" />
-                  <span>Download Standalone Application</span>
-                </a>
-              </div>
             </div>
           )}
         </div>
