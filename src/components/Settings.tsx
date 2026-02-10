@@ -34,7 +34,7 @@ export function Settings() {
     { id: 'hours', icon: Clock, label: t('settings.booking_hours') },
     { id: 'abandoned', icon: TrendingDown, label: 'Abgebrochene Reservierungen' },
     { id: 'email', icon: Mail, label: t('settings.email') },
-    { id: 'gift-card-email', icon: Gift, label: 'Gutschein E-Mails' },
+    { id: 'gift-card-email', icon: Gift, label: 'Gutschein System Einstellung' },
     { id: 'hosting', icon: Upload, label: 'Hosting Upload', showBadge: hasHostingConfig },
   ];
 
