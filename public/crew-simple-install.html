@@ -571,19 +571,22 @@
       opacity: 0.8;
     }
 
-    /* Move reservations cards column down and remove all backgrounds on mobile */
+    /* Mobile calendar and reservations layout */
     @media (max-width: 767px) {
+      /* Remove all dark backgrounds from sidebar */
       .sidebar-mobile {
         background: transparent !important;
       }
 
-      .sidebar-mobile > div:last-child {
-        margin-top: 200px;
-      }
-
+      /* Make header and calendar transparent */
       .sidebar-mobile > div:first-child,
       .sidebar-mobile > div:nth-child(2) {
         background: transparent !important;
+      }
+
+      /* Add space above reservations to prevent overlap with calendar */
+      .reservation-list {
+        margin-top: 16px !important;
       }
     }
   </style>
@@ -1269,7 +1272,7 @@
               </div>
 
               <!-- Reservations List (Scrollable) -->
-              <div class="flex-1 px-3 md:px-4 py-4 overflow-y-auto min-h-0" style="scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent;">
+              <div class="flex-1 px-3 md:px-4 py-4 overflow-y-auto min-h-0 reservation-list" style="scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent;">
                 <style>
                   .overflow-y-auto::-webkit-scrollbar {
                     width: 6px;
