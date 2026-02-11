@@ -603,6 +603,38 @@ export function ReservationManager() {
     }
   };
 
+  const handleMarkPaymentLinkAsPaid = async () => {
+    if (!editingReservation || isUpdating) return;
+
+    setIsUpdating(true);
+
+    const updates: any = {
+      payment_status: 'paid',
+      status: 'confirmed'
+    };
+
+    const { error } = await supabase
+      .from('reservations')
+      .update(updates)
+      .eq('id', editingReservation.id);
+
+    if (error) {
+      console.error('Error marking payment as paid:', error);
+      alert('Fehler beim Aktualisieren des Zahlungsstatus');
+    } else {
+      // Update the editingReservation state to reflect the change
+      setEditingReservation({
+        ...editingReservation,
+        payment_status: 'paid',
+        status: 'confirmed'
+      });
+      loadReservations();
+      alert('Zahlung wurde als bezahlt markiert und Status auf bestätigt gesetzt');
+    }
+
+    setIsUpdating(false);
+  };
+
   const handleEditReservation = (reservation: ReservationWithTable) => {
     setEditingReservation(reservation);
     setNewReservation({
@@ -1844,8 +1876,21 @@ export function ReservationManager() {
                         {editingReservation.payment_status === 'paid' ? 'Bezahlt' : 'Ausstehend'}
                       </span>
                     </div>
+                    {editingReservation.payment_status !== 'paid' && (editingReservation as any)?.booking_method === 'payment_link' && (
+                      <button
+                        type="button"
+                        onClick={handleMarkPaymentLinkAsPaid}
+                        disabled={isUpdating}
+                        className="mt-3 w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        {isUpdating ? 'Wird aktualisiert...' : 'Als bezahlt markieren'}
+                      </button>
+                    )}
                     <p className="mt-3 text-xs text-slate-400 bg-slate-900/50 p-2 rounded">
-                      ℹ️ Zahlungsinformationen für Online-Buchungen werden automatisch geschützt und nicht verändert.
+                      {editingReservation.payment_status !== 'paid' && (editingReservation as any)?.booking_method === 'payment_link'
+                        ? '💡 Wenn der Kunde bar oder per EC-Karte bezahlt hat, klicken Sie auf "Als bezahlt markieren". Der Status wird automatisch auf "Bestätigt" gesetzt.'
+                        : 'ℹ️ Zahlungsinformationen für Online-Buchungen werden automatisch geschützt und nicht verändert.'}
                     </p>
                   </div>
                 )}
