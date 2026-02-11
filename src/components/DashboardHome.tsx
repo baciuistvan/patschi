@@ -34,9 +34,9 @@ export function DashboardHome() {
   const loadStats = async () => {
     setLoading(true);
 
-    const tenDaysAgo = new Date();
-    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-    const dateFilter = formatDateLocal(tenDaysAgo);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateFilter = formatDateLocal(thirtyDaysAgo);
 
     const { data: reservations } = await supabase
       .from('reservations')
