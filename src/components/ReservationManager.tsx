@@ -57,6 +57,7 @@ export function ReservationManager() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [unpaidPaymentLinkCount, setUnpaidPaymentLinkCount] = useState(0);
   const [copyingLinkFor, setCopyingLinkFor] = useState<string | null>(null);
+  const [regeneratingLinkFor, setRegeneratingLinkFor] = useState<string | null>(null);
 
   const createFormRef = useRef<HTMLDivElement>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
@@ -906,6 +907,30 @@ export function ReservationManager() {
     }
   };
 
+  const regeneratePaymentLink = async (reservationId: string) => {
+    if (!confirm('Möchten Sie einen neuen Zahlungslink im aktuellen Stripe-Modus erstellen? Dies wird den alten Link ersetzen.')) {
+      return;
+    }
+
+    try {
+      setRegeneratingLinkFor(reservationId);
+
+      const { data, error } = await supabase.functions.invoke('regenerate-payment-link', {
+        body: { reservationId }
+      });
+
+      if (error) throw error;
+
+      alert(`Neuer Zahlungslink erstellt (${data.stripe_mode} Modus)!\nDer Link wurde in der Reservierung aktualisiert.`);
+      loadReservations();
+    } catch (error: any) {
+      console.error('Error regenerating payment link:', error);
+      alert('Fehler beim Erstellen des neuen Zahlungslinks: ' + (error.message || 'Unbekannter Fehler'));
+    } finally {
+      setRegeneratingLinkFor(null);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 no-print">
@@ -1223,6 +1248,35 @@ export function ReservationManager() {
                                   </>
                                 )}
                               </button>
+                              {(reservation as any).payment_link_url?.includes('/test_') && (
+                                <>
+                                  <span className="px-2 py-1 bg-red-900/30 text-red-400 rounded border border-red-500/30 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    TEST-LINK
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      regeneratePaymentLink(reservation.id);
+                                    }}
+                                    disabled={regeneratingLinkFor === reservation.id}
+                                    className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded border border-orange-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                                    title="Neuen Link im Live-Modus erstellen"
+                                  >
+                                    {regeneratingLinkFor === reservation.id ? (
+                                      <>
+                                        <RefreshCw className="w-3 h-3 animate-spin" />
+                                        <span>Erstellt...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <RefreshCw className="w-3 h-3" />
+                                        <span>Live-Link erstellen</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </>
+                              )}
                             </>
                           )}
                           {(reservation as any).payment_link_url && reservation.payment_status === 'paid' && (
@@ -1427,6 +1481,35 @@ export function ReservationManager() {
                           </>
                         )}
                       </button>
+                      {(reservation as any).payment_link_url?.includes('/test_') && (
+                        <>
+                          <span className="px-2 py-1 bg-red-900/30 text-red-400 rounded border border-red-500/30 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            TEST-LINK
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              regeneratePaymentLink(reservation.id);
+                            }}
+                            disabled={regeneratingLinkFor === reservation.id}
+                            className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded border border-orange-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                            title="Neuen Link im Live-Modus erstellen"
+                          >
+                            {regeneratingLinkFor === reservation.id ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                <span>Erstellt...</span>
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-3 h-3" />
+                                <span>Live-Link erstellen</span>
+                              </>
+                            )}
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                   {(reservation as any).payment_link_url && reservation.payment_status === 'paid' && (
