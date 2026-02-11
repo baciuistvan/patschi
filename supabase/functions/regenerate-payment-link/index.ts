@@ -101,7 +101,7 @@ Deno.serve(async (req: Request) => {
             currency: 'eur',
             product_data: {
               name: `Reservierung für ${reservation.party_size} Personen`,
-              description: `${reservation.reservation_date} um ${reservation.reservation_time} Uhr - ${reservation.customer_name}`,
+              description: `${reservation.reservation_date} um ${reservation.reservation_time} Uhr - ${reservation.customer_name} - Buchungsnummer: ${reservation.booking_code}`,
             },
             unit_amount: amount,
           },
@@ -111,8 +111,12 @@ Deno.serve(async (req: Request) => {
       metadata: {
         reservation_id: reservation.id,
         booking_code: reservation.booking_code,
+        booking_number: reservation.booking_code,
         customer_name: reservation.customer_name,
         customer_email: reservation.customer_email,
+        reservation_date: reservation.reservation_date,
+        reservation_time: reservation.reservation_time,
+        party_size: reservation.party_size.toString(),
       },
     });
 
