@@ -19,6 +19,7 @@ export function ReservationManager() {
   };
 
   const [reservations, setReservations] = useState<ReservationWithTable[]>([]);
+  const [allReservationsForConflicts, setAllReservationsForConflicts] = useState<ReservationWithTable[]>([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly' | 'payment_link'>('monthly');
   const [selectedReservation, setSelectedReservation] = useState<ReservationWithTable | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
@@ -125,7 +126,8 @@ export function ReservationManager() {
     const normalizeTime = (t: string) => t.slice(0, 5);
     const normalizedInputTime = normalizeTime(time);
 
-    reservations.forEach(res => {
+    // Use allReservationsForConflicts instead of filtered reservations
+    allReservationsForConflicts.forEach(res => {
       // Skip the reservation being edited
       if (excludeReservationId && res.id === excludeReservationId) {
         return;
@@ -221,6 +223,21 @@ export function ReservationManager() {
     }
 
     setReservations(formatted);
+
+    // Load ALL reservations for conflict checking (without filters)
+    const { data: allData } = await supabase
+      .from('reservations')
+      .select('*, reservation_tables(*, tables(*))')
+      .order('reservation_date', { ascending: true })
+      .order('reservation_time', { ascending: true });
+
+    if (allData) {
+      const allFormatted = allData.map(r => ({
+        ...r,
+        reservation_tables: r.reservation_tables as any,
+      }));
+      setAllReservationsForConflicts(allFormatted);
+    }
 
     // Count unpaid payment link reservations (including abandoned)
     const unpaidCount = formatted.filter(r =>
