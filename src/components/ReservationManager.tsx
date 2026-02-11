@@ -1265,7 +1265,7 @@ export function ReservationManager() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 text-xs print:hidden">
-                          {(reservation as any).email_sent && (
+                          {(reservation as any).email_sent && (reservation as any).booking_method === 'payment_link' && (
                             <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded border border-green-500/30 flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />
                               E-Mail gesendet
@@ -1500,7 +1500,7 @@ export function ReservationManager() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs print:hidden">
-                  {(reservation as any).email_sent && (
+                  {(reservation as any).email_sent && (reservation as any).booking_method === 'payment_link' && (
                     <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded border border-green-500/30 flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" />
                       E-Mail gesendet
