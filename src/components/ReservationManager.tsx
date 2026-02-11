@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Reservation, Table, Room } from '../lib/supabase';
-import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle, Info } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type ReservationWithTable = Reservation & {
@@ -58,6 +58,7 @@ export function ReservationManager() {
   const [unpaidPaymentLinkCount, setUnpaidPaymentLinkCount] = useState(0);
   const [copyingLinkFor, setCopyingLinkFor] = useState<string | null>(null);
   const [regeneratingLinkFor, setRegeneratingLinkFor] = useState<string | null>(null);
+  const [showBadgeGuide, setShowBadgeGuide] = useState(false);
 
   const createFormRef = useRef<HTMLDivElement>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
@@ -1067,6 +1068,73 @@ export function ReservationManager() {
           >
             Löschen
           </button>
+        )}
+      </div>
+
+      {/* Payment Badge Guide */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowBadgeGuide(!showBadgeGuide)}
+          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 hover:bg-slate-750 transition flex items-center justify-between text-left"
+        >
+          <div className="flex items-center space-x-2">
+            <Info className="w-5 h-5 text-blue-400" />
+            <span className="text-white font-medium">Zahlungs-Badge Legende</span>
+          </div>
+          {showBadgeGuide ? (
+            <ChevronUp className="w-5 h-5 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-400" />
+          )}
+        </button>
+
+        {showBadgeGuide && (
+          <div className="mt-2 bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+            <div className="flex items-center space-x-3">
+              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-green-900/30 text-green-400 border border-green-500/50 whitespace-nowrap">
+                Online bezahlt €50.00
+              </span>
+              <span className="text-sm text-slate-300">
+                Zahlungslink wurde erfolgreich bezahlt
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-purple-900/30 text-purple-400 border border-purple-500/50 whitespace-nowrap">
+                Zahlungslink €50.00
+              </span>
+              <span className="text-sm text-slate-300">
+                Wartet auf Zahlung über Zahlungslink
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-purple-900/30 text-purple-400 border border-purple-500/50 whitespace-nowrap">
+                Online €50.00
+              </span>
+              <span className="text-sm text-slate-300">
+                Direkt online über Widget bezahlt
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-green-900/30 text-green-400 border border-green-500/50 whitespace-nowrap">
+                Anzahlung: €50.00
+              </span>
+              <span className="text-sm text-slate-300">
+                Manuelle Buchung mit Anzahlung (Bar/Überweisung)
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700/50 text-slate-300 border border-slate-600/50 whitespace-nowrap">
+                Kostenlos
+              </span>
+              <span className="text-sm text-slate-300">
+                Keine Zahlung erforderlich
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
