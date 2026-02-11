@@ -610,8 +610,9 @@ export function ReservationManager() {
 
     // Set payment method based on existing reservation
     const bookingMethodFromDb = (reservation as any).booking_method;
+    const paymentMethodFromDb = (reservation as any).payment_method;
 
-    if (bookingMethodFromDb === 'online') {
+    if (bookingMethodFromDb === 'online' || bookingMethodFromDb === 'payment_link' || paymentMethodFromDb === 'stripe') {
       setBookingMethod('free');
       setPaidWithCash(false);
       setCashAmount(0);
@@ -646,7 +647,7 @@ export function ReservationManager() {
       let finalBookingMethod;
       let paymentMethod;
 
-      if (originalBookingMethod === 'online' || originalPaymentMethod === 'stripe') {
+      if (originalBookingMethod === 'online' || originalBookingMethod === 'payment_link' || originalPaymentMethod === 'stripe') {
         paymentStatus = editingReservation.payment_status;
         paymentAmount = editingReservation.payment_amount;
         finalBookingMethod = originalBookingMethod;
@@ -672,7 +673,7 @@ export function ReservationManager() {
         booking_method: finalBookingMethod,
       };
 
-      if (originalBookingMethod === 'online' || originalPaymentMethod === 'stripe') {
+      if (originalBookingMethod === 'online' || originalBookingMethod === 'payment_link' || originalPaymentMethod === 'stripe') {
         updateData.payment_method = paymentMethod;
       }
 
@@ -1802,15 +1803,15 @@ export function ReservationManager() {
               <div className="bg-slate-900/30 p-3 md:p-4 rounded-lg">
                 <label className="block text-sm font-medium text-slate-300 mb-2">Buchungsart</label>
                 <div className={`px-4 py-3 rounded-lg text-center font-semibold ${
-                  (editingReservation as any)?.booking_method === 'online' || ((editingReservation as any)?.booking_method === 'manual' && (editingReservation as any)?.payment_method === 'stripe')
+                  (editingReservation as any)?.booking_method === 'online' || (editingReservation as any)?.booking_method === 'payment_link' || (editingReservation as any)?.payment_method === 'stripe'
                     ? 'bg-purple-900/30 text-purple-400 border-2 border-purple-500/50'
                     : (editingReservation as any)?.booking_method === 'manual'
                     ? 'bg-amber-900/30 text-amber-400 border-2 border-amber-500/50'
                     : 'bg-emerald-900/30 text-emerald-400 border-2 border-emerald-500/50'
                 }`}>
-                  {(editingReservation as any)?.booking_method === 'online' || ((editingReservation as any)?.booking_method === 'manual' && (editingReservation as any)?.payment_method === 'stripe') ? 'Online gebucht' : (editingReservation as any)?.booking_method === 'manual' ? 'Bar bezahlt' : 'Kostenlos / Frei'}
+                  {(editingReservation as any)?.booking_method === 'online' || (editingReservation as any)?.booking_method === 'payment_link' || (editingReservation as any)?.payment_method === 'stripe' ? 'Online gebucht' : (editingReservation as any)?.booking_method === 'manual' ? 'Bar bezahlt' : 'Kostenlos / Frei'}
                 </div>
-                {((editingReservation as any)?.booking_method === 'online' || (editingReservation as any)?.payment_method === 'stripe') && editingReservation.payment_amount > 0 && (
+                {((editingReservation as any)?.booking_method === 'online' || (editingReservation as any)?.booking_method === 'payment_link' || (editingReservation as any)?.payment_method === 'stripe') && editingReservation.payment_amount > 0 && (
                   <div className="mt-3 pt-3 border-t border-slate-700">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-300">Zahlungsbetrag:</span>
@@ -2061,7 +2062,7 @@ export function ReservationManager() {
                 />
               </div>
 
-              {(editingReservation as any)?.booking_method !== 'online' && (
+              {(editingReservation as any)?.booking_method !== 'online' && (editingReservation as any)?.booking_method !== 'payment_link' && (editingReservation as any)?.payment_method !== 'stripe' && (
                 <div className="space-y-3 bg-slate-900/30 p-3 md:p-4 rounded-lg">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Zahlungsstatus ändern</label>
