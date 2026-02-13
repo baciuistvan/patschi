@@ -43,6 +43,7 @@ Deno.serve(async (req: Request) => {
       .select('*')
       .eq('room_id', room_id)
       .eq('is_active', true)
+      .eq('is_bookable', true) // Only get tables that are bookable by customers
       .gte('capacity', party_size) // Only get tables that can fit the party
       .order('capacity', { ascending: true }); // Sort by capacity ascending
 

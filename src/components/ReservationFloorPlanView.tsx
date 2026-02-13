@@ -140,9 +140,6 @@ export function ReservationFloorPlanView({
   };
 
   const handleTableClick = (tableStatus: TableStatus) => {
-    if (tableStatus.status === 'not-reservable') {
-      return;
-    }
     if (tableStatus.reservation) {
       onTableClick(tableStatus.table.id, tableStatus.reservation);
     } else {
@@ -262,7 +259,7 @@ export function ReservationFloorPlanView({
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-gray-600 rounded border-2 border-gray-500 opacity-60"></div>
-                <span className="text-slate-300">Nicht reservierbar</span>
+                <span className="text-slate-300">Nur für Admin</span>
               </div>
             </div>
           </div>
@@ -285,9 +282,7 @@ export function ReservationFloorPlanView({
                 <div
                   key={table.id}
                   onClick={() => handleTableClick(tableStatus)}
-                  className={`absolute transition-all ${
-                    isNotReservable ? 'cursor-not-allowed' : 'cursor-pointer transform hover:scale-105'
-                  } ${getTableColor(
+                  className={`absolute cursor-pointer transition-all transform hover:scale-105 ${getTableColor(
                     tableStatus.status
                   )} ${getTableShape(table.shape || 'rectangle')} border-2 shadow-lg`}
                   style={{
@@ -299,7 +294,7 @@ export function ReservationFloorPlanView({
                   }}
                   title={
                     isNotReservable
-                      ? `Tisch ${table.table_number} - Nicht reservierbar`
+                      ? `Tisch ${table.table_number} - Nur für Admin reservierbar`
                       : tableStatus.reservation
                       ? `${tableStatus.reservation.customer_name} - ${tableStatus.reservation.party_size} Gäste`
                       : `Tisch ${table.table_number} - ${table.capacity} Plätze`
