@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Building2, Code, CreditCard, Clock, Mail, Upload, ChevronDown, Check, TrendingDown } from 'lucide-react';
+import { Building2, Code, CreditCard, Clock, Mail, Upload, ChevronDown, Check, TrendingDown, LayoutGrid } from 'lucide-react';
 import { RoomSettings } from './RoomSettings';
 import { WidgetSettings } from './WidgetSettings';
 import { StripeSettings } from './StripeSettings';
@@ -8,9 +8,10 @@ import { EmailSettings } from './EmailSettings';
 import HostingConfiguration from './HostingConfiguration';
 import FileUploadManager from './FileUploadManager';
 import { AbandonedReservations } from './AbandonedReservations';
+import { FloorPlanManager } from './FloorPlanManager';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type SettingsTab = 'rooms' | 'widget' | 'stripe' | 'hours' | 'email' | 'hosting' | 'abandoned';
+type SettingsTab = 'rooms' | 'floor-plan' | 'widget' | 'stripe' | 'hours' | 'email' | 'hosting' | 'abandoned';
 
 interface SettingsOption {
   id: SettingsTab;
@@ -28,6 +29,7 @@ export function Settings() {
 
   const settingsOptions: SettingsOption[] = [
     { id: 'rooms', icon: Building2, label: t('settings.rooms') },
+    { id: 'floor-plan', icon: LayoutGrid, label: t('nav.floor_plan') },
     { id: 'widget', icon: Code, label: t('settings.widget') },
     { id: 'stripe', icon: CreditCard, label: t('settings.stripe') },
     { id: 'hours', icon: Clock, label: t('settings.booking_hours') },
@@ -140,6 +142,7 @@ export function Settings() {
 
       <div>
         {activeTab === 'rooms' && <RoomSettings />}
+        {activeTab === 'floor-plan' && <FloorPlanManager />}
         {activeTab === 'widget' && <WidgetSettings />}
         {activeTab === 'stripe' && <StripeSettings />}
         {activeTab === 'hours' && <BookingHours />}
