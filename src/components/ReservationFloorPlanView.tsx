@@ -20,7 +20,7 @@ interface Reservation {
 interface TableStatus {
   table: Table;
   reservation?: Reservation;
-  status: 'available' | 'reserved' | 'occupied' | 'cancelled';
+  status: 'available' | 'reserved' | 'occupied' | 'cancelled' | 'not-reservable';
 }
 
 interface ReservationFloorPlanViewProps {
@@ -98,8 +98,11 @@ export function ReservationFloorPlanView({
         res.reservation_tables?.some((rt: any) => rt.table_id === table.id)
       );
 
-      let status: 'available' | 'reserved' | 'occupied' | 'cancelled' = 'available';
-      if (reservation) {
+      let status: 'available' | 'reserved' | 'occupied' | 'cancelled' | 'not-reservable' = 'available';
+
+      if (!table.is_bookable) {
+        status = 'not-reservable';
+      } else if (reservation) {
         if (reservation.status === 'confirmed') {
           status = 'reserved';
         } else if (reservation.status === 'completed') {
@@ -119,7 +122,7 @@ export function ReservationFloorPlanView({
     setTableStatuses(Array.from(tableStatusMap.values()));
   };
 
-  const getTableColor = (status: 'available' | 'reserved' | 'occupied' | 'cancelled') => {
+  const getTableColor = (status: 'available' | 'reserved' | 'occupied' | 'cancelled' | 'not-reservable') => {
     switch (status) {
       case 'available':
         return 'bg-green-500 hover:bg-green-600 border-green-400';
@@ -129,12 +132,17 @@ export function ReservationFloorPlanView({
         return 'bg-red-500 hover:bg-red-600 border-red-400';
       case 'cancelled':
         return 'bg-gray-500 hover:bg-gray-600 border-gray-400';
+      case 'not-reservable':
+        return 'bg-gray-600 hover:bg-gray-700 border-gray-500 opacity-60';
       default:
         return 'bg-gray-500 hover:bg-gray-600 border-gray-400';
     }
   };
 
   const handleTableClick = (tableStatus: TableStatus) => {
+    if (tableStatus.status === 'not-reservable') {
+      return;
+    }
     if (tableStatus.reservation) {
       onTableClick(tableStatus.table.id, tableStatus.reservation);
     } else {
@@ -167,6 +175,7 @@ export function ReservationFloorPlanView({
     available: tableStatuses.filter((ts) => ts.status === 'available').length,
     reserved: tableStatuses.filter((ts) => ts.status === 'reserved').length,
     occupied: tableStatuses.filter((ts) => ts.status === 'occupied').length,
+    notReservable: tableStatuses.filter((ts) => ts.status === 'not-reservable').length,
   };
 
   return (
@@ -251,6 +260,10 @@ export function ReservationFloorPlanView({
                 <div className="w-4 h-4 bg-red-500 rounded border-2 border-red-400"></div>
                 <span className="text-slate-300">Reserviert</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-600 rounded border-2 border-gray-500 opacity-60"></div>
+                <span className="text-slate-300">Nicht reservierbar</span>
+              </div>
             </div>
           </div>
         )}
@@ -267,11 +280,14 @@ export function ReservationFloorPlanView({
             {filteredTableStatuses.map((tableStatus) => {
               const table = tableStatus.table;
               const scaleFactor = 1.0;
+              const isNotReservable = tableStatus.status === 'not-reservable';
               return (
                 <div
                   key={table.id}
                   onClick={() => handleTableClick(tableStatus)}
-                  className={`absolute cursor-pointer transition-all transform hover:scale-105 ${getTableColor(
+                  className={`absolute transition-all ${
+                    isNotReservable ? 'cursor-not-allowed' : 'cursor-pointer transform hover:scale-105'
+                  } ${getTableColor(
                     tableStatus.status
                   )} ${getTableShape(table.shape || 'rectangle')} border-2 shadow-lg`}
                   style={{
@@ -282,7 +298,9 @@ export function ReservationFloorPlanView({
                     transform: `rotate(${table.rotation || 0}deg)`,
                   }}
                   title={
-                    tableStatus.reservation
+                    isNotReservable
+                      ? `Tisch ${table.table_number} - Nicht reservierbar`
+                      : tableStatus.reservation
                       ? `${tableStatus.reservation.customer_name} - ${tableStatus.reservation.party_size} Gäste`
                       : `Tisch ${table.table_number} - ${table.capacity} Plätze`
                   }
