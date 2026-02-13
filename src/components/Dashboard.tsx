@@ -179,7 +179,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                 )}
               </div>
               <button
-                onClick={() => window.open('/crew-simple-install.html', '_blank')}
+                onClick={() => window.open('https://patschi.services/crew-simple-install.html', '_blank')}
                 className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition flex items-center space-x-1"
                 title="Open Crew Dashboard"
               >
