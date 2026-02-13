@@ -40,36 +40,19 @@ export function ReservationFloorPlanView({
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [tableStatuses, setTableStatuses] = useState<TableStatus[]>([]);
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
-  const [currentTime, setCurrentTime] = useState(selectedTime);
   const [showLegend, setShowLegend] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'reserved'>('all');
+  const FIXED_TIME = '15:45';
 
   useEffect(() => {
     loadRooms();
-    generateTimeSlots();
   }, []);
 
   useEffect(() => {
     if (selectedRoom && selectedDate) {
       loadTableStatuses();
     }
-  }, [selectedRoom, selectedDate, currentTime]);
-
-  useEffect(() => {
-    setCurrentTime(selectedTime);
-  }, [selectedTime]);
-
-  const generateTimeSlots = () => {
-    const times: string[] = [];
-    for (let hour = 11; hour <= 23; hour++) {
-      for (let min = 0; min < 60; min += 30) {
-        const timeStr = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-        times.push(timeStr);
-      }
-    }
-    setAvailableTimes(times);
-  };
+  }, [selectedRoom, selectedDate]);
 
   const loadRooms = async () => {
     const { data, error } = await supabase
@@ -98,7 +81,7 @@ export function ReservationFloorPlanView({
 
     if (tablesError || !tables) return;
 
-    const normalizedTime = currentTime.slice(0, 5);
+    const normalizedTime = FIXED_TIME;
 
     const { data: reservations, error: reservationsError } = await supabase
       .from('reservations')
@@ -145,7 +128,7 @@ export function ReservationFloorPlanView({
       case 'available':
         return 'bg-green-500 hover:bg-green-600 border-green-400';
       case 'reserved':
-        return 'bg-yellow-500 hover:bg-yellow-600 border-yellow-400';
+        return 'bg-red-500 hover:bg-red-600 border-red-400';
       case 'occupied':
         return 'bg-red-500 hover:bg-red-600 border-red-400';
       case 'cancelled':
@@ -224,17 +207,7 @@ export function ReservationFloorPlanView({
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
           <div className="flex items-center gap-2 text-sm">
             <Clock className="w-4 h-4 text-slate-400" />
-            <select
-              value={currentTime}
-              onChange={(e) => setCurrentTime(e.target.value)}
-              className="bg-slate-700 text-white px-3 py-1.5 rounded border border-slate-600 focus:border-blue-500 focus:outline-none"
-            >
-              {availableTimes.map((time) => (
-                <option key={time} value={time}>
-                  {time} Uhr
-                </option>
-              ))}
-            </select>
+            <span className="text-white font-medium">{FIXED_TIME} Uhr</span>
           </div>
 
           <div className="flex gap-2">
@@ -262,7 +235,7 @@ export function ReservationFloorPlanView({
               onClick={() => setStatusFilter('reserved')}
               className={`px-3 py-1.5 rounded text-xs font-medium transition ${
                 statusFilter === 'reserved'
-                  ? 'bg-yellow-600 text-white'
+                  ? 'bg-red-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               }`}
             >
@@ -273,28 +246,20 @@ export function ReservationFloorPlanView({
 
         {showLegend && (
           <div className="mb-4 p-3 bg-slate-700 rounded-lg">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-green-500 rounded border-2 border-green-400"></div>
                 <span className="text-slate-300">Verfügbar</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-500 rounded border-2 border-yellow-400"></div>
-                <span className="text-slate-300">Reserviert</span>
-              </div>
-              <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-500 rounded border-2 border-red-400"></div>
-                <span className="text-slate-300">Besetzt</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-500 rounded border-2 border-gray-400"></div>
-                <span className="text-slate-300">Storniert</span>
+                <span className="text-slate-300">Reserviert</span>
               </div>
             </div>
           </div>
         )}
 
-        <div className="relative bg-slate-700 rounded-lg p-6 min-h-[600px]">
+        <div className="relative bg-slate-700 rounded-lg p-6 min-h-[1200px] overflow-auto">
           {filteredTableStatuses.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-slate-400 text-center">
@@ -302,9 +267,10 @@ export function ReservationFloorPlanView({
               </p>
             </div>
           ) : (
-            filteredTableStatuses.map((tableStatus) => {
+            <div className="relative w-full h-[1200px]">
+            {filteredTableStatuses.map((tableStatus) => {
               const table = tableStatus.table;
-              const scaleFactor = 0.8;
+              const scaleFactor = 1.0;
               return (
                 <div
                   key={table.id}
@@ -339,13 +305,14 @@ export function ReservationFloorPlanView({
                   </div>
                 </div>
               );
-            })
+            })}
+            </div>
           )}
         </div>
       </div>
 
       <div className="bg-slate-800 rounded-lg p-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-white">{stats.total}</div>
             <div className="text-sm text-slate-400">Tische Gesamt</div>
@@ -355,12 +322,8 @@ export function ReservationFloorPlanView({
             <div className="text-sm text-slate-400">Verfügbar</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-400">{stats.reserved}</div>
+            <div className="text-2xl font-bold text-red-400">{stats.reserved + stats.occupied}</div>
             <div className="text-sm text-slate-400">Reserviert</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-400">{stats.occupied}</div>
-            <div className="text-sm text-slate-400">Besetzt</div>
           </div>
         </div>
       </div>
