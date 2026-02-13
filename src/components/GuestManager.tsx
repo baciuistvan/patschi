@@ -472,38 +472,38 @@ export function GuestManager() {
                   </tr>
                   {expandedGuest === guest.customer_email && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 bg-slate-50 dark:bg-slate-750">
+                      <td colSpan={6} className="px-6 py-4 bg-slate-100 dark:bg-slate-900">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                               Reservation History
                             </h3>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">
+                            <div className="text-sm text-slate-600 dark:text-slate-300">
                               Member since {formatDate(guest.first_visit_date)}
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Total Visits</div>
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Total Visits</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 {guest.reservation_count}
                               </div>
                             </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Total Spent</div>
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Total Spent</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 €{parseFloat(guest.total_spent).toFixed(2)}
                               </div>
                             </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Avg. Spend</div>
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Avg. Spend</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 €{(parseFloat(guest.total_spent) / guest.reservation_count).toFixed(2)}
                               </div>
                             </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Last Visit</div>
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Last Visit</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 {formatDate(guest.last_visit_date)}
                               </div>
@@ -511,30 +511,30 @@ export function GuestManager() {
                           </div>
 
                           {guestReservations[guest.customer_email] ? (
-                            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden shadow-sm">
                               <table className="w-full">
-                                <thead className="bg-slate-50 dark:bg-slate-700">
+                                <thead className="bg-slate-100 dark:bg-slate-700">
                                   <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Time</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Party Size</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Amount</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Booking Code</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Time</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Party Size</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Amount</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Booking Code</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                   {guestReservations[guest.customer_email].map((reservation) => (
-                                    <tr key={reservation.id}>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                                    <tr key={reservation.id} className="hover:bg-slate-50 dark:hover:bg-slate-750">
+                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
                                         {formatDate(reservation.reservation_date)}
                                       </td>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
                                         {reservation.reservation_time}
                                       </td>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
                                         <div className="flex items-center space-x-1">
-                                          <Users className="w-4 h-4 text-slate-400" />
+                                          <Users className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                                           <span>{reservation.party_size}</span>
                                         </div>
                                       </td>
@@ -543,10 +543,10 @@ export function GuestManager() {
                                           {reservation.status}
                                         </span>
                                       </td>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
                                         €{parseFloat(reservation.payment_amount || '0').toFixed(2)}
                                       </td>
-                                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 font-mono">
+                                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 font-mono">
                                         {reservation.booking_code || '-'}
                                       </td>
                                     </tr>
