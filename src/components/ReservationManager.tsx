@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Reservation, Table, Room } from '../lib/supabase';
-import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle, Info } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle, Info, List, LayoutGrid } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { ReservationFloorPlanView } from './ReservationFloorPlanView';
 
 type ReservationWithTable = Reservation & {
   table?: Table;
@@ -59,6 +60,7 @@ export function ReservationManager() {
   const [copyingLinkFor, setCopyingLinkFor] = useState<string | null>(null);
   const [regeneratingLinkFor, setRegeneratingLinkFor] = useState<string | null>(null);
   const [showBadgeGuide, setShowBadgeGuide] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'floor-plan'>('list');
 
   const createFormRef = useRef<HTMLDivElement>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
@@ -955,7 +957,8 @@ export function ReservationManager() {
         </div>
       </div>
 
-      <div className="flex space-x-2 w-full sm:w-auto no-print overflow-x-auto">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 no-print">
+        <div className="flex space-x-2 w-full sm:w-auto overflow-x-auto">
           <button
             onClick={() => setFilter('today')}
             className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
@@ -1048,6 +1051,34 @@ export function ReservationManager() {
             )}
           </div>
         </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-3 py-2 rounded-lg transition flex items-center space-x-2 ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+            title={t('reservations.list_view')}
+          >
+            <List className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('reservations.view_list')}</span>
+          </button>
+          <button
+            onClick={() => setViewMode('floor-plan')}
+            className={`px-3 py-2 rounded-lg transition flex items-center space-x-2 ${
+              viewMode === 'floor-plan'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+            title={t('reservations.floor_plan_view')}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('reservations.view_floor_plan')}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Search Bar */}
       <div className="flex items-center space-x-2 w-full mb-4">
@@ -1153,7 +1184,26 @@ export function ReservationManager() {
         </div>
       )}
 
-      <div className="grid gap-4 printable-reservations">
+      {viewMode === 'floor-plan' ? (
+        <ReservationFloorPlanView
+          selectedDate={selectedDate || formatDateLocal(new Date())}
+          selectedTime={newReservation.reservation_time || '18:00'}
+          onTableClick={(tableId, reservation) => {
+            if (reservation) {
+              setSelectedReservation(reservation as any);
+            }
+          }}
+          onCreateReservation={(tableId) => {
+            setNewReservation({
+              ...newReservation,
+              reservation_date: selectedDate || formatDateLocal(new Date()),
+            });
+            setSelectedTables([tableId]);
+            setShowCreateForm(true);
+          }}
+        />
+      ) : (
+        <div className="grid gap-4 printable-reservations">
         {filter === 'monthly' ? (
           <>
             {groupReservationsByMonth().map((monthGroup) => {
@@ -1642,13 +1692,14 @@ export function ReservationManager() {
           </>
         )}
 
-        {reservations.length === 0 && (
+        {reservations.length === 0 && viewMode === 'list' && (
           <div className="text-center py-12 text-slate-400">
             <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>{t('reservations.no_reservations')}</p>
           </div>
         )}
       </div>
+      )}
 
       {showCreateForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-2 md:p-4 z-50 overflow-y-auto">
