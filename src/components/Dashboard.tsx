@@ -104,7 +104,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                   }`}
                 >
                   <UserCircle className="w-3.5 h-3.5" />
-                  <span>Guests</span>
+                  <span>{t('nav.guests')}</span>
                 </button>
                 <button
                   onClick={() => setCurrentView('settings')}
@@ -270,7 +270,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                 }`}
               >
                 <UserCircle className="w-5 h-5" />
-                <span>Guests</span>
+                <span>{t('nav.guests')}</span>
               </button>
               <button
                 onClick={() => {
