@@ -183,7 +183,7 @@ export function GuestManager() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Total Visits', 'Total Spent', 'First Visit', 'Last Visit'];
+    const headers = ['Name', 'E-Mail', 'Telefon', 'Gesamte Besuche', 'Gesamt Ausgegeben', 'Erster Besuch', 'Letzter Besuch'];
     const csvContent = [
       headers.join(','),
       ...filteredAndSortedGuests.map(guest => [
@@ -201,7 +201,7 @@ export function GuestManager() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `guests-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `gaeste-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -213,9 +213,9 @@ export function GuestManager() {
     if (visits >= 5 || spent >= 1000) {
       return <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-full">VIP</span>;
     } else if (visits >= 2) {
-      return <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Returning</span>;
+      return <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Stammgast</span>;
     } else {
-      return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">New</span>;
+      return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">Neu</span>;
     }
   };
 
@@ -242,12 +242,27 @@ export function GuestManager() {
     }
   };
 
+  const translateStatus = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'Bestätigt';
+      case 'pending':
+        return 'Ausstehend';
+      case 'cancelled':
+        return 'Storniert';
+      case 'completed':
+        return 'Abgeschlossen';
+      default:
+        return status;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600 dark:text-slate-400">Loading guests...</p>
+          <p className="mt-4 text-slate-600 dark:text-slate-400">Gäste werden geladen...</p>
         </div>
       </div>
     );
@@ -257,9 +272,9 @@ export function GuestManager() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Guest Management</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Gästeverwaltung</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            {filteredAndSortedGuests.length} {filteredAndSortedGuests.length === 1 ? 'guest' : 'guests'} found
+            {filteredAndSortedGuests.length} {filteredAndSortedGuests.length === 1 ? 'Gast' : 'Gäste'} gefunden
           </p>
         </div>
         <button
@@ -268,7 +283,7 @@ export function GuestManager() {
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Download className="w-4 h-4" />
-          <span>Export CSV</span>
+          <span>CSV Exportieren</span>
         </button>
       </div>
 
@@ -278,7 +293,7 @@ export function GuestManager() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name, email, or phone..."
+              placeholder="Suche nach Name, E-Mail oder Telefon..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
@@ -289,7 +304,7 @@ export function GuestManager() {
             className="flex items-center space-x-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-slate-700 dark:text-slate-300"
           >
             <Filter className="w-4 h-4" />
-            <span>Filters</span>
+            <span>Filter</span>
           </button>
         </div>
 
@@ -303,7 +318,7 @@ export function GuestManager() {
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >
-              All Guests
+              Alle Gäste
             </button>
             <button
               onClick={() => setFilterType('new')}
@@ -313,7 +328,7 @@ export function GuestManager() {
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >
-              New (1 visit)
+              Neu (1 Besuch)
             </button>
             <button
               onClick={() => setFilterType('returning')}
@@ -323,7 +338,7 @@ export function GuestManager() {
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >
-              Returning (2-4 visits)
+              Stammgast (2-4 Besuche)
             </button>
             <button
               onClick={() => setFilterType('vip')}
@@ -333,7 +348,7 @@ export function GuestManager() {
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >
-              VIP (5+ visits or €1000+)
+              VIP (5+ Besuche oder €1000+)
             </button>
           </div>
         )}
@@ -349,21 +364,21 @@ export function GuestManager() {
                     onClick={() => handleSort('name')}
                     className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
                   >
-                    <span>Guest</span>
+                    <span>Gast</span>
                     {sortField === 'name' && (
                       sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
                   </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Contact
+                  Kontakt
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <button
                     onClick={() => handleSort('visits')}
                     className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
                   >
-                    <span>Visits</span>
+                    <span>Besuche</span>
                     {sortField === 'visits' && (
                       sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
@@ -374,7 +389,7 @@ export function GuestManager() {
                     onClick={() => handleSort('spent')}
                     className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
                   >
-                    <span>Total Spent</span>
+                    <span>Gesamt Ausgegeben</span>
                     {sortField === 'spent' && (
                       sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
@@ -385,14 +400,14 @@ export function GuestManager() {
                     onClick={() => handleSort('last_visit')}
                     className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
                   >
-                    <span>Last Visit</span>
+                    <span>Letzter Besuch</span>
                     {sortField === 'last_visit' && (
                       sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                     )}
                   </button>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Actions
+                  Aktionen
                 </th>
               </tr>
             </thead>
@@ -466,7 +481,7 @@ export function GuestManager() {
                         className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
                       >
                         <Eye className="w-4 h-4" />
-                        <span>View</span>
+                        <span>Ansehen</span>
                       </button>
                     </td>
                   </tr>
@@ -476,34 +491,34 @@ export function GuestManager() {
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                              Reservation History
+                              Reservierungsverlauf
                             </h3>
                             <div className="text-sm text-slate-600 dark:text-slate-300">
-                              Member since {formatDate(guest.first_visit_date)}
+                              Mitglied seit {formatDate(guest.first_visit_date)}
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Total Visits</div>
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Gesamte Besuche</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 {guest.reservation_count}
                               </div>
                             </div>
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Total Spent</div>
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Gesamt Ausgegeben</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 €{parseFloat(guest.total_spent).toFixed(2)}
                               </div>
                             </div>
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Avg. Spend</div>
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Durchschn. Ausgaben</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 €{(parseFloat(guest.total_spent) / guest.reservation_count).toFixed(2)}
                               </div>
                             </div>
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Last Visit</div>
+                              <div className="text-sm text-slate-600 dark:text-slate-300">Letzter Besuch</div>
                               <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                                 {formatDate(guest.last_visit_date)}
                               </div>
@@ -515,12 +530,12 @@ export function GuestManager() {
                               <table className="w-full">
                                 <thead className="bg-slate-100 dark:bg-slate-700">
                                   <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Date</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Time</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Party Size</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Datum</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Uhrzeit</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Personenzahl</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Amount</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Booking Code</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Betrag</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Buchungscode</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -540,7 +555,7 @@ export function GuestManager() {
                                       </td>
                                       <td className="px-4 py-3">
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
-                                          {reservation.status}
+                                          {translateStatus(reservation.status)}
                                         </span>
                                       </td>
                                       <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
@@ -572,11 +587,11 @@ export function GuestManager() {
         {filteredAndSortedGuests.length === 0 && (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No guests found</h3>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Keine Gäste gefunden</h3>
             <p className="text-slate-600 dark:text-slate-400">
               {searchTerm || filterType !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Guest data will appear here once reservations are made'}
+                ? 'Versuchen Sie, Ihre Suche oder Filter anzupassen'
+                : 'Gästedaten erscheinen hier, sobald Reservierungen vorgenommen wurden'}
             </p>
           </div>
         )}
