@@ -94,13 +94,9 @@ export function ReservationFloorPlanView({
     const tableStatusMap = new Map<string, TableStatus>();
 
     tables.forEach((table) => {
-      const reservation = reservations?.find((res) => {
-        const resTime = res.reservation_time.slice(0, 5);
-        return (
-          resTime === normalizedTime &&
-          res.reservation_tables?.some((rt: any) => rt.table_id === table.id)
-        );
-      });
+      const reservation = reservations?.find((res) =>
+        res.reservation_tables?.some((rt: any) => rt.table_id === table.id)
+      );
 
       let status: 'available' | 'reserved' | 'occupied' | 'cancelled' = 'available';
       if (reservation) {
@@ -259,7 +255,7 @@ export function ReservationFloorPlanView({
           </div>
         )}
 
-        <div className="relative bg-slate-700 rounded-lg p-6 min-h-[1200px] overflow-auto">
+        <div className="relative bg-slate-700 rounded-lg p-6 min-h-[840px] overflow-auto">
           {filteredTableStatuses.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-slate-400 text-center">
@@ -267,7 +263,7 @@ export function ReservationFloorPlanView({
               </p>
             </div>
           ) : (
-            <div className="relative w-full h-[1200px]">
+            <div className="relative w-full h-[840px]">
             {filteredTableStatuses.map((tableStatus) => {
               const table = tableStatus.table;
               const scaleFactor = 1.0;
