@@ -61,9 +61,11 @@ export function ReservationManager() {
   const [regeneratingLinkFor, setRegeneratingLinkFor] = useState<string | null>(null);
   const [showBadgeGuide, setShowBadgeGuide] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'floor-plan'>('list');
+  const [showViewMenu, setShowViewMenu] = useState(false);
 
   const createFormRef = useRef<HTMLDivElement>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (showCreateForm && createFormRef.current) {
@@ -94,6 +96,19 @@ export function ReservationManager() {
       loadTables(newReservation.room_id);
     }
   }, [newReservation.room_id]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target as Node)) {
+        setShowViewMenu(false);
+      }
+    }
+
+    if (showViewMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showViewMenu]);
 
   const loadRooms = async () => {
     const { data } = await supabase
@@ -1052,31 +1067,56 @@ export function ReservationManager() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="relative" ref={viewMenuRef}>
           <button
-            onClick={() => setViewMode('list')}
-            className={`px-3 py-2 rounded-lg transition flex items-center space-x-2 ${
-              viewMode === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-            title={t('reservations.list_view')}
+            onClick={() => setShowViewMenu(!showViewMenu)}
+            className="px-3 py-2 rounded-lg transition flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700"
           >
-            <List className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('reservations.view_list')}</span>
+            {viewMode === 'list' ? (
+              <>
+                <List className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('reservations.view_list')}</span>
+              </>
+            ) : (
+              <>
+                <LayoutGrid className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('reservations.view_floor_plan')}</span>
+              </>
+            )}
+            <ChevronDown className={`w-4 h-4 transition-transform ${showViewMenu ? 'rotate-180' : ''}`} />
           </button>
-          <button
-            onClick={() => setViewMode('floor-plan')}
-            className={`px-3 py-2 rounded-lg transition flex items-center space-x-2 ${
-              viewMode === 'floor-plan'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-            title={t('reservations.floor_plan_view')}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('reservations.view_floor_plan')}</span>
-          </button>
+          {showViewMenu && (
+            <div className="absolute right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-20 min-w-[200px]">
+              <button
+                onClick={() => {
+                  setViewMode('list');
+                  setShowViewMenu(false);
+                }}
+                className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                <List className="w-5 h-5" />
+                <span>{t('reservations.view_list')}</span>
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('floor-plan');
+                  setShowViewMenu(false);
+                }}
+                className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
+                  viewMode === 'floor-plan'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+                <span>{t('reservations.view_floor_plan')}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
