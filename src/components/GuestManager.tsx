@@ -401,7 +401,7 @@ export function GuestManager() {
                 <>
                   <tr
                     key={guest.customer_email}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-750 transition cursor-pointer"
+                    className="hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
                     onClick={() => toggleGuestDetails(guest.customer_email)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -525,7 +525,7 @@ export function GuestManager() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                   {guestReservations[guest.customer_email].map((reservation) => (
-                                    <tr key={reservation.id} className="hover:bg-slate-50 dark:hover:bg-slate-750">
+                                    <tr key={reservation.id} className="hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                       <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
                                         {formatDate(reservation.reservation_date)}
                                       </td>
