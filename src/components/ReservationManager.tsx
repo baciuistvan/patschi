@@ -141,9 +141,9 @@ export function ReservationManager() {
   const getReservedTablesForDateTime = (date: string, time: string, excludeReservationId?: string): Set<string> => {
     const reservedTableIds = new Set<string>();
 
-    // Normalize time format to HH:MM (remove seconds if present)
-    const normalizeTime = (t: string) => t.slice(0, 5);
-    const normalizedInputTime = normalizeTime(time);
+    // Calculate the time range for the input reservation (default 2 hour duration)
+    const inputStart = new Date(`${date}T${time}`);
+    const inputEnd = new Date(inputStart.getTime() + 120 * 60000); // 2 hours in milliseconds
 
     // Use allReservationsForConflicts instead of filtered reservations
     allReservationsForConflicts.forEach(res => {
@@ -152,11 +152,25 @@ export function ReservationManager() {
         return;
       }
 
-      // Normalize the reservation time for comparison
-      const normalizedResTime = normalizeTime(res.reservation_time);
+      // Skip cancelled reservations
+      if (res.status === 'cancelled') {
+        return;
+      }
 
-      // Check if reservation matches the date and time and is not cancelled
-      if (res.reservation_date === date && normalizedResTime === normalizedInputTime && res.status !== 'cancelled') {
+      // Check if reservation is on the same date
+      if (res.reservation_date !== date) {
+        return;
+      }
+
+      // Calculate the time range for this existing reservation
+      const resStart = new Date(`${res.reservation_date}T${res.reservation_time}`);
+      const resDuration = res.duration_minutes || 120;
+      const resEnd = new Date(resStart.getTime() + resDuration * 60000);
+
+      // Check for time overlap: two time ranges overlap if one starts before the other ends
+      const hasOverlap = inputStart < resEnd && inputEnd > resStart;
+
+      if (hasOverlap) {
         if (res.reservation_tables && Array.isArray(res.reservation_tables)) {
           res.reservation_tables.forEach((rt: any) => {
             reservedTableIds.add(rt.table_id);
@@ -188,8 +202,6 @@ export function ReservationManager() {
     }
 
     const { data, error } = await query;
-
-    console.log('Reservations query result:', { data, error, count: data?.length });
 
     let formatted: any[] = [];
 
@@ -654,10 +666,6 @@ export function ReservationManager() {
   };
 
   const handleEditReservation = (reservation: ReservationWithTable) => {
-    console.log('=== Opening edit form ===');
-    console.log('Reservation:', reservation);
-    console.log('Reservation tables:', reservation.reservation_tables);
-
     setEditingReservation(reservation);
 
     const assignedTables: string[] = [];
@@ -671,9 +679,7 @@ export function ReservationManager() {
       });
     }
 
-    console.log('Assigned tables extracted:', assignedTables);
     const finalRoomId = roomIdFromTables || reservation.table?.room_id || '';
-    console.log('Final room ID:', finalRoomId);
 
     setNewReservation({
       customer_name: reservation.customer_name,
@@ -690,10 +696,8 @@ export function ReservationManager() {
     });
 
     setSelectedTables(assignedTables);
-    console.log('Set selected tables to:', assignedTables);
     if (finalRoomId) {
       setTableRoomFilter(finalRoomId);
-      console.log('Set table room filter to:', finalRoomId);
     }
 
     // Set payment method based on existing reservation
@@ -724,10 +728,6 @@ export function ReservationManager() {
   const handleUpdateReservation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingReservation || isUpdating) return;
-
-    console.log('=== Starting reservation update ===');
-    console.log('Selected tables:', selectedTables);
-    console.log('New reservation data:', newReservation);
 
     setIsUpdating(true);
     try {
@@ -769,16 +769,11 @@ export function ReservationManager() {
         updateData.payment_method = paymentMethod;
       }
 
-      console.log('Updating reservation:', editingReservation.id);
-      console.log('Update data:', updateData);
-
-      const { error, data: updatedData } = await supabase
+      const { error } = await supabase
         .from('reservations')
         .update(updateData)
         .eq('id', editingReservation.id)
         .select();
-
-      console.log('Update result:', updatedData);
 
       if (error) {
         console.error('Database error:', error);
@@ -786,11 +781,7 @@ export function ReservationManager() {
         return;
       }
 
-      alert('Reservierung erfolgreich aktualisiert!');
-
       // Update table assignments
-      console.log('Selected tables before update:', selectedTables);
-
       const { error: deleteError } = await supabase
         .from('reservation_tables')
         .delete()
@@ -798,8 +789,6 @@ export function ReservationManager() {
 
       if (deleteError) {
         console.error('Error deleting old table assignments:', deleteError);
-      } else {
-        console.log('Old table assignments deleted successfully');
       }
 
       if (selectedTables.length > 0) {
@@ -807,17 +796,15 @@ export function ReservationManager() {
           reservation_id: editingReservation.id,
           table_id: tableId,
         }));
-        console.log('Inserting new table assignments:', tableLinks);
         const { error: insertError } = await supabase.from('reservation_tables').insert(tableLinks);
         if (insertError) {
           console.error('Error inserting new table assignments:', insertError);
           alert('Fehler beim Zuweisen der Tische: ' + insertError.message);
-        } else {
-          console.log('New table assignments inserted successfully');
+          return;
         }
-      } else {
-        console.log('No tables selected, skipping table assignment');
       }
+
+      alert('Reservierung erfolgreich aktualisiert!');
 
         if (selectedDays.length > 0) {
           const additionalReservations = selectedDays.map(date => ({
@@ -850,7 +837,6 @@ export function ReservationManager() {
           }
         }
 
-        console.log('Update complete, reloading reservations...');
         setShowEditForm(false);
         setEditingReservation(null);
         setSelectedTables([]);
@@ -873,7 +859,6 @@ export function ReservationManager() {
           payment_amount: 0,
         });
         await loadReservations();
-        console.log('Reservations reloaded');
     } catch (error) {
       console.error('Error updating reservation:', error);
       alert('Failed to update reservation. Please try again.');
