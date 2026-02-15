@@ -654,6 +654,10 @@ export function ReservationManager() {
   };
 
   const handleEditReservation = (reservation: ReservationWithTable) => {
+    console.log('=== Opening edit form ===');
+    console.log('Reservation:', reservation);
+    console.log('Reservation tables:', reservation.reservation_tables);
+
     setEditingReservation(reservation);
 
     const assignedTables: string[] = [];
@@ -667,7 +671,9 @@ export function ReservationManager() {
       });
     }
 
+    console.log('Assigned tables extracted:', assignedTables);
     const finalRoomId = roomIdFromTables || reservation.table?.room_id || '';
+    console.log('Final room ID:', finalRoomId);
 
     setNewReservation({
       customer_name: reservation.customer_name,
@@ -684,8 +690,10 @@ export function ReservationManager() {
     });
 
     setSelectedTables(assignedTables);
+    console.log('Set selected tables to:', assignedTables);
     if (finalRoomId) {
       setTableRoomFilter(finalRoomId);
+      console.log('Set table room filter to:', finalRoomId);
     }
 
     // Set payment method based on existing reservation
@@ -716,6 +724,10 @@ export function ReservationManager() {
   const handleUpdateReservation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingReservation || isUpdating) return;
+
+    console.log('=== Starting reservation update ===');
+    console.log('Selected tables:', selectedTables);
+    console.log('New reservation data:', newReservation);
 
     setIsUpdating(true);
     try {
@@ -776,19 +788,36 @@ export function ReservationManager() {
 
       alert('Reservierung erfolgreich aktualisiert!');
 
-      if (true) {
-        await supabase
-          .from('reservation_tables')
-          .delete()
-          .eq('reservation_id', editingReservation.id);
+      // Update table assignments
+      console.log('Selected tables before update:', selectedTables);
 
-        if (selectedTables.length > 0) {
-          const tableLinks = selectedTables.map(tableId => ({
-            reservation_id: editingReservation.id,
-            table_id: tableId,
-          }));
-          await supabase.from('reservation_tables').insert(tableLinks);
+      const { error: deleteError } = await supabase
+        .from('reservation_tables')
+        .delete()
+        .eq('reservation_id', editingReservation.id);
+
+      if (deleteError) {
+        console.error('Error deleting old table assignments:', deleteError);
+      } else {
+        console.log('Old table assignments deleted successfully');
+      }
+
+      if (selectedTables.length > 0) {
+        const tableLinks = selectedTables.map(tableId => ({
+          reservation_id: editingReservation.id,
+          table_id: tableId,
+        }));
+        console.log('Inserting new table assignments:', tableLinks);
+        const { error: insertError } = await supabase.from('reservation_tables').insert(tableLinks);
+        if (insertError) {
+          console.error('Error inserting new table assignments:', insertError);
+          alert('Fehler beim Zuweisen der Tische: ' + insertError.message);
+        } else {
+          console.log('New table assignments inserted successfully');
         }
+      } else {
+        console.log('No tables selected, skipping table assignment');
+      }
 
         if (selectedDays.length > 0) {
           const additionalReservations = selectedDays.map(date => ({
@@ -845,7 +874,6 @@ export function ReservationManager() {
         });
         await loadReservations();
         console.log('Reservations reloaded');
-      }
     } catch (error) {
       console.error('Error updating reservation:', error);
       alert('Failed to update reservation. Please try again.');
