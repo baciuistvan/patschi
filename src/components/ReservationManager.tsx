@@ -764,7 +764,13 @@ export function ReservationManager() {
         .update(updateData)
         .eq('id', editingReservation.id);
 
-      if (!error) {
+      if (error) {
+        console.error('Database error:', error);
+        alert('Fehler beim Aktualisieren der Reservierung: ' + error.message);
+        return;
+      }
+
+      if (true) {
         await supabase
           .from('reservation_tables')
           .delete()
