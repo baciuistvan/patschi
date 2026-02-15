@@ -757,16 +757,24 @@ export function ReservationManager() {
         updateData.payment_method = paymentMethod;
       }
 
-      const { error } = await supabase
+      console.log('Updating reservation:', editingReservation.id);
+      console.log('Update data:', updateData);
+
+      const { error, data: updatedData } = await supabase
         .from('reservations')
         .update(updateData)
-        .eq('id', editingReservation.id);
+        .eq('id', editingReservation.id)
+        .select();
+
+      console.log('Update result:', updatedData);
 
       if (error) {
         console.error('Database error:', error);
         alert('Fehler beim Aktualisieren der Reservierung: ' + error.message);
         return;
       }
+
+      alert('Reservierung erfolgreich aktualisiert!');
 
       if (true) {
         await supabase
@@ -813,6 +821,7 @@ export function ReservationManager() {
           }
         }
 
+        console.log('Update complete, reloading reservations...');
         setShowEditForm(false);
         setEditingReservation(null);
         setSelectedTables([]);
@@ -834,7 +843,8 @@ export function ReservationManager() {
           payment_status: 'unpaid',
           payment_amount: 0,
         });
-        loadReservations();
+        await loadReservations();
+        console.log('Reservations reloaded');
       }
     } catch (error) {
       console.error('Error updating reservation:', error);
