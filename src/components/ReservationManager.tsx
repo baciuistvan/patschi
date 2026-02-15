@@ -656,6 +656,20 @@ export function ReservationManager() {
 
   const handleEditReservation = (reservation: ReservationWithTable) => {
     setEditingReservation(reservation);
+
+    const assignedTables: string[] = [];
+    let roomIdFromTables = '';
+    if (reservation.reservation_tables && reservation.reservation_tables.length > 0) {
+      reservation.reservation_tables.forEach((rt: any) => {
+        assignedTables.push(rt.table_id);
+        if (!roomIdFromTables && rt.tables?.room_id) {
+          roomIdFromTables = rt.tables.room_id;
+        }
+      });
+    }
+
+    const finalRoomId = roomIdFromTables || reservation.table?.room_id || '';
+
     setNewReservation({
       customer_name: reservation.customer_name,
       customer_email: reservation.customer_email || '',
@@ -663,18 +677,17 @@ export function ReservationManager() {
       party_size: reservation.party_size,
       reservation_date: reservation.reservation_date,
       reservation_time: reservation.reservation_time,
-      room_id: reservation.table?.room_id || '',
+      room_id: finalRoomId,
       special_requests: reservation.special_requests || '',
       status: reservation.status,
       payment_status: reservation.payment_status,
       payment_amount: reservation.payment_amount || 0,
     });
 
-    const assignedTables: string[] = [];
-    if (reservation.reservation_tables && reservation.reservation_tables.length > 0) {
-      reservation.reservation_tables.forEach((rt: any) => assignedTables.push(rt.table_id));
-    }
     setSelectedTables(assignedTables);
+    if (finalRoomId) {
+      setTableRoomFilter(finalRoomId);
+    }
 
     // Set payment method based on existing reservation
     const bookingMethodFromDb = (reservation as any).booking_method;
@@ -2280,6 +2293,26 @@ export function ReservationManager() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Raum auswählen *</label>
+                <select
+                  required
+                  value={newReservation.room_id}
+                  onChange={(e) => {
+                    setNewReservation({ ...newReservation, room_id: e.target.value });
+                    setTableRoomFilter(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Bitte wählen...</option>
+                  {rooms.map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
