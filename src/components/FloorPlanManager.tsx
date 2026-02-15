@@ -442,9 +442,13 @@ export function FloorPlanManager() {
 
     const { error } = await supabase.from('tables').insert([newTable]);
 
-    if (!error) {
-      loadTables(selectedRoom);
+    if (error) {
+      console.error('Error creating table from drawing:', error);
+      alert(`Failed to create table: ${error.message}`);
+      return;
     }
+
+    await loadTables(selectedRoom);
   };
 
   const createDecoration = () => {
@@ -552,7 +556,10 @@ export function FloorPlanManager() {
 
   const handleAddTable = async (tableData: Partial<Table>) => {
     const roomId = tableData.room_id || selectedRoom;
-    if (!roomId) return;
+    if (!roomId) {
+      alert('Please select a room first');
+      return;
+    }
 
     // Add default position if not provided
     const tableWithDefaults = {
@@ -567,13 +574,17 @@ export function FloorPlanManager() {
       .from('tables')
       .insert([tableWithDefaults]);
 
-    if (!error) {
-      // Reload the room where the table was added
-      if (roomId === selectedRoom) {
-        loadTables(selectedRoom);
-      }
-      setShowAddTable(false);
+    if (error) {
+      console.error('Error adding table:', error);
+      alert(`Failed to add table: ${error.message}`);
+      return;
     }
+
+    // Reload the room where the table was added
+    if (roomId === selectedRoom) {
+      await loadTables(selectedRoom);
+    }
+    setShowAddTable(false);
   };
 
   const handleUpdateTable = async (tableId: string, updates: Partial<Table>) => {
@@ -582,8 +593,14 @@ export function FloorPlanManager() {
       .update(updates)
       .eq('id', tableId);
 
-    if (!error && selectedRoom) {
-      loadTables(selectedRoom);
+    if (error) {
+      console.error('Error updating table:', error);
+      alert(`Failed to update table: ${error.message}`);
+      return;
+    }
+
+    if (selectedRoom) {
+      await loadTables(selectedRoom);
       setEditingTable(null);
     }
   };
