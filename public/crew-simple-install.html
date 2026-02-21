@@ -1846,15 +1846,21 @@
                       <span class="text-sm sm:text-base font-medium text-slate-300">Bar bezahlt</span>
                     </label>
                     <div id="cashAmountSection" class="hidden">
-                      <label class="block text-sm font-medium text-slate-300 mb-2">Barbetrag (€)</label>
-                      <input
-                        type="number"
-                        id="cashAmount"
-                        min="0"
-                        step="0.01"
-                        value="0"
-                        class="w-full px-3 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px] text-base"
-                      />
+                      <div id="singleDayAmountWrapper">
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Barbetrag (€)</label>
+                        <input
+                          type="number"
+                          id="cashAmount"
+                          min="0"
+                          step="0.01"
+                          value="0"
+                          class="w-full px-3 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px] text-base"
+                        />
+                      </div>
+                      <div id="perDayAmountsWrapper" class="hidden">
+                        <label class="block text-sm font-medium text-slate-300 mb-3">Barbetrag pro Tag (€)</label>
+                        <div id="perDayAmountsList" class="space-y-2"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2201,6 +2207,7 @@
     let resSelectedDays = [];
     let resBookingMethod = 'free';
     let resPaidWithCash = false;
+    let resDayAmounts = {};
     let resTableRoomFilter = null;
     let resAllTables = [];
     let resEditMode = false;
@@ -2261,6 +2268,7 @@
       // Reset or populate state
       resSelectedTables = [];
       resSelectedDays = [];
+      resDayAmounts = {};
 
       if (resEditMode && resEditReservation) {
         // Populate form with existing data
@@ -2551,7 +2559,9 @@
         } else {
           selector.classList.add('hidden');
           resSelectedDays = [];
+          resDayAmounts = {};
           updateSelectedDaysInfo();
+          updatePaymentAmountsSection();
         }
       };
 
@@ -2592,11 +2602,67 @@
         const section = document.getElementById('cashAmountSection');
         if (e.target.checked) {
           section.classList.remove('hidden');
+          updatePaymentAmountsSection();
         } else {
           section.classList.add('hidden');
           document.getElementById('cashAmount').value = '0';
+          resDayAmounts = {};
         }
       };
+    }
+
+    function updatePaymentAmountsSection() {
+      if (!resPaidWithCash) return;
+
+      const mainDate = document.getElementById('resDate').value;
+      const isMultiDay = document.getElementById('multipleDays').checked && resSelectedDays.length > 0;
+
+      const singleWrapper = document.getElementById('singleDayAmountWrapper');
+      const perDayWrapper = document.getElementById('perDayAmountsWrapper');
+      const perDayList = document.getElementById('perDayAmountsList');
+
+      if (isMultiDay) {
+        singleWrapper.classList.add('hidden');
+        perDayWrapper.classList.remove('hidden');
+
+        const allDates = [mainDate, ...resSelectedDays].filter(Boolean);
+        allDates.sort();
+
+        perDayList.innerHTML = '';
+        allDates.forEach(dateStr => {
+          const [y, m, d] = dateStr.split('-').map(Number);
+          const dateObj = new Date(y, m - 1, d);
+          const label = dateObj.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+          const isMain = dateStr === mainDate;
+          const currentVal = resDayAmounts[dateStr] !== undefined ? resDayAmounts[dateStr] : 0;
+
+          const row = document.createElement('div');
+          row.className = 'flex items-center gap-3';
+          row.innerHTML = `
+            <span class="text-sm text-slate-300 flex-1">${label}${isMain ? ' <span class="text-green-400 text-xs">(Haupttag)</span>' : ''}</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value="${currentVal}"
+              data-date="${dateStr}"
+              class="w-28 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm text-right"
+              placeholder="0.00"
+            />
+            <span class="text-slate-400 text-sm">€</span>
+          `;
+
+          const input = row.querySelector('input');
+          input.addEventListener('input', (e) => {
+            resDayAmounts[dateStr] = parseFloat(e.target.value) || 0;
+          });
+
+          perDayList.appendChild(row);
+        });
+      } else {
+        singleWrapper.classList.remove('hidden');
+        perDayWrapper.classList.add('hidden');
+      }
     }
 
     function updateDaysGrid() {
@@ -2637,12 +2703,14 @@
           button.onclick = () => {
             if (isSelected) {
               resSelectedDays = resSelectedDays.filter(d => d !== dateStr);
+              delete resDayAmounts[dateStr];
             } else {
               resSelectedDays.push(dateStr);
               resSelectedDays.sort();
             }
             updateDaysGrid();
             updateSelectedDaysInfo();
+            updatePaymentAmountsSection();
           };
         }
 
@@ -2683,6 +2751,7 @@
       document.getElementById('resPartySize').value = '2';
       resSelectedTables = [];
       resSelectedDays = [];
+      resDayAmounts = {};
       resBookingMethod = 'free';
       resPaidWithCash = false;
       resEditMode = false;
@@ -2994,6 +3063,8 @@
 
       console.log('Final dates to book:', datesToBook);
 
+      const isPerDayMode = resPaidWithCash && document.getElementById('multipleDays').checked && resSelectedDays.length > 0;
+
       // Get form data
       const baseData = {
         reservation_time: document.getElementById('resTime').value,
@@ -3006,7 +3077,6 @@
         duration_minutes: 120,
         status: 'confirmed',
         payment_status: resPaidWithCash ? 'paid' : 'unpaid',
-        payment_amount: resPaidWithCash ? parseFloat(document.getElementById('cashAmount').value) : 0,
         payment_method: resPaidWithCash ? 'cash' : 'none',
         booking_method: resBookingMethod === 'free' ? 'free' : (resPaidWithCash ? 'manual' : 'free'),
         selected_tables: resSelectedTables
@@ -3029,7 +3099,10 @@
         // Create reservations for all dates
         const bookingCodes = [];
         for (const date of datesToBook) {
-          const formData = { ...baseData, reservation_date: date };
+          const paymentAmount = isPerDayMode
+            ? (resDayAmounts[date] ?? 0)
+            : (resPaidWithCash ? parseFloat(document.getElementById('cashAmount').value) || 0 : 0);
+          const formData = { ...baseData, reservation_date: date, payment_amount: paymentAmount };
 
           const response = await fetch(`${SUPABASE_URL}/functions/v1/create-reservation`, {
             method: 'POST',
