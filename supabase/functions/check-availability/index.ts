@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const { reservation_date, reservation_time, party_size, room_id } = await req.json();
@@ -37,15 +37,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get all tables for the room, ordered by capacity (smallest first)
+    // Get all bookable tables for the room with sufficient capacity, smallest first
     const { data: tables, error: tablesError } = await supabase
       .from('tables')
-      .select('*')
+      .select('id, table_number, capacity')
       .eq('room_id', room_id)
       .eq('is_active', true)
-      .eq('is_bookable', true) // Only get tables that are bookable by customers
-      .gte('capacity', party_size) // Only get tables that can fit the party
-      .order('capacity', { ascending: true }); // Sort by capacity ascending
+      .eq('is_bookable', true)
+      .gte('capacity', party_size)
+      .order('capacity', { ascending: true });
 
     if (tablesError) {
       console.error('Error fetching tables:', tablesError);
@@ -62,7 +62,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // If no tables can accommodate the party size
     if (!tables || tables.length === 0) {
       return new Response(
         JSON.stringify({
@@ -77,38 +76,44 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Calculate time window for the reservation (2 hours)
-    const requestedStartTime = new Date(`${reservation_date}T${reservation_time}`);
-    const requestedEndTime = new Date(requestedStartTime.getTime() + 120 * 60000); // 2 hours
+    // Calculate time window for the new reservation (2 hours)
+    const requestedStart = new Date(`${reservation_date}T${reservation_time}`);
+    const requestedEnd = new Date(requestedStart.getTime() + 120 * 60000);
 
-    // Check each table (smallest first) for availability
+    // For each candidate table (smallest first), check if it's free using reservation_tables join table
     for (const table of tables) {
-      // Get existing reservations for this table on this date
-      const { data: existingReservations, error: reservationsError } = await supabase
-        .from('reservations')
-        .select('reservation_time, duration_minutes')
-        .eq('reservation_date', reservation_date)
-        .contains('selected_tables', [table.id])
-        .in('status', ['confirmed', 'pending']);
+      const { data: conflicts, error: conflictsError } = await supabase
+        .from('reservation_tables')
+        .select(`
+          reservation_id,
+          reservations!inner (
+            reservation_time,
+            reservation_date,
+            duration_minutes,
+            status
+          )
+        `)
+        .eq('table_id', table.id)
+        .eq('reservations.reservation_date', reservation_date)
+        .in('reservations.status', ['confirmed', 'pending']);
 
-      if (reservationsError) {
-        console.error('Error checking reservations:', reservationsError);
-        continue; // Skip this table and try the next one
+      if (conflictsError) {
+        console.error('Error checking conflicts for table', table.id, conflictsError);
+        continue;
       }
 
-      // Check if table is available
       let isAvailable = true;
 
-      if (existingReservations && existingReservations.length > 0) {
-        for (const reservation of existingReservations) {
-          const existingStartTime = new Date(`${reservation_date}T${reservation.reservation_time}`);
-          const existingEndTime = new Date(existingStartTime.getTime() + (reservation.duration_minutes || 120) * 60000);
+      if (conflicts && conflicts.length > 0) {
+        for (const conflict of conflicts) {
+          const res = conflict.reservations as any;
+          const existingStart = new Date(`${res.reservation_date}T${res.reservation_time}`);
+          const existingEnd = new Date(existingStart.getTime() + (res.duration_minutes || 120) * 60000);
 
-          // Check for time overlap
           if (
-            (requestedStartTime >= existingStartTime && requestedStartTime < existingEndTime) ||
-            (requestedEndTime > existingStartTime && requestedEndTime <= existingEndTime) ||
-            (requestedStartTime <= existingStartTime && requestedEndTime >= existingEndTime)
+            (requestedStart >= existingStart && requestedStart < existingEnd) ||
+            (requestedEnd > existingStart && requestedEnd <= existingEnd) ||
+            (requestedStart <= existingStart && requestedEnd >= existingEnd)
           ) {
             isAvailable = false;
             break;
@@ -116,7 +121,6 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // If this table is available, return it
       if (isAvailable) {
         return new Response(
           JSON.stringify({
@@ -125,7 +129,7 @@ Deno.serve(async (req: Request) => {
             tables_needed: 1,
             table_info: {
               id: table.id,
-              name: table.name,
+              name: table.table_number,
               capacity: table.capacity
             },
             message: 'Tisch verfügbar'
@@ -138,7 +142,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // No available tables found
     return new Response(
       JSON.stringify({
         available: false,
