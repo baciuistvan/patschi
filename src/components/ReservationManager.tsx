@@ -50,6 +50,7 @@ export function ReservationManager() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [paidWithCash, setPaidWithCash] = useState(false);
   const [cashAmount, setCashAmount] = useState(0);
+  const [dayAmounts, setDayAmounts] = useState<Record<string, number>>({});
   const [bookingMethod, setBookingMethod] = useState<'free' | 'manual'>('free');
   const [tableRoomFilter, setTableRoomFilter] = useState<string | null>(null);
   const [isCreatingWithPaymentLink, setIsCreatingWithPaymentLink] = useState(false);
@@ -540,7 +541,10 @@ export function ReservationManager() {
       }
     }
 
+    const isPerDayMode = paidWithCash && multipleDays && selectedDays.length > 0;
+
     for (const date of datesToBook) {
+      const perDayAmount = isPerDayMode ? (dayAmounts[date] ?? 0) : (paidWithCash ? cashAmount : 0);
       const { data: reservation, error } = await supabase.from('reservations').insert([{
         customer_name: newReservation.customer_name,
         customer_email: newReservation.customer_email,
@@ -551,7 +555,7 @@ export function ReservationManager() {
         special_requests: newReservation.special_requests,
         status: 'confirmed',
         payment_status: paidWithCash ? 'paid' : 'unpaid',
-        payment_amount: paidWithCash ? cashAmount : 0,
+        payment_amount: perDayAmount,
         payment_method: paidWithCash ? 'cash' : 'none',
         duration_minutes: 120,
         stripe_payment_intent_id: null,
@@ -596,6 +600,7 @@ export function ReservationManager() {
     setSelectedTables([]);
     setMultipleDays(false);
     setSelectedDays([]);
+    setDayAmounts({});
     setPaidWithCash(false);
     setCashAmount(0);
     setBookingMethod('free');
@@ -1875,6 +1880,7 @@ export function ReservationManager() {
                       setMultipleDays(e.target.checked);
                       if (!e.target.checked) {
                         setSelectedDays([]);
+                        setDayAmounts({});
                       }
                     }}
                     className="w-4 h-4 md:w-5 md:h-5 bg-slate-900 border-slate-600 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
@@ -1903,8 +1909,10 @@ export function ReservationManager() {
                               key={dateStr}
                               type="button"
                               onClick={() => {
+                                if (isOriginalDate) return;
                                 if (isSelected) {
                                   setSelectedDays(selectedDays.filter(d => d !== dateStr));
+                                  setDayAmounts(prev => { const next = { ...prev }; delete next[dateStr]; return next; });
                                 } else {
                                   setSelectedDays([...selectedDays, dateStr].sort());
                                 }
@@ -2084,15 +2092,48 @@ export function ReservationManager() {
                     </label>
                     {paidWithCash && (
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">{t('crew.cash_amount')}</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={cashAmount}
-                          onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
+                        {multipleDays && selectedDays.length > 0 ? (
+                          <>
+                            <label className="block text-sm font-medium text-slate-300 mb-3">{t('crew.cash_amount')} pro Tag</label>
+                            <div className="space-y-2">
+                              {[newReservation.reservation_date, ...selectedDays].filter(Boolean).sort().map(dateStr => {
+                                const [y, m, d] = dateStr.split('-').map(Number);
+                                const dateObj = new Date(y, m - 1, d);
+                                const label = dateObj.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+                                const isMain = dateStr === newReservation.reservation_date;
+                                return (
+                                  <div key={dateStr} className="flex items-center gap-3">
+                                    <span className="text-sm text-slate-300 flex-1">
+                                      {label}{isMain && <span className="text-green-400 text-xs ml-1">(Haupttag)</span>}
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={dayAmounts[dateStr] ?? 0}
+                                      onChange={(e) => setDayAmounts(prev => ({ ...prev, [dateStr]: parseFloat(e.target.value) || 0 }))}
+                                      className="w-28 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm text-right"
+                                      placeholder="0.00"
+                                    />
+                                    <span className="text-slate-400 text-sm">€</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <label className="block text-sm font-medium text-slate-300 mb-2">{t('crew.cash_amount')}</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={cashAmount}
+                              onChange={(e) => setCashAmount(parseFloat(e.target.value) || 0)}
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            />
+                          </>
+                        )}
                       </div>
                     )}
                   </>
@@ -2121,6 +2162,7 @@ export function ReservationManager() {
                     setSelectedTables([]);
                     setMultipleDays(false);
                     setSelectedDays([]);
+                    setDayAmounts({});
                     setPaidWithCash(false);
                     setCashAmount(0);
                     setBookingMethod('free');
