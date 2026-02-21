@@ -1008,7 +1008,13 @@ export function ReservationManager() {
             <span className="hidden sm:inline">Drucken</span>
           </button>
           <button
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => {
+              setNewReservation(prev => ({
+                ...prev,
+                reservation_date: selectedDate || formatDateLocal(new Date()),
+              }));
+              setShowCreateForm(true);
+            }}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center space-x-2"
           >
             <Plus className="w-5 h-5" />
