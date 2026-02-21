@@ -2330,10 +2330,10 @@
         resBookingMethod = 'free';
         resPaidWithCash = false;
 
-        // Set today's date as minimum and default
+        // Set today's date as minimum, use selected calendar date as default
         const today = formatDateLocal(new Date());
         document.getElementById('resDate').min = today;
-        document.getElementById('resDate').value = today;
+        document.getElementById('resDate').value = formatDateLocal(state.selectedDate);
         document.getElementById('resTime').value = '15:45';
 
         document.getElementById('paymentOptions').closest('.space-y-3').classList.remove('hidden');
