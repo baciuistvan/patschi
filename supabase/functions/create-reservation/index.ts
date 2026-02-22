@@ -59,6 +59,46 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Server-side same-day cutoff check
+    const nowUtc = new Date();
+    const viennaFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Vienna',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    const viennaParts = viennaFormatter.formatToParts(nowUtc);
+    const viennaDateStr = `${viennaParts.find(p => p.type === 'year')!.value}-${viennaParts.find(p => p.type === 'month')!.value}-${viennaParts.find(p => p.type === 'day')!.value}`;
+    const viennaHour = parseInt(viennaParts.find(p => p.type === 'hour')!.value, 10);
+    const viennaMinute = parseInt(viennaParts.find(p => p.type === 'minute')!.value, 10);
+    const viennaTimeInMinutes = viennaHour * 60 + viennaMinute;
+
+    if (reservation_date === viennaDateStr && viennaTimeInMinutes >= 12 * 60) {
+      return new Response(
+        JSON.stringify({
+          error: 'Reservierungen für heute sind nur bis 12:00 Uhr möglich. Bitte wählen Sie ein Datum ab morgen.',
+          reason: 'closed_today'
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Require selected_tables — a reservation without a table assignment is not valid
+    if (!selected_tables || !Array.isArray(selected_tables) || selected_tables.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: 'Keine Tischzuweisung vorhanden. Bitte prüfen Sie die Verfügbarkeit erneut.',
+          reason: 'no_tables'
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Final availability check to prevent overbooking
     if (selected_tables && Array.isArray(selected_tables) && selected_tables.length > 0) {
       // Calculate time window for the reservation
@@ -152,21 +192,21 @@ Deno.serve(async (req: Request) => {
       throw reservationError;
     }
 
-    // Link tables if provided
-    if (selected_tables && Array.isArray(selected_tables) && selected_tables.length > 0) {
-      const tableLinks = selected_tables.map(tableId => ({
-        reservation_id: reservation.id,
-        table_id: tableId
-      }));
+    // Link tables — required, throw on failure so the reservation is not left without a table
+    const tableLinks = selected_tables.map((tableId: string) => ({
+      reservation_id: reservation.id,
+      table_id: tableId
+    }));
 
-      const { error: tablesError } = await supabase
-        .from("reservation_tables")
-        .insert(tableLinks);
+    const { error: tablesError } = await supabase
+      .from("reservation_tables")
+      .insert(tableLinks);
 
-      if (tablesError) {
-        console.error('Error linking tables:', tablesError);
-        // Don't throw - reservation is already created
-      }
+    if (tablesError) {
+      console.error('Error linking tables:', tablesError);
+      // Roll back the reservation so there are no orphaned records
+      await supabase.from("reservations").delete().eq("id", reservation.id);
+      throw new Error('Tischzuweisung fehlgeschlagen. Bitte versuchen Sie es erneut.');
     }
 
     // Send confirmation email

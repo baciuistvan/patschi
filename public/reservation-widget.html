@@ -705,6 +705,8 @@
                             errorMessage = t.errors.fullyBooked;
                         } else if (availability.reason === 'capacity_exceeded') {
                             errorMessage = `${t.errors.capacityExceeded} ${formData.party_size} ${t.errors.capacityExceeded2}`;
+                        } else if (availability.reason === 'closed_today') {
+                            errorMessage = t.errors.todayCutoff;
                         }
                         setError(errorMessage);
                         return;
@@ -775,6 +777,15 @@
                     const responseData = await response.json();
 
                     if (!response.ok) {
+                        if (responseData.reason === 'closed_today') {
+                            setStep(1);
+                            setAvailabilityChecked(false);
+                            setSelectedTables([]);
+                        } else if (responseData.reason === 'no_tables') {
+                            setStep(1);
+                            setAvailabilityChecked(false);
+                            setSelectedTables([]);
+                        }
                         throw new Error(responseData.error || t.errors.creationError);
                     }
 
@@ -894,6 +905,15 @@
                     const responseData = await response.json();
 
                     if (!response.ok) {
+                        if (responseData.reason === 'closed_today') {
+                            setStep(1);
+                            setAvailabilityChecked(false);
+                            setSelectedTables([]);
+                        } else if (responseData.reason === 'no_tables') {
+                            setStep(1);
+                            setAvailabilityChecked(false);
+                            setSelectedTables([]);
+                        }
                         throw new Error(responseData.error || t.errors.creationError);
                     }
 

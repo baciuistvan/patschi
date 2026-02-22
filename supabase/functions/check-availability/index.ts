@@ -37,6 +37,36 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Server-side same-day cutoff: online reservations for today are only allowed before 12:00
+    const nowUtc = new Date();
+    const viennaOffset = 60; // Europe/Vienna is UTC+1 (winter) — using fixed offset; DST handled below
+    const viennaTime = new Date(nowUtc.getTime() + viennaOffset * 60000);
+    // More accurate: use Intl to get current Vienna time
+    const viennaFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Vienna',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    const viennaParts = viennaFormatter.formatToParts(nowUtc);
+    const viennaDateStr = `${viennaParts.find(p => p.type === 'year')!.value}-${viennaParts.find(p => p.type === 'month')!.value}-${viennaParts.find(p => p.type === 'day')!.value}`;
+    const viennaHour = parseInt(viennaParts.find(p => p.type === 'hour')!.value, 10);
+    const viennaMinute = parseInt(viennaParts.find(p => p.type === 'minute')!.value, 10);
+    const viennaTimeInMinutes = viennaHour * 60 + viennaMinute;
+
+    if (reservation_date === viennaDateStr && viennaTimeInMinutes >= 12 * 60) {
+      return new Response(
+        JSON.stringify({
+          available: false,
+          message: 'Reservierungen für heute sind nur bis 12:00 Uhr möglich. Bitte wählen Sie ein Datum ab morgen.',
+          reason: 'closed_today'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Get all bookable tables for the room with sufficient capacity, smallest first
     const { data: tables, error: tablesError } = await supabase
       .from('tables')
