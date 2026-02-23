@@ -20,6 +20,17 @@ export function ReservationWidget() {
   const selectedTablesRef = useRef<any[]>([]);
   const paymentMethodListenerAdded = useRef(false);
   const clientSecretRef = useRef('');
+  const formDataRef = useRef({
+    party_size: 2,
+    reservation_date: '',
+    reservation_time: '15:45',
+    room_id: '',
+    customer_name: '',
+    customer_email: '',
+    customer_phone: '',
+    special_requests: '',
+    payment_amount: 35000,
+  });
   const [success, setSuccess] = useState(false);
   const [bookingCode, setBookingCode] = useState('');
   const [stripe, setStripe] = useState<Stripe | null>(null);
@@ -51,6 +62,10 @@ export function ReservationWidget() {
   useEffect(() => {
     selectedTablesRef.current = selectedTables;
   }, [selectedTables]);
+
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   useEffect(() => {
     setAvailabilityChecked(false);
@@ -983,6 +998,11 @@ export function ReservationWidget() {
                     try {
                       setLoading(true);
                       setError('');
+
+                      if (!selectedTablesRef.current || selectedTablesRef.current.length === 0) {
+                        throw new Error('Keine Tischzuweisung vorhanden. Bitte gehen Sie zurück zu Schritt 1 und prüfen Sie die Verfügbarkeit erneut.');
+                      }
+
                       const secret = await createPaymentIntent();
                       setClientSecret(secret);
                       clientSecretRef.current = secret;
@@ -1010,22 +1030,25 @@ export function ReservationWidget() {
                             } else {
                               ev.complete('success');
                               const tables = selectedTablesRef.current;
+                              const fd = formDataRef.current;
+                              console.log('[GooglePay] selected_tables:', tables);
+                              console.log('[GooglePay] formData:', fd);
                               const reservationData = {
-                                customer_name: formData.customer_name,
-                                customer_email: formData.customer_email,
-                                customer_phone: formData.customer_phone || '',
-                                party_size: formData.party_size,
-                                reservation_date: formData.reservation_date,
-                                reservation_time: formData.reservation_time,
+                                customer_name: fd.customer_name,
+                                customer_email: fd.customer_email,
+                                customer_phone: fd.customer_phone || '',
+                                party_size: fd.party_size,
+                                reservation_date: fd.reservation_date,
+                                reservation_time: fd.reservation_time,
                                 duration_minutes: 120,
                                 status: 'confirmed',
-                                special_requests: formData.special_requests || '',
+                                special_requests: fd.special_requests || '',
                                 payment_status: 'paid',
-                                payment_amount: formData.payment_amount / 100,
+                                payment_amount: fd.payment_amount / 100,
                                 payment_method: 'stripe',
                                 stripe_payment_intent_id: result.paymentIntent!.id,
                                 booking_method: 'online',
-                                room_id: formData.room_id,
+                                room_id: fd.room_id,
                                 selected_tables: tables,
                               };
 
