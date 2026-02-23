@@ -1008,6 +1008,7 @@ export function ReservationWidget() {
                               stripe_payment_intent_id: result.paymentIntent!.id,
                               booking_method: 'online',
                               room_id: formData.room_id,
+                              selected_tables: selectedTables,
                             };
 
                             const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
