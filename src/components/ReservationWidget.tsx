@@ -366,15 +366,6 @@ export function ReservationWidget() {
 
   const createFreeReservation = async () => {
     try {
-      const freshAvailability = await checkAvailability();
-      if (!freshAvailability.available) {
-        throw new Error('Der Tisch ist leider nicht mehr verfügbar. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
-      }
-      const freshTables = freshAvailability.selected_tables || [];
-      if (freshTables.length === 0) {
-        throw new Error('Keine Tischzuweisung möglich. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
-      }
-
       const reservationData = {
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
@@ -390,7 +381,7 @@ export function ReservationWidget() {
         payment_method: 'none',
         booking_method: 'free',
         room_id: formData.room_id,
-        selected_tables: freshTables,
+        selected_tables: selectedTables,
       };
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
@@ -500,14 +491,8 @@ export function ReservationWidget() {
     setError('');
 
     try {
-      // Re-check availability to get fresh table assignment
-      const freshAvailability = await checkAvailability();
-      if (!freshAvailability.available) {
-        throw new Error('Der Tisch ist leider nicht mehr verfügbar. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
-      }
-      const freshTables = freshAvailability.selected_tables || [];
-      if (freshTables.length === 0) {
-        throw new Error('Keine Tischzuweisung möglich. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
+      if (!selectedTables || selectedTables.length === 0) {
+        throw new Error('Keine Tischzuweisung vorhanden. Bitte gehen Sie zurück zu Schritt 1 und prüfen Sie die Verfügbarkeit erneut.');
       }
 
       console.log('[Payment] Creating payment intent...');
@@ -565,7 +550,7 @@ export function ReservationWidget() {
         stripe_payment_intent_id: paymentIntent.id,
         booking_method: 'online',
         room_id: formData.room_id,
-        selected_tables: freshTables,
+        selected_tables: selectedTables,
       };
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
