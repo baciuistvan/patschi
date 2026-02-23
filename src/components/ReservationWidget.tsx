@@ -366,6 +366,15 @@ export function ReservationWidget() {
 
   const createFreeReservation = async () => {
     try {
+      const freshAvailability = await checkAvailability();
+      if (!freshAvailability.available) {
+        throw new Error('Der Tisch ist leider nicht mehr verfügbar. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
+      }
+      const freshTables = freshAvailability.selected_tables || [];
+      if (freshTables.length === 0) {
+        throw new Error('Keine Tischzuweisung möglich. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
+      }
+
       const reservationData = {
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
@@ -381,7 +390,7 @@ export function ReservationWidget() {
         payment_method: 'none',
         booking_method: 'free',
         room_id: formData.room_id,
-        selected_tables: selectedTables,
+        selected_tables: freshTables,
       };
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
@@ -491,6 +500,16 @@ export function ReservationWidget() {
     setError('');
 
     try {
+      // Re-check availability to get fresh table assignment
+      const freshAvailability = await checkAvailability();
+      if (!freshAvailability.available) {
+        throw new Error('Der Tisch ist leider nicht mehr verfügbar. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
+      }
+      const freshTables = freshAvailability.selected_tables || [];
+      if (freshTables.length === 0) {
+        throw new Error('Keine Tischzuweisung möglich. Bitte gehen Sie zurück und prüfen Sie die Verfügbarkeit erneut.');
+      }
+
       console.log('[Payment] Creating payment intent...');
       const secret = await createPaymentIntent();
       console.log('[Payment] Payment intent created, client secret:', secret.substring(0, 20) + '...');
@@ -516,7 +535,6 @@ export function ReservationWidget() {
         console.error('[Payment] Error code:', stripeError.code);
         console.error('[Payment] Error type:', stripeError.type);
 
-        // Check for specific error about payment intent not found
         if (stripeError.code === 'resource_missing' || stripeError.message?.includes('No such payment_intent')) {
           throw new Error('Zahlungs-Konfigurationsfehler: Die Zahlung konnte nicht gefunden werden. Dies kann passieren, wenn die Stripe-Einstellungen während des Buchungsprozesses geändert wurden. Bitte laden Sie die Seite neu und versuchen Sie es erneut.');
         }
@@ -547,7 +565,7 @@ export function ReservationWidget() {
         stripe_payment_intent_id: paymentIntent.id,
         booking_method: 'online',
         room_id: formData.room_id,
-        selected_tables: selectedTables,
+        selected_tables: freshTables,
       };
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
