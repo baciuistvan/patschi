@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, Room } from '../lib/supabase';
 import { Calendar, Users, Mail, Phone, MessageSquare, CreditCard, Check } from 'lucide-react';
 import { loadStripe, Stripe, StripeElements } from '@stripe/stripe-js';
@@ -17,6 +17,9 @@ export function ReservationWidget() {
   const [error, setError] = useState('');
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
   const [selectedTables, setSelectedTables] = useState<any[]>([]);
+  const selectedTablesRef = useRef<any[]>([]);
+  const paymentMethodListenerAdded = useRef(false);
+  const clientSecretRef = useRef('');
   const [success, setSuccess] = useState(false);
   const [bookingCode, setBookingCode] = useState('');
   const [stripe, setStripe] = useState<Stripe | null>(null);
@@ -46,8 +49,13 @@ export function ReservationWidget() {
   }, []);
 
   useEffect(() => {
+    selectedTablesRef.current = selectedTables;
+  }, [selectedTables]);
+
+  useEffect(() => {
     setAvailabilityChecked(false);
     setSelectedTables([]);
+    selectedTablesRef.current = [];
     setError('');
   }, [formData.reservation_date, formData.party_size, formData.room_id]);
 
@@ -192,6 +200,7 @@ export function ReservationWidget() {
 
       const canMakePayment = await pr.canMakePayment();
       if (canMakePayment) {
+        paymentMethodListenerAdded.current = false;
         setPaymentRequest(pr);
       }
     } catch (err) {
@@ -331,8 +340,9 @@ export function ReservationWidget() {
           setError(errorMessage);
           return;
         }
-        // Store selected table info
-        setSelectedTables(availability.selected_tables || []);
+        const tables = availability.selected_tables || [];
+        setSelectedTables(tables);
+        selectedTablesRef.current = tables;
         setAvailabilityChecked(true);
       }
 
@@ -975,6 +985,7 @@ export function ReservationWidget() {
                       setError('');
                       const secret = await createPaymentIntent();
                       setClientSecret(secret);
+                      clientSecretRef.current = secret;
 
                       paymentRequest.update({
                         total: {
@@ -983,62 +994,67 @@ export function ReservationWidget() {
                         },
                       });
 
-                      paymentRequest.on('paymentmethod', async (ev: any) => {
-                        try {
-                          const result = await stripe!.confirmCardPayment(secret, {
-                            payment_method: ev.paymentMethod.id,
-                          });
-
-                          if (result.error) {
-                            ev.complete('fail');
-                            setError(result.error.message || 'Zahlung fehlgeschlagen');
-                            setLoading(false);
-                          } else {
-                            ev.complete('success');
-                            const reservationData = {
-                              customer_name: formData.customer_name,
-                              customer_email: formData.customer_email,
-                              customer_phone: formData.customer_phone || '',
-                              party_size: formData.party_size,
-                              reservation_date: formData.reservation_date,
-                              reservation_time: formData.reservation_time,
-                              duration_minutes: 120,
-                              status: 'confirmed',
-                              special_requests: formData.special_requests || '',
-                              payment_status: 'paid',
-                              payment_amount: formData.payment_amount / 100,
-                              payment_method: 'stripe',
-                              stripe_payment_intent_id: result.paymentIntent!.id,
-                              booking_method: 'online',
-                              room_id: formData.room_id,
-                              selected_tables: selectedTables,
-                            };
-
-                            const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
-                            const response = await fetch(apiUrl, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify(reservationData),
+                      if (!paymentMethodListenerAdded.current) {
+                        paymentMethodListenerAdded.current = true;
+                        paymentRequest.on('paymentmethod', async (ev: any) => {
+                          const currentSecret = clientSecretRef.current;
+                          try {
+                            const result = await stripe!.confirmCardPayment(currentSecret, {
+                              payment_method: ev.paymentMethod.id,
                             });
 
-                            const responseData = await response.json();
-                            if (response.ok) {
-                              setBookingCode(responseData.booking_code);
-                              setSuccess(true);
+                            if (result.error) {
+                              ev.complete('fail');
+                              setError(result.error.message || 'Zahlung fehlgeschlagen');
+                              setLoading(false);
                             } else {
-                              setError('Fehler beim Erstellen der Reservierung');
+                              ev.complete('success');
+                              const tables = selectedTablesRef.current;
+                              const reservationData = {
+                                customer_name: formData.customer_name,
+                                customer_email: formData.customer_email,
+                                customer_phone: formData.customer_phone || '',
+                                party_size: formData.party_size,
+                                reservation_date: formData.reservation_date,
+                                reservation_time: formData.reservation_time,
+                                duration_minutes: 120,
+                                status: 'confirmed',
+                                special_requests: formData.special_requests || '',
+                                payment_status: 'paid',
+                                payment_amount: formData.payment_amount / 100,
+                                payment_method: 'stripe',
+                                stripe_payment_intent_id: result.paymentIntent!.id,
+                                booking_method: 'online',
+                                room_id: formData.room_id,
+                                selected_tables: tables,
+                              };
+
+                              const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
+                              const response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(reservationData),
+                              });
+
+                              const responseData = await response.json();
+                              if (response.ok) {
+                                setBookingCode(responseData.booking_code);
+                                setSuccess(true);
+                              } else {
+                                setError(responseData.error || 'Fehler beim Erstellen der Reservierung');
+                              }
+                              setLoading(false);
                             }
+                          } catch (err: any) {
+                            ev.complete('fail');
+                            setError(err.message || 'Ein Fehler ist aufgetreten');
                             setLoading(false);
                           }
-                        } catch (err: any) {
-                          ev.complete('fail');
-                          setError(err.message || 'Ein Fehler ist aufgetreten');
-                          setLoading(false);
-                        }
-                      });
+                        });
+                      }
 
                       paymentRequest.show();
                     } catch (err: any) {
