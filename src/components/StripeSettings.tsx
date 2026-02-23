@@ -409,6 +409,35 @@ export function StripeSettings() {
               </div>
             )}
 
+            {(() => {
+              const extractAccountId = (key: string) => {
+                const match = key.match(/^(?:pk|sk)_(?:test|live)_51([A-Za-z0-9]+)/);
+                return match ? match[1] : null;
+              };
+              const testPubAccount = extractAccountId(testPublishableKey);
+              const testSecAccount = extractAccountId(testSecretKey);
+              const livePubAccount = extractAccountId(livePublishableKey);
+              const liveSecAccount = extractAccountId(liveSecretKey);
+              const testMismatch = testPubAccount && testSecAccount && testPubAccount !== testSecAccount;
+              const liveMismatch = livePubAccount && liveSecAccount && livePubAccount !== liveSecAccount;
+              if (!testMismatch && !liveMismatch) return null;
+              return (
+                <div className="bg-red-900/30 border-2 border-red-600 rounded-lg p-4">
+                  <p className="text-sm font-bold text-red-300 mb-2">Critical: Mismatched Stripe Account Keys</p>
+                  {testMismatch && (
+                    <p className="text-sm text-red-200 mb-1">
+                      Your <strong>test publishable key</strong> and <strong>test secret key</strong> are from different Stripe accounts. This will cause "No such payment_intent" errors. Both keys must come from the same Stripe account.
+                    </p>
+                  )}
+                  {liveMismatch && (
+                    <p className="text-sm text-red-200">
+                      Your <strong>live publishable key</strong> and <strong>live secret key</strong> are from different Stripe accounts. This will cause payment failures. Both keys must come from the same Stripe account.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="flex justify-end pt-4">
               <button
                 onClick={handleSaveSettings}
