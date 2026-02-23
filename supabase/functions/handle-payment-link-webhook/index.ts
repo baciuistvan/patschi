@@ -87,7 +87,10 @@ Deno.serve(async (req: Request) => {
       const signedPayload = `${timestamp}.${body}`;
 
       // Compute expected signature
-      const keyData = encoder.encode(webhookSecret);
+      // Stripe webhook secrets are "whsec_" + base64, so decode the base64 part
+      const base64Part = webhookSecret.startsWith('whsec_') ? webhookSecret.slice(6) : webhookSecret;
+      const keyBytes = Uint8Array.from(atob(base64Part), c => c.charCodeAt(0));
+      const keyData = keyBytes;
       const messageData = encoder.encode(signedPayload);
 
       const cryptoKey = await crypto.importKey(
