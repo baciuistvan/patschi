@@ -209,6 +209,40 @@ Deno.serve(async (req: Request) => {
       throw new Error('Tischzuweisung fehlgeschlagen. Bitte versuchen Sie es erneut.');
     }
 
+    // Update Stripe PaymentIntent metadata with booking code
+    if (stripe_payment_intent_id) {
+      try {
+        const { data: stripeSettings } = await supabase
+          .from("settings")
+          .select("key, value")
+          .in("key", ["stripe_mode", "stripe_live_secret_key", "stripe_test_secret_key"]);
+
+        const stripeSettingsMap: Record<string, string> = {};
+        stripeSettings?.forEach((s: any) => stripeSettingsMap[s.key] = s.value);
+
+        const stripeMode = stripeSettingsMap["stripe_mode"] || "test";
+        const stripeSecretKey = stripeMode === "live"
+          ? stripeSettingsMap["stripe_live_secret_key"]
+          : stripeSettingsMap["stripe_test_secret_key"];
+
+        if (stripeSecretKey) {
+          await fetch(`https://api.stripe.com/v1/payment_intents/${stripe_payment_intent_id}`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${stripeSecretKey}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              "metadata[booking_code]": booking_code,
+              "metadata[reservation_id]": reservation.id,
+            }).toString(),
+          });
+        }
+      } catch (stripeUpdateError) {
+        console.error("Failed to update Stripe PaymentIntent metadata:", stripeUpdateError);
+      }
+    }
+
     // Send confirmation email
     try {
       const emailApiUrl = `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`;
