@@ -766,7 +766,12 @@
                         setStep(1);
                         setAvailabilityChecked(false);
                         setSelectedTables([]);
-                        throw new Error(freshAvailability.message || t.errors.noAvailability);
+                        let errMsg = t.errors.noAvailability;
+                        if (freshAvailability.reason === 'closed') errMsg = t.errors.allClosed;
+                        else if (freshAvailability.reason === 'fully_booked') errMsg = t.errors.fullyBooked;
+                        else if (freshAvailability.reason === 'capacity_exceeded') errMsg = `${t.errors.capacityExceeded} ${fd.party_size} ${t.errors.capacityExceeded2}`;
+                        else if (freshAvailability.reason === 'closed_today') errMsg = t.errors.todayCutoff;
+                        throw new Error(errMsg);
                     }
                     const freshTables = freshAvailability.selected_tables || [];
 
@@ -883,7 +888,12 @@
                         setStep(1);
                         setAvailabilityChecked(false);
                         setSelectedTables([]);
-                        throw new Error(freshAvailability.message || t.errors.noAvailability);
+                        let errMsg = t.errors.noAvailability;
+                        if (freshAvailability.reason === 'closed') errMsg = t.errors.allClosed;
+                        else if (freshAvailability.reason === 'fully_booked') errMsg = t.errors.fullyBooked;
+                        else if (freshAvailability.reason === 'capacity_exceeded') errMsg = `${t.errors.capacityExceeded} ${fd.party_size} ${t.errors.capacityExceeded2}`;
+                        else if (freshAvailability.reason === 'closed_today') errMsg = t.errors.todayCutoff;
+                        throw new Error(errMsg);
                     }
                     const freshTables = freshAvailability.selected_tables || [];
 
