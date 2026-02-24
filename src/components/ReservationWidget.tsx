@@ -438,22 +438,23 @@ export function ReservationWidget() {
   const createFreeReservation = async () => {
     try {
       const tables = await ensureTablesSelected();
+      const fd = formDataRef.current;
 
       const reservationData = {
-        customer_name: formData.customer_name,
-        customer_email: formData.customer_email,
-        customer_phone: formData.customer_phone || '',
-        party_size: formData.party_size,
-        reservation_date: formData.reservation_date,
-        reservation_time: formData.reservation_time,
+        customer_name: fd.customer_name,
+        customer_email: fd.customer_email,
+        customer_phone: fd.customer_phone || '',
+        party_size: fd.party_size,
+        reservation_date: fd.reservation_date,
+        reservation_time: fd.reservation_time,
         duration_minutes: 120,
         status: 'confirmed',
-        special_requests: formData.special_requests || '',
+        special_requests: fd.special_requests || '',
         payment_status: 'unpaid',
         payment_amount: 0,
         payment_method: 'none',
         booking_method: 'free',
-        room_id: formData.room_id,
+        room_id: fd.room_id,
         selected_tables: tables,
       };
 
@@ -515,7 +516,8 @@ export function ReservationWidget() {
     }
 
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`;
-    console.log('[Payment Intent] Creating payment intent for amount:', formData.payment_amount);
+    const fd = formDataRef.current;
+    console.log('[Payment Intent] Creating payment intent for amount:', fd.payment_amount);
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -523,14 +525,14 @@ export function ReservationWidget() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: formData.payment_amount,
+        amount: fd.payment_amount,
         currency: 'eur',
         metadata: {
-          customer_name: formData.customer_name,
-          customer_email: formData.customer_email,
-          reservation_date: formData.reservation_date,
-          reservation_time: formData.reservation_time,
-          party_size: formData.party_size.toString(),
+          customer_name: fd.customer_name,
+          customer_email: fd.customer_email,
+          reservation_date: fd.reservation_date,
+          reservation_time: fd.reservation_time,
+          party_size: fd.party_size.toString(),
         },
       }),
     });
@@ -575,13 +577,14 @@ export function ReservationWidget() {
       console.log('[Payment] Current Stripe mode:', stripeMode);
       console.log('[Payment] Using Stripe instance initialized with:', stripeMode === 'test' ? 'TEST' : 'LIVE', 'keys');
 
+      const fdr = formDataRef.current;
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
         payment_method: {
           card: cardElement,
           billing_details: {
-            name: formData.customer_name,
-            email: formData.customer_email,
-            phone: formData.customer_phone,
+            name: fdr.customer_name,
+            email: fdr.customer_email,
+            phone: fdr.customer_phone,
           },
         },
       });
@@ -606,21 +609,21 @@ export function ReservationWidget() {
       console.log('[Payment] Payment successful, intent ID:', paymentIntent.id);
 
       const reservationData = {
-        customer_name: formData.customer_name,
-        customer_email: formData.customer_email,
-        customer_phone: formData.customer_phone || '',
-        party_size: formData.party_size,
-        reservation_date: formData.reservation_date,
-        reservation_time: formData.reservation_time,
+        customer_name: fdr.customer_name,
+        customer_email: fdr.customer_email,
+        customer_phone: fdr.customer_phone || '',
+        party_size: fdr.party_size,
+        reservation_date: fdr.reservation_date,
+        reservation_time: fdr.reservation_time,
         duration_minutes: 120,
         status: 'confirmed',
-        special_requests: formData.special_requests || '',
+        special_requests: fdr.special_requests || '',
         payment_status: 'paid',
-        payment_amount: formData.payment_amount / 100,
+        payment_amount: fdr.payment_amount / 100,
         payment_method: 'stripe',
         stripe_payment_intent_id: paymentIntent.id,
         booking_method: 'online',
-        room_id: formData.room_id,
+        room_id: fdr.room_id,
         selected_tables: tablesToUse,
       };
 
