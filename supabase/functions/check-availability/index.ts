@@ -175,19 +175,32 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Prefer smallest table that fits the party; if none fits exactly, use the largest available
+    // Find the smallest table that fits the party size exactly
     const exactFit = [...freeTables].sort((a, b) => a.capacity - b.capacity).find(t => t.capacity >= party_size);
-    const bestTable = exactFit || freeTables[0];
+
+    if (!exactFit) {
+      return new Response(
+        JSON.stringify({
+          available: false,
+          message: `Leider haben wir in diesem Bereich keine verfügbaren Tische für ${party_size} Personen. Bitte wählen Sie einen anderen Bereich oder kontaktieren Sie uns direkt.`,
+          reason: 'capacity_exceeded'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         available: true,
-        selected_tables: [bestTable.id],
+        selected_tables: [exactFit.id],
         tables_needed: 1,
         table_info: {
-          id: bestTable.id,
-          name: bestTable.table_number,
-          capacity: bestTable.capacity
+          id: exactFit.id,
+          name: exactFit.table_number,
+          capacity: exactFit.capacity
         },
         message: 'Tisch verfügbar'
       }),
