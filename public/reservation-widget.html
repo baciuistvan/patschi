@@ -397,6 +397,14 @@
                 special_requests: '',
                 payment_amount: 35000,
             });
+            const formDataRef = useRef(formData);
+            const setFormDataAndRef = (updater) => {
+                setFormData(prev => {
+                    const next = typeof updater === 'function' ? updater(prev) : updater;
+                    formDataRef.current = next;
+                    return next;
+                });
+            };
 
             useEffect(() => {
                 console.log('Component mounted, Stripe available:', typeof Stripe !== 'undefined');
@@ -519,7 +527,7 @@
 
                 if (data && data.length > 0) {
                     setRooms(data);
-                    setFormData(prev => ({ ...prev, room_id: data[0].id }));
+                    setFormDataAndRef(prev => ({ ...prev, room_id: data[0].id }));
                 }
             };
 
@@ -531,7 +539,7 @@
                     .maybeSingle();
 
                 if (depositData) {
-                    setFormData(prev => ({ ...prev, payment_amount: parseFloat(depositData.value) * 100 }));
+                    setFormDataAndRef(prev => ({ ...prev, payment_amount: parseFloat(depositData.value) * 100 }));
                 }
             };
 
@@ -657,19 +665,8 @@
                 setError('');
                 setLoading(true);
 
-                // Capture a snapshot of formData at the exact moment the button is clicked.
-                // This prevents stale closure issues where async callbacks see outdated state.
-                const snapshot = {
-                    reservation_date: formData.reservation_date,
-                    reservation_time: formData.reservation_time,
-                    party_size: formData.party_size,
-                    room_id: formData.room_id,
-                    customer_name: formData.customer_name,
-                    customer_email: formData.customer_email,
-                    customer_phone: formData.customer_phone,
-                    special_requests: formData.special_requests,
-                    payment_amount: formData.payment_amount,
-                };
+                // Read from ref — always has the latest values regardless of closure age
+                const snapshot = formDataRef.current;
                 console.log('[widget] snapshot.room_id:', snapshot.room_id);
 
                 try {
@@ -876,18 +873,8 @@
                 setLoading(true);
                 setError('');
 
-                // Capture fresh snapshot at payment time to avoid stale closures
-                const fd = {
-                    reservation_date: formData.reservation_date,
-                    reservation_time: formData.reservation_time,
-                    party_size: formData.party_size,
-                    room_id: formData.room_id,
-                    customer_name: formData.customer_name,
-                    customer_email: formData.customer_email,
-                    customer_phone: formData.customer_phone,
-                    special_requests: formData.special_requests,
-                    payment_amount: formData.payment_amount,
-                };
+                // Read from ref — always has the latest values regardless of closure age
+                const fd = formDataRef.current;
 
                 try {
                     // Re-verify availability right before payment to get fresh table IDs
@@ -1075,7 +1062,7 @@
                                     setSuccess(false);
                                     setStep(1);
                                     setBookingCode('');
-                                    setFormData({
+                                    setFormDataAndRef({
                                         party_size: 2,
                                         reservation_date: '',
                                         reservation_time: '15:45',
@@ -1180,7 +1167,7 @@
                                 <input
                                     type="date"
                                     value={formData.reservation_date}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}
+                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, reservation_date: e.target.value }))}
                                     min={(() => {
                                         const now = new Date();
                                         const currentHour = now.getHours();
@@ -1214,7 +1201,7 @@
                                         const value = e.target.value;
                                         const numValue = parseInt(value);
                                         if (value === '' || (numValue >= 1 && numValue <= 10)) {
-                                            setFormData(prev => ({ ...prev, party_size: value === '' ? '' : numValue }));
+                                            setFormDataAndRef(prev => ({ ...prev, party_size: value === '' ? '' : numValue }));
                                         }
                                     }}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
@@ -1228,7 +1215,7 @@
                                     </label>
                                     <select
                                         value={formData.room_id}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
+                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, room_id: e.target.value }))}
                                         style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                     >
                                         {rooms.map((room) => (
@@ -1259,7 +1246,7 @@
                                 <input
                                     type="text"
                                     value={formData.customer_name}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_name: e.target.value }))}
                                     placeholder={t.step2.placeholder.name}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
@@ -1272,7 +1259,7 @@
                                 <input
                                     type="email"
                                     value={formData.customer_email}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
+                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_email: e.target.value }))}
                                     placeholder={t.step2.placeholder.email}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
@@ -1285,7 +1272,7 @@
                                 <input
                                     type="tel"
                                     value={formData.customer_phone}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
+                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_phone: e.target.value }))}
                                     placeholder={t.step2.placeholder.phone}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
@@ -1297,7 +1284,7 @@
                                 </label>
                                 <textarea
                                     value={formData.special_requests}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, special_requests: e.target.value }))}
+                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, special_requests: e.target.value }))}
                                     rows={4}
                                     placeholder={t.step2.placeholder.requests}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', boxSizing: 'border-box'}}
@@ -1380,18 +1367,8 @@
                                             onClick={async () => {
                                                 setLoading(true);
                                                 setError('');
-                                                // Snapshot formData at click time to avoid stale closure
-                                                const prFd = {
-                                                    reservation_date: formData.reservation_date,
-                                                    reservation_time: formData.reservation_time,
-                                                    party_size: formData.party_size,
-                                                    room_id: formData.room_id,
-                                                    customer_name: formData.customer_name,
-                                                    customer_email: formData.customer_email,
-                                                    customer_phone: formData.customer_phone,
-                                                    special_requests: formData.special_requests,
-                                                    payment_amount: formData.payment_amount,
-                                                };
+                                                // Read from ref — always has the latest values regardless of closure age
+                                                const prFd = formDataRef.current;
                                                 try {
                                                     // Re-verify availability to get fresh table IDs
                                                     const prAvailability = await checkAvailability(prFd);
