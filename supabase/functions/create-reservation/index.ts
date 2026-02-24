@@ -85,28 +85,91 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Require selected_tables — a reservation without a table assignment is not valid
-    if (!selected_tables || !Array.isArray(selected_tables) || selected_tables.length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: 'Keine Tischzuweisung vorhanden. Bitte prüfen Sie die Verfügbarkeit erneut.',
-          reason: 'no_tables'
-        }),
-        {
-          status: 422,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let finalSelectedTables = selected_tables;
+
+    if (!finalSelectedTables || !Array.isArray(finalSelectedTables) || finalSelectedTables.length === 0) {
+      console.log('[create-reservation] No tables provided, auto-selecting...');
+      const { data: candidateTables, error: candidateError } = await supabase
+        .from('tables')
+        .select('id, table_number, capacity')
+        .eq('room_id', room_id)
+        .eq('is_active', true)
+        .eq('is_bookable', true)
+        .gte('capacity', party_size)
+        .order('capacity', { ascending: true });
+
+      if (candidateError || !candidateTables || candidateTables.length === 0) {
+        return new Response(
+          JSON.stringify({
+            error: 'Keine passenden Tische verfügbar. Bitte prüfen Sie die Verfügbarkeit erneut.',
+            reason: 'no_tables'
+          }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const requestedStartAuto = new Date(`${reservation_date}T${reservation_time}`);
+      const requestedEndAuto = new Date(requestedStartAuto.getTime() + (duration_minutes || 120) * 60000);
+
+      let autoTable: string | null = null;
+      for (const table of candidateTables) {
+        const { data: conflicts } = await supabase
+          .from('reservation_tables')
+          .select(`
+            reservation_id,
+            reservations!inner (
+              reservation_time,
+              reservation_date,
+              duration_minutes,
+              status
+            )
+          `)
+          .eq('table_id', table.id)
+          .eq('reservations.reservation_date', reservation_date)
+          .in('reservations.status', ['confirmed', 'pending']);
+
+        let isFree = true;
+        if (conflicts && conflicts.length > 0) {
+          for (const c of conflicts) {
+            const res = c.reservations as any;
+            const eStart = new Date(`${res.reservation_date}T${res.reservation_time}`);
+            const eEnd = new Date(eStart.getTime() + (res.duration_minutes || 120) * 60000);
+            if (
+              (requestedStartAuto >= eStart && requestedStartAuto < eEnd) ||
+              (requestedEndAuto > eStart && requestedEndAuto <= eEnd) ||
+              (requestedStartAuto <= eStart && requestedEndAuto >= eEnd)
+            ) {
+              isFree = false;
+              break;
+            }
+          }
         }
-      );
+        if (isFree) {
+          autoTable = table.id;
+          break;
+        }
+      }
+
+      if (!autoTable) {
+        return new Response(
+          JSON.stringify({
+            error: 'Alle passenden Tische sind bereits belegt. Bitte wählen Sie ein anderes Datum.',
+            reason: 'fully_booked'
+          }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      finalSelectedTables = [autoTable];
+      console.log('[create-reservation] Auto-selected table:', autoTable);
     }
 
     // Final availability check to prevent overbooking
-    if (selected_tables && Array.isArray(selected_tables) && selected_tables.length > 0) {
-      // Calculate time window for the reservation
+    if (finalSelectedTables && Array.isArray(finalSelectedTables) && finalSelectedTables.length > 0) {
       const requestedStartTime = new Date(`${reservation_date}T${reservation_time}`);
       const requestedEndTime = new Date(requestedStartTime.getTime() + (duration_minutes || 120) * 60000);
 
-      // Check each table for conflicts
-      for (const tableId of selected_tables) {
+      for (const tableId of finalSelectedTables) {
         const { data: existingReservations, error: checkError } = await supabase
           .from('reservation_tables')
           .select(`
@@ -193,7 +256,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Link tables — required, throw on failure so the reservation is not left without a table
-    const tableLinks = selected_tables.map((tableId: string) => ({
+    const tableLinks = finalSelectedTables.map((tableId: string) => ({
       reservation_id: reservation.id,
       table_id: tableId
     }));
