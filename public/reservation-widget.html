@@ -734,19 +734,19 @@
                 }
 
                 if (step === 2) {
-                    if (!formData.customer_name || !formData.customer_email) {
+                    if (!snapshot.customer_name || !snapshot.customer_email) {
                         setError(t.errors.fillRequired);
                         return;
                     }
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(formData.customer_email)) {
+                    if (!emailRegex.test(snapshot.customer_email)) {
                         setError(t.errors.invalidEmail);
                         return;
                     }
 
                     // If Stripe is disabled, create a free reservation directly
                     if (!stripeEnabled) {
-                        await createFreeReservation();
+                        await createFreeReservation(snapshot);
                         return;
                     }
                 }
@@ -761,24 +761,34 @@
                 }
             };
 
-            const createFreeReservation = async () => {
+            const createFreeReservation = async (fd) => {
                 try {
+                    // Re-verify availability at submission to get fresh table IDs
+                    const freshAvailability = await checkAvailability(fd);
+                    if (!freshAvailability.available) {
+                        setStep(1);
+                        setAvailabilityChecked(false);
+                        setSelectedTables([]);
+                        throw new Error(freshAvailability.message || t.errors.noAvailability);
+                    }
+                    const freshTables = freshAvailability.selected_tables || [];
+
                     const reservationData = {
-                        customer_name: formData.customer_name,
-                        customer_email: formData.customer_email,
-                        customer_phone: formData.customer_phone || '',
-                        party_size: formData.party_size,
-                        reservation_date: formData.reservation_date,
-                        reservation_time: formData.reservation_time,
+                        customer_name: fd.customer_name,
+                        customer_email: fd.customer_email,
+                        customer_phone: fd.customer_phone || '',
+                        party_size: fd.party_size,
+                        reservation_date: fd.reservation_date,
+                        reservation_time: fd.reservation_time,
                         duration_minutes: 120,
                         status: 'confirmed',
-                        special_requests: formData.special_requests || '',
+                        special_requests: fd.special_requests || '',
                         payment_status: 'unpaid',
                         payment_amount: 0,
                         payment_method: 'none',
                         booking_method: 'free',
-                        room_id: formData.room_id,
-                        selected_tables: selectedTables,
+                        room_id: fd.room_id,
+                        selected_tables: freshTables,
                     };
 
                     const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
@@ -866,16 +876,39 @@
                 setLoading(true);
                 setError('');
 
+                // Capture fresh snapshot at payment time to avoid stale closures
+                const fd = {
+                    reservation_date: formData.reservation_date,
+                    reservation_time: formData.reservation_time,
+                    party_size: formData.party_size,
+                    room_id: formData.room_id,
+                    customer_name: formData.customer_name,
+                    customer_email: formData.customer_email,
+                    customer_phone: formData.customer_phone,
+                    special_requests: formData.special_requests,
+                    payment_amount: formData.payment_amount,
+                };
+
                 try {
+                    // Re-verify availability right before payment to get fresh table IDs
+                    const freshAvailability = await checkAvailability(fd);
+                    if (!freshAvailability.available) {
+                        setStep(1);
+                        setAvailabilityChecked(false);
+                        setSelectedTables([]);
+                        throw new Error(freshAvailability.message || t.errors.noAvailability);
+                    }
+                    const freshTables = freshAvailability.selected_tables || [];
+
                     const secret = await createPaymentIntent();
 
                     const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
                         payment_method: {
                             card: card,
                             billing_details: {
-                                name: formData.customer_name,
-                                email: formData.customer_email,
-                                phone: formData.customer_phone,
+                                name: fd.customer_name,
+                                email: fd.customer_email,
+                                phone: fd.customer_phone,
                             },
                         },
                     });
@@ -891,22 +924,22 @@
                     }
 
                     const reservationData = {
-                        customer_name: formData.customer_name,
-                        customer_email: formData.customer_email,
-                        customer_phone: formData.customer_phone || '',
-                        party_size: formData.party_size,
-                        reservation_date: formData.reservation_date,
-                        reservation_time: formData.reservation_time,
+                        customer_name: fd.customer_name,
+                        customer_email: fd.customer_email,
+                        customer_phone: fd.customer_phone || '',
+                        party_size: fd.party_size,
+                        reservation_date: fd.reservation_date,
+                        reservation_time: fd.reservation_time,
                         duration_minutes: 120,
                         status: 'confirmed',
-                        special_requests: formData.special_requests || '',
+                        special_requests: fd.special_requests || '',
                         payment_status: 'paid',
-                        payment_amount: formData.payment_amount / 100,
+                        payment_amount: fd.payment_amount / 100,
                         payment_method: 'stripe',
                         stripe_payment_intent_id: paymentIntent.id,
                         booking_method: 'online',
-                        room_id: formData.room_id,
-                        selected_tables: selectedTables,
+                        room_id: fd.room_id,
+                        selected_tables: freshTables,
                     };
 
                     const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
@@ -1347,7 +1380,31 @@
                                             onClick={async () => {
                                                 setLoading(true);
                                                 setError('');
+                                                // Snapshot formData at click time to avoid stale closure
+                                                const prFd = {
+                                                    reservation_date: formData.reservation_date,
+                                                    reservation_time: formData.reservation_time,
+                                                    party_size: formData.party_size,
+                                                    room_id: formData.room_id,
+                                                    customer_name: formData.customer_name,
+                                                    customer_email: formData.customer_email,
+                                                    customer_phone: formData.customer_phone,
+                                                    special_requests: formData.special_requests,
+                                                    payment_amount: formData.payment_amount,
+                                                };
                                                 try {
+                                                    // Re-verify availability to get fresh table IDs
+                                                    const prAvailability = await checkAvailability(prFd);
+                                                    if (!prAvailability.available) {
+                                                        setStep(1);
+                                                        setAvailabilityChecked(false);
+                                                        setSelectedTables([]);
+                                                        setError(prAvailability.message || t.errors.noAvailability);
+                                                        setLoading(false);
+                                                        return;
+                                                    }
+                                                    const prFreshTables = prAvailability.selected_tables || [];
+
                                                     const secret = await createPaymentIntent();
                                                     if (!secret) {
                                                         throw new Error(t.errors.paymentError);
@@ -1356,7 +1413,7 @@
                                                     paymentRequest.update({
                                                         total: {
                                                             label: language === 'de' ? 'Reservierungs-Anzahlung' : 'Reservation Deposit',
-                                                            amount: formData.payment_amount,
+                                                            amount: prFd.payment_amount,
                                                         },
                                                     });
 
@@ -1379,22 +1436,22 @@
                                                                 ev.complete('success');
 
                                                                 const reservationData = {
-                                                                    customer_name: formData.customer_name,
-                                                                    customer_email: formData.customer_email,
-                                                                    customer_phone: formData.customer_phone || '',
-                                                                    party_size: formData.party_size,
-                                                                    reservation_date: formData.reservation_date,
-                                                                    reservation_time: formData.reservation_time,
+                                                                    customer_name: prFd.customer_name,
+                                                                    customer_email: prFd.customer_email,
+                                                                    customer_phone: prFd.customer_phone || '',
+                                                                    party_size: prFd.party_size,
+                                                                    reservation_date: prFd.reservation_date,
+                                                                    reservation_time: prFd.reservation_time,
                                                                     duration_minutes: 120,
                                                                     status: 'confirmed',
-                                                                    special_requests: formData.special_requests || '',
+                                                                    special_requests: prFd.special_requests || '',
                                                                     payment_status: 'paid',
-                                                                    payment_amount: formData.payment_amount / 100,
+                                                                    payment_amount: prFd.payment_amount / 100,
                                                                     payment_method: 'stripe',
                                                                     stripe_payment_intent_id: result.paymentIntent.id,
                                                                     booking_method: 'online',
-                                                                    room_id: formData.room_id,
-                                                                    selected_tables: selectedTables,
+                                                                    room_id: prFd.room_id,
+                                                                    selected_tables: prFreshTables,
                                                                 };
 
                                                                 const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
