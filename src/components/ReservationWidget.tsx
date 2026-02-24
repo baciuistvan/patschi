@@ -1020,7 +1020,7 @@ export function ReservationWidget() {
             <input
               type="text"
               value={formData.customer_name}
-              onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
               className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
               placeholder="Max Mustermann"
             />
@@ -1034,7 +1034,7 @@ export function ReservationWidget() {
             <input
               type="email"
               value={formData.customer_email}
-              onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
               className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
               placeholder="max@beispiel.de"
             />
@@ -1048,7 +1048,7 @@ export function ReservationWidget() {
             <input
               type="tel"
               value={formData.customer_phone}
-              onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
               className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
               placeholder="+43 123 456789"
             />
@@ -1061,7 +1061,7 @@ export function ReservationWidget() {
             </label>
             <textarea
               value={formData.special_requests}
-              onChange={(e) => setFormData({ ...formData, special_requests: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, special_requests: e.target.value }))}
               rows={4}
               className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
               placeholder="z.B. Allergien, besondere Anlässe..."
