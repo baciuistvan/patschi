@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Parse request body
-    const { amount, currency = "eur", metadata = {} } = await req.json();
+    const { amount, currency = "eur", metadata = {}, selected_table_ids = [] } = await req.json();
 
     if (!amount || amount <= 0) {
       return new Response(
@@ -76,6 +76,23 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Look up table numbers for metadata
+    const enrichedMetadata: Record<string, string> = { ...metadata };
+    if (selected_table_ids && Array.isArray(selected_table_ids) && selected_table_ids.length > 0) {
+      const { data: tables } = await supabase
+        .from("tables")
+        .select("id, table_number")
+        .in("id", selected_table_ids);
+
+      if (tables && tables.length > 0) {
+        const tableNumbers = tables.map((t: any) => t.table_number).filter(Boolean).join(", ");
+        if (tableNumbers) {
+          enrichedMetadata["table_numbers"] = tableNumbers;
+          enrichedMetadata["table_ids"] = selected_table_ids.join(", ");
+        }
+      }
     }
 
     // Create payment intent with Stripe
@@ -89,7 +106,7 @@ Deno.serve(async (req: Request) => {
         amount: amount.toString(),
         currency: currency,
         "automatic_payment_methods[enabled]": "true",
-        ...Object.entries(metadata).reduce((acc, [key, value]) => {
+        ...Object.entries(enrichedMetadata).reduce((acc, [key, value]) => {
           acc[`metadata[${key}]`] = String(value);
           return acc;
         }, {} as Record<string, string>)

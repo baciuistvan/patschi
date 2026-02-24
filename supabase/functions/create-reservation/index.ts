@@ -356,16 +356,33 @@ Deno.serve(async (req: Request) => {
           : stripeSettingsMap["stripe_test_secret_key"];
 
         if (stripeSecretKey) {
+          // Look up table numbers for the assigned tables
+          let tableNumbers = '';
+          if (finalSelectedTables && finalSelectedTables.length > 0) {
+            const { data: tableRows } = await supabase
+              .from('tables')
+              .select('table_number')
+              .in('id', finalSelectedTables);
+            if (tableRows && tableRows.length > 0) {
+              tableNumbers = tableRows.map((t: any) => t.table_number).filter(Boolean).join(', ');
+            }
+          }
+
+          const metadataParams: Record<string, string> = {
+            "metadata[booking_code]": booking_code,
+            "metadata[reservation_id]": reservation.id,
+          };
+          if (tableNumbers) {
+            metadataParams["metadata[table_numbers]"] = tableNumbers;
+          }
+
           await fetch(`https://api.stripe.com/v1/payment_intents/${stripe_payment_intent_id}`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${stripeSecretKey}`,
               "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: new URLSearchParams({
-              "metadata[booking_code]": booking_code,
-              "metadata[reservation_id]": reservation.id,
-            }).toString(),
+            body: new URLSearchParams(metadataParams).toString(),
           });
         }
       } catch (stripeUpdateError) {

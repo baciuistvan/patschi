@@ -532,7 +532,7 @@ export function ReservationWidget() {
     }
   };
 
-  const createPaymentIntent = async () => {
+  const createPaymentIntent = async (selectedTableIds: string[] = []) => {
     // First, re-check the current mode from database to ensure it hasn't changed
     const { data: settings, error: settingsError } = await supabase
       .from('settings')
@@ -577,6 +577,7 @@ export function ReservationWidget() {
       body: JSON.stringify({
         amount: fd.payment_amount,
         currency: 'eur',
+        selected_table_ids: selectedTableIds,
         metadata: {
           customer_name: fd.customer_name,
           customer_email: fd.customer_email,
@@ -620,7 +621,7 @@ export function ReservationWidget() {
       const tablesToUse = await ensureTablesSelected(fdrSnapshot.room_id);
 
       console.log('[Payment] Creating payment intent...');
-      const secret = await createPaymentIntent();
+      const secret = await createPaymentIntent(tablesToUse);
       console.log('[Payment] Payment intent created, client secret:', secret.substring(0, 20) + '...');
       setClientSecret(secret);
 
