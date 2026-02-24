@@ -233,8 +233,9 @@ export function ReservationWidget() {
     if (data) {
       setRooms(data);
       if (data.length > 0 && !formDataRef.current.room_id) {
-        formDataRef.current = { ...formDataRef.current, room_id: data[0].id };
-        setFormData(prev => ({ ...prev, room_id: data[0].id }));
+        const terrasse = data.find((r: any) => r.name === 'Terrasse') || data[data.length - 1];
+        formDataRef.current = { ...formDataRef.current, room_id: terrasse.id };
+        setFormData(prev => ({ ...prev, room_id: terrasse.id }));
       }
     }
   };
@@ -718,7 +719,7 @@ export function ReservationWidget() {
                 party_size: 2,
                 reservation_date: '',
                 reservation_time: '15:45',
-                room_id: rooms[0]?.id || '',
+                room_id: (rooms.find((r: any) => r.name === 'Terrasse') || rooms[rooms.length - 1])?.id || '',
                 customer_name: '',
                 customer_email: '',
                 customer_phone: '',
