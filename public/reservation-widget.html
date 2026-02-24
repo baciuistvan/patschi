@@ -628,6 +628,7 @@
             };
 
             const checkAvailability = async () => {
+                console.log('[widget] checkAvailability called with room_id:', formData.room_id, 'date:', formData.reservation_date);
                 const apiUrl = `https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/check-availability`;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -1130,7 +1131,7 @@
                                 <input
                                     type="date"
                                     value={formData.reservation_date}
-                                    onChange={(e) => setFormData({ ...formData, reservation_date: e.target.value })}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}
                                     min={(() => {
                                         const now = new Date();
                                         const currentHour = now.getHours();
@@ -1164,7 +1165,7 @@
                                         const value = e.target.value;
                                         const numValue = parseInt(value);
                                         if (value === '' || (numValue >= 1 && numValue <= 10)) {
-                                            setFormData({ ...formData, party_size: value === '' ? '' : numValue });
+                                            setFormData(prev => ({ ...prev, party_size: value === '' ? '' : numValue }));
                                         }
                                     }}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
@@ -1178,7 +1179,7 @@
                                     </label>
                                     <select
                                         value={formData.room_id}
-                                        onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
                                         style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                     >
                                         {rooms.map((room) => (
@@ -1209,7 +1210,7 @@
                                 <input
                                     type="text"
                                     value={formData.customer_name}
-                                    onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
                                     placeholder={t.step2.placeholder.name}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
@@ -1222,7 +1223,7 @@
                                 <input
                                     type="email"
                                     value={formData.customer_email}
-                                    onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_email: e.target.value }))}
                                     placeholder={t.step2.placeholder.email}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
@@ -1235,7 +1236,7 @@
                                 <input
                                     type="tel"
                                     value={formData.customer_phone}
-                                    onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
                                     placeholder={t.step2.placeholder.phone}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
                                 />
@@ -1247,7 +1248,7 @@
                                 </label>
                                 <textarea
                                     value={formData.special_requests}
-                                    onChange={(e) => setFormData({ ...formData, special_requests: e.target.value })}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, special_requests: e.target.value }))}
                                     rows={4}
                                     placeholder={t.step2.placeholder.requests}
                                     style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', boxSizing: 'border-box'}}
