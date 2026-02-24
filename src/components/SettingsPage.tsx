@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { ChevronDown, Palette, Gift, Upload, Mail, Bell } from 'lucide-react';
+import { ChevronDown, Palette, Gift, Upload, Mail, Bell, CreditCard } from 'lucide-react';
 import { GiftCardEmailSettings } from './GiftCardEmailSettings';
+import { GiftCardStripeSettings } from './GiftCardStripeSettings';
 import { WordPressWidgetSettings } from './WordPressWidgetSettings';
 import HostingConfiguration from './HostingConfiguration';
 import FileUploadManager from './FileUploadManager';
 import { SMTPSettings } from './SMTPSettings';
 import { NotificationSettings } from './NotificationSettings';
 
-type SettingsSection = 'templates' | 'widget' | 'hosting' | 'smtp' | 'notifications' | null;
+type SettingsSection = 'templates' | 'stripe' | 'widget' | 'hosting' | 'smtp' | 'notifications' | null;
 
 export function SettingsPage() {
   const [expandedSection, setExpandedSection] = useState<SettingsSection>(null);
@@ -48,6 +49,33 @@ export function SettingsPage() {
           {expandedSection === 'templates' && (
             <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
               <GiftCardEmailSettings />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <button
+            onClick={() => toggleSection('stripe')}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Stripe Test / Live Modus</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Zwischen Test- und Live-Zahlungen umschalten</p>
+              </div>
+            </div>
+            <ChevronDown
+              className={`w-5 h-5 text-slate-600 dark:text-slate-400 transition-transform ${
+                expandedSection === 'stripe' ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+          {expandedSection === 'stripe' && (
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+              <GiftCardStripeSettings />
             </div>
           )}
         </div>
