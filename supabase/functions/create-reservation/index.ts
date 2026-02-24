@@ -308,6 +308,9 @@ Deno.serve(async (req: Request) => {
     if (stripe_payment_intent_id) {
       reservationData.stripe_payment_intent_id = stripe_payment_intent_id;
     }
+    if (room_id) {
+      reservationData.room_id = room_id;
+    }
 
     const { data: reservation, error: reservationError } = await supabase
       .from("reservations")

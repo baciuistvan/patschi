@@ -345,8 +345,6 @@ export function ReservationWidget() {
   };
 
   const ensureTablesSelected = async (): Promise<string[]> => {
-    const tables = selectedTables.length > 0 ? selectedTables : selectedTablesRef.current;
-    if (tables && tables.length > 0) return tables;
 
     console.log('[ensureTablesSelected] Tables lost, re-checking availability...');
     const fd = formDataRef.current;
