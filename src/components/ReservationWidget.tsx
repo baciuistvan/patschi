@@ -292,6 +292,43 @@ export function ReservationWidget() {
     return await response.json();
   };
 
+  const ensureTablesSelected = async (): Promise<string[]> => {
+    const tables = selectedTables.length > 0 ? selectedTables : selectedTablesRef.current;
+    if (tables && tables.length > 0) return tables;
+
+    console.log('[ensureTablesSelected] Tables lost, re-checking availability...');
+    const fd = formDataRef.current;
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-availability`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reservation_date: fd.reservation_date,
+        reservation_time: fd.reservation_time,
+        party_size: fd.party_size,
+        room_id: fd.room_id,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Fehler beim Prüfen der Verfügbarkeit');
+    }
+
+    const result = await response.json();
+    if (!result.available || !result.selected_tables?.length) {
+      throw new Error(result.message || 'Keine Verfügbarkeit mehr vorhanden. Bitte versuchen Sie es erneut.');
+    }
+
+    const freshTables = result.selected_tables;
+    setSelectedTables(freshTables);
+    selectedTablesRef.current = freshTables;
+    console.log('[ensureTablesSelected] Re-fetched tables:', freshTables);
+    return freshTables;
+  };
+
   const handleNextStep = async () => {
     console.log('handleNextStep called, current step:', step);
     setError('');
@@ -391,6 +428,8 @@ export function ReservationWidget() {
 
   const createFreeReservation = async () => {
     try {
+      const tables = await ensureTablesSelected();
+
       const reservationData = {
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
@@ -406,7 +445,7 @@ export function ReservationWidget() {
         payment_method: 'none',
         booking_method: 'free',
         room_id: formData.room_id,
-        selected_tables: selectedTables,
+        selected_tables: tables,
       };
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
@@ -516,13 +555,7 @@ export function ReservationWidget() {
     setError('');
 
     try {
-      console.log('[Payment] selectedTables at submit:', selectedTables, 'selectedTablesRef:', selectedTablesRef.current);
-
-      const tablesToUse = selectedTables.length > 0 ? selectedTables : selectedTablesRef.current;
-
-      if (!tablesToUse || tablesToUse.length === 0) {
-        throw new Error('Keine Tischzuweisung vorhanden. Bitte gehen Sie zurück zu Schritt 1 und prüfen Sie die Verfügbarkeit erneut.');
-      }
+      const tablesToUse = await ensureTablesSelected();
 
       console.log('[Payment] Creating payment intent...');
       const secret = await createPaymentIntent();
@@ -1003,9 +1036,7 @@ export function ReservationWidget() {
                       setLoading(true);
                       setError('');
 
-                      if (!selectedTablesRef.current || selectedTablesRef.current.length === 0) {
-                        throw new Error('Keine Tischzuweisung vorhanden. Bitte gehen Sie zurück zu Schritt 1 und prüfen Sie die Verfügbarkeit erneut.');
-                      }
+                      const applePayTables = await ensureTablesSelected();
 
                       const secret = await createPaymentIntent();
                       setClientSecret(secret);
@@ -1033,10 +1064,13 @@ export function ReservationWidget() {
                               setLoading(false);
                             } else {
                               ev.complete('success');
-                              const tables = selectedTablesRef.current;
                               const fd = formDataRef.current;
-                              console.log('[GooglePay] selected_tables:', tables);
-                              console.log('[GooglePay] formData:', fd);
+                              const tables = selectedTablesRef.current;
+                              if (!tables || tables.length === 0) {
+                                setError('Keine Tischzuweisung vorhanden. Bitte laden Sie die Seite neu.');
+                                setLoading(false);
+                                return;
+                              }
                               const reservationData = {
                                 customer_name: fd.customer_name,
                                 customer_email: fd.customer_email,
