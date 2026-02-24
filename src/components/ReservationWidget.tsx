@@ -233,6 +233,7 @@ export function ReservationWidget() {
     if (data) {
       setRooms(data);
       if (data.length > 0) {
+        formDataRef.current = { ...formDataRef.current, room_id: data[0].id };
         setFormData(prev => ({ ...prev, room_id: data[0].id }));
       }
     }
@@ -246,7 +247,9 @@ export function ReservationWidget() {
       .maybeSingle();
 
     if (depositData) {
-      setFormData(prev => ({ ...prev, payment_amount: parseFloat(depositData.value) * 100 }));
+      const amount = parseFloat(depositData.value) * 100;
+      formDataRef.current = { ...formDataRef.current, payment_amount: amount };
+      setFormData(prev => ({ ...prev, payment_amount: amount }));
     }
   };
 
@@ -333,17 +336,20 @@ export function ReservationWidget() {
   };
 
   const handleNextStep = async () => {
-    console.log('handleNextStep called, current step:', step);
+    // Capture the entire form state synchronously at click time — this avoids
+    // any stale closure issue where formData.room_id might be outdated inside async code.
+    const snapshot = { ...formDataRef.current };
+    console.log('handleNextStep called, current step:', step, 'room_id snapshot:', snapshot.room_id);
     setError('');
     setLoading(true);
 
     try {
       if (step === 1) {
-        if (!formData.reservation_date) {
+        if (!snapshot.reservation_date) {
           setError('Bitte wählen Sie ein Datum');
           return;
         }
-        const selectedDate = new Date(formData.reservation_date);
+        const selectedDate = new Date(snapshot.reservation_date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (selectedDate < today) {
@@ -369,22 +375,18 @@ export function ReservationWidget() {
           return;
         }
 
-        if (!formData.party_size || formData.party_size < 1) {
+        if (!snapshot.party_size || snapshot.party_size < 1) {
           setError('Bitte geben Sie die Anzahl der Personen an');
           return;
         }
 
-        if (formData.party_size > 15) {
+        if (snapshot.party_size > 15) {
           setError('Online-Reservierungen sind nur für maximal 15 Personen möglich. Für größere Gruppen kontaktieren Sie uns bitte direkt.');
           return;
         }
 
-        // Check availability before proceeding — pass room_id directly from current state
-        // to avoid the formDataRef stale-closure race condition when the user quickly
-        // clicks "Weiter" after changing the room dropdown.
-        const currentRoomId = formData.room_id;
-        formDataRef.current = { ...formDataRef.current, room_id: currentRoomId };
-        const availability = await checkAvailability(currentRoomId);
+        console.log('[handleNextStep] Checking availability for room_id:', snapshot.room_id);
+        const availability = await checkAvailability(snapshot.room_id);
         if (!availability.available) {
           setAvailabilityChecked(false);
           setSelectedTables([]);
@@ -825,7 +827,10 @@ export function ReservationWidget() {
             <input
               type="date"
               value={formData.reservation_date}
-              onChange={(e) => setFormData({ ...formData, reservation_date: e.target.value })}
+              onChange={(e) => {
+                formDataRef.current = { ...formDataRef.current, reservation_date: e.target.value };
+                setFormData(prev => ({ ...prev, reservation_date: e.target.value }));
+              }}
               min={(() => {
                 const now = new Date();
                 const currentHour = now.getHours();
@@ -869,7 +874,9 @@ export function ReservationWidget() {
               value={formData.party_size}
               onChange={(e) => {
                 const value = e.target.value;
-                setFormData({ ...formData, party_size: value === '' ? '' as any : (parseInt(value) || '') as any });
+                const parsed = value === '' ? '' as any : (parseInt(value) || '') as any;
+                formDataRef.current = { ...formDataRef.current, party_size: parsed };
+                setFormData(prev => ({ ...prev, party_size: parsed }));
               }}
               className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
             />
