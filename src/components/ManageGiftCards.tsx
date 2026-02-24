@@ -121,6 +121,9 @@ export function ManageGiftCards() {
         // Mark as active (gültig) and restore balance to original amount
         updateData.status = 'active';
         updateData.current_balance = card.original_amount;
+        updateData.is_redeemed = false;
+        updateData.redeemed_at = null;
+        updateData.redeemed_by = null;
       }
 
       const { error } = await supabase
