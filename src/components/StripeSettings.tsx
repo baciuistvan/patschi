@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, AlertCircle, CheckCircle, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { CreditCard, AlertCircle, CheckCircle, ExternalLink, Eye, EyeOff, Mail, Save, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -19,6 +19,17 @@ export function StripeSettings() {
   const [testPublishableKey, setTestPublishableKey] = useState('');
   const [livePublishableKey, setLivePublishableKey] = useState('');
   const [showSecretKeys, setShowSecretKeys] = useState(false);
+
+  const [paymentEmailSubject, setPaymentEmailSubject] = useState('');
+  const [paymentEmailBody, setPaymentEmailBody] = useState('');
+  const [paymentEmailBodyHtml, setPaymentEmailBodyHtml] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [saveEmailSuccess, setSaveEmailSuccess] = useState(false);
+  const [activePaymentTab, setActivePaymentTab] = useState<'text' | 'html'>('text');
+  const [showPaymentPreview, setShowPaymentPreview] = useState(true);
+  const [testPaymentEmail, setTestPaymentEmail] = useState('');
+  const [testingPaymentEmail, setTestingPaymentEmail] = useState(false);
+  const [testPaymentResult, setTestPaymentResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     checkStripeStatus();
@@ -54,32 +65,106 @@ export function StripeSettings() {
         'stripe_test_secret_key',
         'stripe_live_secret_key',
         'stripe_test_publishable_key',
-        'stripe_live_publishable_key'
+        'stripe_live_publishable_key',
+        'payment_email_subject',
+        'payment_email_body',
+        'payment_email_body_html'
       ]);
 
     if (settings) {
       settings.forEach(setting => {
         switch(setting.key) {
-          case 'deposit_amount':
-            setDepositAmount(parseFloat(setting.value));
-            break;
-          case 'stripe_enabled':
-            setStripeEnabled(setting.value === 'true');
-            break;
-          case 'stripe_test_secret_key':
-            setTestSecretKey(setting.value || '');
-            break;
-          case 'stripe_live_secret_key':
-            setLiveSecretKey(setting.value || '');
-            break;
-          case 'stripe_test_publishable_key':
-            setTestPublishableKey(setting.value || '');
-            break;
-          case 'stripe_live_publishable_key':
-            setLivePublishableKey(setting.value || '');
-            break;
+          case 'deposit_amount': setDepositAmount(parseFloat(setting.value)); break;
+          case 'stripe_enabled': setStripeEnabled(setting.value === 'true'); break;
+          case 'stripe_test_secret_key': setTestSecretKey(setting.value || ''); break;
+          case 'stripe_live_secret_key': setLiveSecretKey(setting.value || ''); break;
+          case 'stripe_test_publishable_key': setTestPublishableKey(setting.value || ''); break;
+          case 'stripe_live_publishable_key': setLivePublishableKey(setting.value || ''); break;
+          case 'payment_email_subject': setPaymentEmailSubject(setting.value || ''); break;
+          case 'payment_email_body': setPaymentEmailBody(setting.value || ''); break;
+          case 'payment_email_body_html': setPaymentEmailBodyHtml(setting.value || ''); break;
         }
       });
+    }
+  };
+
+  const getPaymentPreviewHtml = () => {
+    const sampleData: Record<string, string> = {
+      customer_name: 'Max Mustermann',
+      customer_email: 'max@example.com',
+      customer_phone: '+43 123 456789',
+      booking_code: 'ABC123',
+      reservation_date: '15.03.2024',
+      reservation_time: '19:00',
+      party_size: '4',
+      table_number: 'Tisch 12',
+      room_name: 'Hauptraum',
+      special_requests: 'Fensterplatz bevorzugt',
+      deposit_amount: '40.00',
+      payment_link_url: 'https://buy.stripe.com/test_example'
+    };
+    let html = paymentEmailBodyHtml || '';
+    Object.entries(sampleData).forEach(([key, value]) => {
+      html = html.replace(new RegExp(`{{${key}}}`, 'g'), value);
+    });
+    return html;
+  };
+
+  const handleSavePaymentEmail = async () => {
+    setSavingEmail(true);
+    setSaveEmailSuccess(false);
+    try {
+      await supabase.from('settings').upsert([
+        { key: 'payment_email_subject', value: paymentEmailSubject },
+        { key: 'payment_email_body', value: paymentEmailBody },
+        { key: 'payment_email_body_html', value: paymentEmailBodyHtml },
+      ], { onConflict: 'key' });
+      setSaveEmailSuccess(true);
+      setTimeout(() => setSaveEmailSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save payment email settings:', error);
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+
+  const handleTestPaymentEmail = async () => {
+    if (!testPaymentEmail || !testPaymentEmail.includes('@')) {
+      setTestPaymentResult({ success: false, message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein' });
+      return;
+    }
+    setTestingPaymentEmail(true);
+    setTestPaymentResult(null);
+    try {
+      const testData = {
+        customer_name: 'Max Mustermann',
+        customer_email: testPaymentEmail,
+        customer_phone: '+43 123 456789',
+        reservation_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        reservation_time: '19:00',
+        party_size: 4,
+        special_requests: 'Fensterplatz bevorzugt',
+        payment_amount: 40,
+        booking_code: 'TEST-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        table_number: 'Tisch 12',
+        room_name: 'Hauptraum',
+        payment_link_url: 'https://buy.stripe.com/test_example_link'
+      };
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-reservation-confirmation-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify(testData)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setTestPaymentResult({ success: true, message: `Test-Zahlungslink-E-Mail erfolgreich an ${testPaymentEmail} gesendet!` });
+      } else {
+        setTestPaymentResult({ success: false, message: result.error || 'Fehler beim Senden der Test-E-Mail.' });
+      }
+    } catch (error: any) {
+      setTestPaymentResult({ success: false, message: error.message || 'Ein Fehler ist aufgetreten' });
+    } finally {
+      setTestingPaymentEmail(false);
     }
   };
 
@@ -522,6 +607,142 @@ export function StripeSettings() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Zahlungslink-E-Mail</h2>
+          <p className="text-slate-400">
+            Separate E-Mail-Vorlage für Reservierungen mit Zahlungslink (wenn Anzahlung erforderlich ist)
+          </p>
+        </div>
+
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <Mail className="w-8 h-8 text-green-400" />
+          </div>
+          <div className="flex-1 space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">E-Mail-Betreff (Zahlungslink)</label>
+              <p className="text-xs text-slate-400 mb-3">Die Betreffzeile für Zahlungslink-E-Mails (leer lassen, um Standard-Vorlage zu verwenden)</p>
+              <input
+                type="text"
+                value={paymentEmailSubject}
+                onChange={(e) => setPaymentEmailSubject(e.target.value)}
+                placeholder="Ihre Reservierung - Bitte Anzahlung leisten"
+                className="w-full px-4 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-300">E-Mail-Inhalt (Zahlungslink)</label>
+                <div className="flex items-center space-x-3">
+                  {activePaymentTab === 'html' && (
+                    <button type="button" onClick={() => setShowPaymentPreview(!showPaymentPreview)} className="flex items-center space-x-2 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-300 hover:text-white hover:border-slate-600 transition text-sm">
+                      {showPaymentPreview ? <><EyeOff className="w-4 h-4" /><span>Vorschau ausblenden</span></> : <><Eye className="w-4 h-4" /><span>Vorschau anzeigen</span></>}
+                    </button>
+                  )}
+                  <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
+                    <button type="button" onClick={() => setActivePaymentTab('text')} className={`px-4 py-1.5 text-sm font-medium rounded transition ${activePaymentTab === 'text' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>Text</button>
+                    <button type="button" onClick={() => setActivePaymentTab('html')} className={`px-4 py-1.5 text-sm font-medium rounded transition ${activePaymentTab === 'html' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>HTML</button>
+                  </div>
+                </div>
+              </div>
+
+              {activePaymentTab === 'text' ? (
+                <>
+                  <p className="text-xs text-slate-400 mb-3">Einfacher Text für die Zahlungslink-E-Mail (leer lassen, um Standard-Vorlage zu verwenden)</p>
+                  <textarea
+                    value={paymentEmailBody}
+                    onChange={(e) => setPaymentEmailBody(e.target.value)}
+                    rows={12}
+                    placeholder="Liebe/r {{customer_name}},&#10;&#10;vielen Dank für Ihre Reservierungsanfrage! Um Ihre Reservierung zu bestätigen, leisten Sie bitte die Anzahlung...&#10;&#10;Zahlungslink: {{payment_link_url}}"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-400 mb-3">Vollständiger HTML-Code für die Zahlungslink-E-Mail (leer lassen, um Standard-Vorlage zu verwenden)</p>
+                  <div className={`grid gap-4 ${showPaymentPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <div className="flex flex-col">
+                      <div className="text-xs font-medium text-slate-400 mb-2">HTML Editor</div>
+                      <textarea
+                        value={paymentEmailBodyHtml}
+                        onChange={(e) => setPaymentEmailBodyHtml(e.target.value)}
+                        rows={24}
+                        placeholder="<!DOCTYPE html>&#10;<html>&#10;<body>&#10;  <a href='{{payment_link_url}}'>Jetzt bezahlen</a>&#10;</body>&#10;</html>"
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white font-mono text-xs focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                      />
+                    </div>
+                    {showPaymentPreview && (
+                      <div className="flex flex-col">
+                        <div className="text-xs font-medium text-slate-400 mb-2">Live-Vorschau</div>
+                        <div className="bg-white rounded-lg overflow-hidden border border-slate-600 flex-1">
+                          <iframe srcDoc={getPaymentPreviewHtml()} className="w-full h-full" style={{ minHeight: '600px' }} sandbox="allow-same-origin" title="Payment Email Preview" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-green-900/20 border border-green-800 rounded-xl p-5">
+          <h3 className="text-base font-semibold text-white mb-3">Verfügbare Variablen</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+            {[
+              ['{{customer_name}}', 'Name des Kunden'],
+              ['{{reservation_date}}', 'Reservierungsdatum'],
+              ['{{reservation_time}}', 'Reservierungszeit'],
+              ['{{party_size}}', 'Anzahl Personen'],
+              ['{{table_number}}', 'Tischnummer'],
+              ['{{room_name}}', 'Raumname'],
+              ['{{booking_code}}', 'Buchungsnummer'],
+              ['{{deposit_amount}}', 'Anzahlungsbetrag'],
+              ['{{payment_link_url}}', 'Zahlungslink-URL'],
+            ].map(([code, desc]) => (
+              <div key={code} className="bg-slate-900 rounded-lg p-2">
+                <code className="text-green-400 text-xs">{code}</code>
+                <p className="text-slate-400 text-xs mt-0.5">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-white">Test-Zahlungslink-E-Mail senden</h3>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="email"
+              value={testPaymentEmail}
+              onChange={(e) => setTestPaymentEmail(e.target.value)}
+              placeholder="ihre@email.de"
+              className="flex-1 px-4 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            <button onClick={handleTestPaymentEmail} disabled={testingPaymentEmail} className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:opacity-50 flex items-center justify-center space-x-2 whitespace-nowrap">
+              <Send className="w-4 h-4" />
+              <span>{testingPaymentEmail ? 'Wird gesendet...' : 'Test-E-Mail senden'}</span>
+            </button>
+          </div>
+          {testPaymentResult && (
+            <div className={`p-4 rounded-lg ${testPaymentResult.success ? 'bg-green-900/30 border border-green-700' : 'bg-red-900/30 border border-red-700'}`}>
+              <p className={`text-sm ${testPaymentResult.success ? 'text-green-300' : 'text-red-300'}`}>{testPaymentResult.message}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-2 border-t border-slate-700">
+          <button onClick={handleSavePaymentEmail} disabled={savingEmail} className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition disabled:opacity-50 flex items-center space-x-2">
+            {saveEmailSuccess ? (
+              <><CheckCircle className="w-4 h-4" /><span>Gespeichert</span></>
+            ) : (
+              <><Save className="w-4 h-4" /><span>{savingEmail ? 'Wird gespeichert...' : 'Zahlungslink-E-Mail speichern'}</span></>
+            )}
+          </button>
         </div>
       </div>
 
