@@ -95,8 +95,8 @@ Deno.serve(async (req: Request) => {
         .eq('room_id', room_id)
         .eq('is_active', true)
         .eq('is_bookable', true)
-        .gte('capacity', party_size)
-        .order('capacity', { ascending: true });
+        .gt('capacity', 0)
+        .order('capacity', { ascending: false });
 
       if (candidateError || !candidateTables || candidateTables.length === 0) {
         return new Response(
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
       const requestedStartAuto = new Date(`${reservation_date}T${reservation_time}`);
       const requestedEndAuto = new Date(requestedStartAuto.getTime() + (duration_minutes || 120) * 60000);
 
-      let autoTable: string | null = null;
+      const freeTables: { id: string; capacity: number }[] = [];
       for (const table of candidateTables) {
         const { data: conflicts } = await supabase
           .from('reservation_tables')
@@ -145,12 +145,11 @@ Deno.serve(async (req: Request) => {
           }
         }
         if (isFree) {
-          autoTable = table.id;
-          break;
+          freeTables.push({ id: table.id, capacity: table.capacity });
         }
       }
 
-      if (!autoTable) {
+      if (freeTables.length === 0) {
         return new Response(
           JSON.stringify({
             error: 'Alle passenden Tische sind bereits belegt. Bitte wählen Sie ein anderes Datum.',
@@ -160,8 +159,10 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      finalSelectedTables = [autoTable];
-      console.log('[create-reservation] Auto-selected table:', autoTable);
+      const exactFit = [...freeTables].sort((a, b) => a.capacity - b.capacity).find(t => t.capacity >= party_size);
+      const bestTable = exactFit || freeTables[0];
+      finalSelectedTables = [bestTable.id];
+      console.log('[create-reservation] Auto-selected table:', bestTable.id);
     }
 
     // Final availability check to prevent overbooking

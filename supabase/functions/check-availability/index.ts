@@ -67,15 +67,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get all bookable tables for the room with sufficient capacity, smallest first
-    const { data: tables, error: tablesError } = await supabase
+    // Get all bookable tables for the room, sorted largest first
+    const { data: allTables, error: tablesError } = await supabase
       .from('tables')
       .select('id, table_number, capacity')
       .eq('room_id', room_id)
       .eq('is_active', true)
       .eq('is_bookable', true)
-      .gte('capacity', party_size)
-      .order('capacity', { ascending: true });
+      .gt('capacity', 0)
+      .order('capacity', { ascending: false });
 
     if (tablesError) {
       console.error('Error fetching tables:', tablesError);
@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (!tables || tables.length === 0) {
+    if (!allTables || allTables.length === 0) {
       return new Response(
         JSON.stringify({
           available: false,
@@ -110,8 +110,9 @@ Deno.serve(async (req: Request) => {
     const requestedStart = new Date(`${reservation_date}T${reservation_time}`);
     const requestedEnd = new Date(requestedStart.getTime() + 120 * 60000);
 
-    // For each candidate table (smallest first), check if it's free using reservation_tables join table
-    for (const table of tables) {
+    // Check which tables are free at the requested time
+    const freeTables: typeof allTables = [];
+    for (const table of allTables) {
       const { data: conflicts, error: conflictsError } = await supabase
         .from('reservation_tables')
         .select(`
@@ -152,31 +153,39 @@ Deno.serve(async (req: Request) => {
       }
 
       if (isAvailable) {
-        return new Response(
-          JSON.stringify({
-            available: true,
-            selected_tables: [table.id],
-            tables_needed: 1,
-            table_info: {
-              id: table.id,
-              name: table.table_number,
-              capacity: table.capacity
-            },
-            message: 'Tisch verfügbar'
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+        freeTables.push(table);
       }
     }
 
+    if (freeTables.length === 0) {
+      return new Response(
+        JSON.stringify({
+          available: false,
+          message: 'An diesem Datum und dieser Uhrzeit sind alle Tische bereits gebucht. Bitte wählen Sie ein anderes Datum.',
+          reason: 'fully_booked'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Prefer smallest table that fits the party; if none fits exactly, use the largest available
+    const exactFit = [...freeTables].sort((a, b) => a.capacity - b.capacity).find(t => t.capacity >= party_size);
+    const bestTable = exactFit || freeTables[0];
+
     return new Response(
       JSON.stringify({
-        available: false,
-        message: 'An diesem Datum und dieser Uhrzeit sind alle passenden Tische bereits gebucht. Bitte wählen Sie ein anderes Datum.',
-        reason: 'fully_booked'
+        available: true,
+        selected_tables: [bestTable.id],
+        tables_needed: 1,
+        table_info: {
+          id: bestTable.id,
+          name: bestTable.table_number,
+          capacity: bestTable.capacity
+        },
+        message: 'Tisch verfügbar'
       }),
       {
         status: 200,
