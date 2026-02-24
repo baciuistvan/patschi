@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, Room } from '../lib/supabase';
-import { Calendar, Users, Mail, Phone, MessageSquare, CreditCard, Check } from 'lucide-react';
+import { Calendar, Users, Mail, Phone, MessageSquare, CreditCard, Check, MapPin, Loader2 } from 'lucide-react';
 import { loadStripe, Stripe, StripeElements } from '@stripe/stripe-js';
 
 const formatDateLocal = (date: Date): string => {
@@ -40,6 +40,8 @@ export function ReservationWidget() {
   const [stripeError, setStripeError] = useState('');
   const [stripeEnabled, setStripeEnabled] = useState(true);
   const [stripeMode, setStripeMode] = useState<'test' | 'live'>('test');
+  const [roomAvailability, setRoomAvailability] = useState<Record<string, 'available' | 'unavailable' | 'checking' | 'unknown'>>({});
+  const availabilityCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [formData, setFormData] = useState({
     party_size: 2,
@@ -73,6 +75,17 @@ export function ReservationWidget() {
     selectedTablesRef.current = [];
     setError('');
   }, [formData.reservation_date, formData.party_size, formData.room_id]);
+
+  useEffect(() => {
+    if (!formData.reservation_date || !formData.party_size || formData.party_size < 1 || rooms.length === 0) return;
+    if (availabilityCheckTimeout.current) clearTimeout(availabilityCheckTimeout.current);
+    availabilityCheckTimeout.current = setTimeout(() => {
+      checkAllRoomsAvailability(formData.reservation_date, formData.party_size, rooms);
+    }, 400);
+    return () => {
+      if (availabilityCheckTimeout.current) clearTimeout(availabilityCheckTimeout.current);
+    };
+  }, [formData.reservation_date, formData.party_size, rooms, checkAllRoomsAvailability]);
 
   const loadStripeModeAndInitialize = async () => {
     try {
@@ -272,6 +285,38 @@ export function ReservationWidget() {
       }
     }
   }, [step, cardElement, stripe, formData.payment_amount]);
+
+  const checkAllRoomsAvailability = useCallback(async (date: string, partySize: number, roomList: Room[]) => {
+    if (!date || !partySize || partySize < 1 || roomList.length === 0) return;
+    const checking: Record<string, 'checking'> = {};
+    roomList.forEach(r => { checking[r.id] = 'checking'; });
+    setRoomAvailability(checking);
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-availability`;
+    const results: Record<string, 'available' | 'unavailable'> = {};
+    await Promise.all(roomList.map(async (room) => {
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reservation_date: date,
+            reservation_time: '15:45',
+            party_size: partySize,
+            room_id: room.id,
+          }),
+        });
+        const data = await response.json();
+        results[room.id] = data.available ? 'available' : 'unavailable';
+      } catch {
+        results[room.id] = 'unavailable';
+      }
+    }));
+    setRoomAvailability(results);
+  }, []);
 
   const checkAvailability = async (overrideRoomId?: string) => {
     const fd = formDataRef.current;
@@ -889,24 +934,69 @@ export function ReservationWidget() {
             </p>
           </div>
 
-          {rooms.length > 1 && (
+          {rooms.length > 0 && (
             <div>
               <label className="block text-base font-semibold text-slate-700 mb-3">
-                Bereich
+                <MapPin className="w-5 h-5 inline mr-2" />
+                Bereich wählen
               </label>
-              <select
-                value={formData.room_id}
-                onChange={(e) => {
-                  const newRoomId = e.target.value;
-                  formDataRef.current = { ...formDataRef.current, room_id: newRoomId };
-                  setFormData(prev => ({ ...prev, room_id: newRoomId }));
-                }}
-                className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
-              >
-                {rooms.map((room) => (
-                  <option key={room.id} value={room.id}>{room.name}</option>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 gap-3">
+                {rooms.map((room) => {
+                  const avail = roomAvailability[room.id];
+                  const isSelected = formData.room_id === room.id;
+                  const isChecking = avail === 'checking';
+                  const isAvailable = avail === 'available';
+                  const isUnavailable = avail === 'unavailable';
+                  const hasDate = !!formData.reservation_date && !!formData.party_size;
+
+                  return (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => {
+                        formDataRef.current = { ...formDataRef.current, room_id: room.id };
+                        setFormData(prev => ({ ...prev, room_id: room.id }));
+                      }}
+                      className={`relative flex flex-col items-start p-4 rounded-xl border-2 text-left transition-all ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-50 shadow-md'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                      }`}
+                    >
+                      <div className={`font-bold text-lg mb-1 ${isSelected ? 'text-emerald-700' : 'text-slate-800'}`}>
+                        {room.name}
+                      </div>
+                      {hasDate && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {isChecking && (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                              <span className="text-xs text-slate-400">Prüfen...</span>
+                            </>
+                          )}
+                          {isAvailable && (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                              <span className="text-xs font-medium text-emerald-600">Verfügbar</span>
+                            </>
+                          )}
+                          {isUnavailable && (
+                            <>
+                              <div className="w-2 h-2 rounded-full bg-red-400" />
+                              <span className="text-xs font-medium text-red-500">Ausgebucht</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {isSelected && (
+                        <div className="absolute top-3 right-3">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
