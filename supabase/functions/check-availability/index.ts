@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +21,9 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { reservation_date, reservation_time, party_size, room_id } = await req.json();
+    const body = await req.json();
+    const { reservation_date, reservation_time, party_size, room_id } = body;
+    console.log('[check-availability] Received request:', JSON.stringify({ reservation_date, reservation_time, party_size, room_id }));
 
     if (!reservation_date || !reservation_time || !party_size || !room_id) {
       return new Response(
@@ -67,15 +69,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get all bookable tables for the room, sorted largest first
+    console.log('[check-availability] Querying tables for room_id:', room_id);
     const { data: allTables, error: tablesError } = await supabase
       .from('tables')
-      .select('id, table_number, capacity')
+      .select('id, table_number, capacity, room_id')
       .eq('room_id', room_id)
       .eq('is_active', true)
       .eq('is_bookable', true)
       .gt('capacity', 0)
       .order('capacity', { ascending: false });
+
+    console.log('[check-availability] Found tables:', JSON.stringify(allTables?.map(t => ({ id: t.id, num: t.table_number, cap: t.capacity, room: t.room_id }))));
 
     if (tablesError) {
       console.error('Error fetching tables:', tablesError);
