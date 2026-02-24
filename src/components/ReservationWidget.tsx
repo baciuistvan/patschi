@@ -270,6 +270,8 @@ export function ReservationWidget() {
   }, [step, cardElement, stripe, formData.payment_amount]);
 
   const checkAvailability = async () => {
+    const fd = formDataRef.current;
+    console.log('[checkAvailability] room_id:', fd.room_id);
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-availability`;
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -278,10 +280,10 @@ export function ReservationWidget() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        reservation_date: formData.reservation_date,
-        reservation_time: formData.reservation_time,
-        party_size: formData.party_size,
-        room_id: formData.room_id,
+        reservation_date: fd.reservation_date,
+        reservation_time: fd.reservation_time,
+        party_size: fd.party_size,
+        room_id: fd.room_id,
       }),
     });
 
@@ -878,7 +880,7 @@ export function ReservationWidget() {
               </label>
               <select
                 value={formData.room_id}
-                onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
                 className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
               >
                 {rooms.map((room) => (
