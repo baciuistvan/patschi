@@ -344,10 +344,16 @@ export function ReservationWidget() {
     return await response.json();
   };
 
-  const ensureTablesSelected = async (): Promise<string[]> => {
-
-    console.log('[ensureTablesSelected] Tables lost, re-checking availability...');
+  const ensureTablesSelected = async (explicitRoomId?: string): Promise<string[]> => {
     const fd = formDataRef.current;
+    const roomIdToUse = explicitRoomId ?? fd.room_id;
+
+    if (selectedTablesRef.current && selectedTablesRef.current.length > 0) {
+      console.log('[ensureTablesSelected] Using already-selected tables:', selectedTablesRef.current);
+      return selectedTablesRef.current;
+    }
+
+    console.log('[ensureTablesSelected] No tables saved, re-checking availability for room:', roomIdToUse);
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-availability`;
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -359,7 +365,7 @@ export function ReservationWidget() {
         reservation_date: fd.reservation_date,
         reservation_time: fd.reservation_time,
         party_size: fd.party_size,
-        room_id: fd.room_id,
+        room_id: roomIdToUse,
       }),
     });
 
@@ -481,8 +487,8 @@ export function ReservationWidget() {
 
   const createFreeReservation = async () => {
     try {
-      const tables = await ensureTablesSelected();
       const fd = formDataRef.current;
+      const tables = await ensureTablesSelected(fd.room_id);
 
       const reservationData = {
         customer_name: fd.customer_name,
@@ -610,7 +616,8 @@ export function ReservationWidget() {
     setError('');
 
     try {
-      const tablesToUse = await ensureTablesSelected();
+      const fdrSnapshot = formDataRef.current;
+      const tablesToUse = await ensureTablesSelected(fdrSnapshot.room_id);
 
       console.log('[Payment] Creating payment intent...');
       const secret = await createPaymentIntent();
@@ -1146,7 +1153,7 @@ export function ReservationWidget() {
                       setLoading(true);
                       setError('');
 
-                      const applePayTables = await ensureTablesSelected();
+                      const applePayTables = await ensureTablesSelected(formDataRef.current.room_id);
 
                       const secret = await createPaymentIntent();
                       setClientSecret(secret);
