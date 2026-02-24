@@ -516,7 +516,11 @@ export function ReservationWidget() {
     setError('');
 
     try {
-      if (!selectedTables || selectedTables.length === 0) {
+      console.log('[Payment] selectedTables at submit:', selectedTables, 'selectedTablesRef:', selectedTablesRef.current);
+
+      const tablesToUse = selectedTables.length > 0 ? selectedTables : selectedTablesRef.current;
+
+      if (!tablesToUse || tablesToUse.length === 0) {
         throw new Error('Keine Tischzuweisung vorhanden. Bitte gehen Sie zurück zu Schritt 1 und prüfen Sie die Verfügbarkeit erneut.');
       }
 
@@ -575,7 +579,7 @@ export function ReservationWidget() {
         stripe_payment_intent_id: paymentIntent.id,
         booking_method: 'online',
         room_id: formData.room_id,
-        selected_tables: selectedTables,
+        selected_tables: tablesToUse,
       };
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-reservation`;
