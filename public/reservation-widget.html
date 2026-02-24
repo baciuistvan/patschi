@@ -416,16 +416,15 @@
                 };
                 initialize();
 
-                // Track page abandonment
                 const handleBeforeUnload = () => {
-                    if (!success && sessionStarted && formData.customer_name) {
+                    if (!success && sessionStarted && formDataRef.current.customer_name) {
                         logAbandonment();
                     }
                 };
 
                 window.addEventListener('beforeunload', handleBeforeUnload);
                 return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-            }, [success, sessionStarted, formData.customer_name]);
+            }, []);
 
             useEffect(() => {
                 setAvailabilityChecked(false);
@@ -527,7 +526,10 @@
 
                 if (data && data.length > 0) {
                     setRooms(data);
-                    setFormDataAndRef(prev => ({ ...prev, room_id: data[0].id }));
+                    setFormDataAndRef(prev => ({
+                        ...prev,
+                        room_id: prev.room_id || data[0].id
+                    }));
                 }
             };
 
