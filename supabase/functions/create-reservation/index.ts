@@ -165,6 +165,69 @@ Deno.serve(async (req: Request) => {
       console.log('[create-reservation] Auto-selected table:', bestTable.id);
     }
 
+    // Validate selected tables belong to the correct room
+    if (room_id && finalSelectedTables && Array.isArray(finalSelectedTables) && finalSelectedTables.length > 0) {
+      const { data: validTables, error: validError } = await supabase
+        .from('tables')
+        .select('id')
+        .eq('room_id', room_id)
+        .in('id', finalSelectedTables);
+
+      if (validError) {
+        console.error('[create-reservation] Error validating table room:', validError);
+      } else if (!validTables || validTables.length !== finalSelectedTables.length) {
+        console.log('[create-reservation] Table-room mismatch detected, re-selecting...');
+        const { data: candidateTables } = await supabase
+          .from('tables')
+          .select('id, table_number, capacity')
+          .eq('room_id', room_id)
+          .eq('is_active', true)
+          .eq('is_bookable', true)
+          .gt('capacity', 0)
+          .order('capacity', { ascending: false });
+
+        if (candidateTables && candidateTables.length > 0) {
+          const requestedStartFix = new Date(`${reservation_date}T${reservation_time}`);
+          const requestedEndFix = new Date(requestedStartFix.getTime() + (duration_minutes || 120) * 60000);
+
+          const freeTablesForRoom: { id: string; capacity: number }[] = [];
+          for (const table of candidateTables) {
+            const { data: conflicts } = await supabase
+              .from('reservation_tables')
+              .select(`reservation_id, reservations!inner (reservation_time, reservation_date, duration_minutes, status)`)
+              .eq('table_id', table.id)
+              .eq('reservations.reservation_date', reservation_date)
+              .in('reservations.status', ['confirmed', 'pending']);
+
+            let isFree = true;
+            if (conflicts && conflicts.length > 0) {
+              for (const c of conflicts) {
+                const res = c.reservations as any;
+                const eStart = new Date(`${res.reservation_date}T${res.reservation_time}`);
+                const eEnd = new Date(eStart.getTime() + (res.duration_minutes || 120) * 60000);
+                if (
+                  (requestedStartFix >= eStart && requestedStartFix < eEnd) ||
+                  (requestedEndFix > eStart && requestedEndFix <= eEnd) ||
+                  (requestedStartFix <= eStart && requestedEndFix >= eEnd)
+                ) { isFree = false; break; }
+              }
+            }
+            if (isFree) freeTablesForRoom.push({ id: table.id, capacity: table.capacity });
+          }
+
+          if (freeTablesForRoom.length > 0) {
+            const fit = [...freeTablesForRoom].sort((a, b) => a.capacity - b.capacity).find(t => t.capacity >= party_size);
+            finalSelectedTables = [(fit || freeTablesForRoom[0]).id];
+          } else {
+            return new Response(
+              JSON.stringify({ error: 'Alle Tische im gewählten Raum sind bereits belegt.', reason: 'fully_booked' }),
+              { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      }
+    }
+
     // Final availability check to prevent overbooking
     if (finalSelectedTables && Array.isArray(finalSelectedTables) && finalSelectedTables.length > 0) {
       const requestedStartTime = new Date(`${reservation_date}T${reservation_time}`);
