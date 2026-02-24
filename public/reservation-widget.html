@@ -627,8 +627,9 @@
                 }
             };
 
-            const checkAvailability = async () => {
-                console.log('[widget] checkAvailability called with room_id:', formData.room_id, 'date:', formData.reservation_date);
+            const checkAvailability = async (overrideData) => {
+                const data = overrideData || formData;
+                console.log('[widget] checkAvailability called with room_id:', data.room_id, 'date:', data.reservation_date);
                 const apiUrl = `https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/check-availability`;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -637,10 +638,10 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        reservation_date: formData.reservation_date,
-                        reservation_time: formData.reservation_time,
-                        party_size: formData.party_size,
-                        room_id: formData.room_id,
+                        reservation_date: data.reservation_date,
+                        reservation_time: data.reservation_time,
+                        party_size: data.party_size,
+                        room_id: data.room_id,
                     }),
                 });
 
@@ -652,18 +653,33 @@
             };
 
             const handleNextStep = async () => {
-                console.log('handleNextStep called, current step:', step);
+                console.log('handleNextStep called, current step:', step, 'room_id at call time:', formData.room_id);
                 setError('');
                 setLoading(true);
+
+                // Capture a snapshot of formData at the exact moment the button is clicked.
+                // This prevents stale closure issues where async callbacks see outdated state.
+                const snapshot = {
+                    reservation_date: formData.reservation_date,
+                    reservation_time: formData.reservation_time,
+                    party_size: formData.party_size,
+                    room_id: formData.room_id,
+                    customer_name: formData.customer_name,
+                    customer_email: formData.customer_email,
+                    customer_phone: formData.customer_phone,
+                    special_requests: formData.special_requests,
+                    payment_amount: formData.payment_amount,
+                };
+                console.log('[widget] snapshot.room_id:', snapshot.room_id);
 
                 try {
 
                 if (step === 1) {
-                    if (!formData.reservation_date) {
+                    if (!snapshot.reservation_date) {
                         setError(t.errors.selectDate);
                         return;
                     }
-                    const selectedDate = new Date(formData.reservation_date);
+                    const selectedDate = new Date(snapshot.reservation_date);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     if (selectedDate < today) {
@@ -684,18 +700,18 @@
                         return;
                     }
 
-                    if (!formData.party_size || formData.party_size < 1) {
+                    if (!snapshot.party_size || snapshot.party_size < 1) {
                         setError(t.errors.partySize);
                         return;
                     }
 
-                    if (formData.party_size > 10) {
+                    if (snapshot.party_size > 10) {
                         setError(t.errors.maxGuests);
                         return;
                     }
 
-                    // Check availability before proceeding
-                    const availability = await checkAvailability();
+                    // Check availability — pass the snapshot so we use the room_id the user sees right now
+                    const availability = await checkAvailability(snapshot);
                     if (!availability.available) {
                         setAvailabilityChecked(false);
                         setSelectedTables([]);
@@ -705,7 +721,7 @@
                         } else if (availability.reason === 'fully_booked') {
                             errorMessage = t.errors.fullyBooked;
                         } else if (availability.reason === 'capacity_exceeded') {
-                            errorMessage = `${t.errors.capacityExceeded} ${formData.party_size} ${t.errors.capacityExceeded2}`;
+                            errorMessage = `${t.errors.capacityExceeded} ${snapshot.party_size} ${t.errors.capacityExceeded2}`;
                         } else if (availability.reason === 'closed_today') {
                             errorMessage = t.errors.todayCutoff;
                         }

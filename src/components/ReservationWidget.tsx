@@ -232,7 +232,7 @@ export function ReservationWidget() {
 
     if (data) {
       setRooms(data);
-      if (data.length > 0) {
+      if (data.length > 0 && !formDataRef.current.room_id) {
         formDataRef.current = { ...formDataRef.current, room_id: data[0].id };
         setFormData(prev => ({ ...prev, room_id: data[0].id }));
       }
