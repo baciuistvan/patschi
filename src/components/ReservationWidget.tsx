@@ -269,9 +269,10 @@ export function ReservationWidget() {
     }
   }, [step, cardElement, stripe, formData.payment_amount]);
 
-  const checkAvailability = async () => {
+  const checkAvailability = async (overrideRoomId?: string) => {
     const fd = formDataRef.current;
-    console.log('[checkAvailability] room_id:', fd.room_id);
+    const roomId = overrideRoomId ?? fd.room_id;
+    console.log('[checkAvailability] room_id:', roomId, '(override:', overrideRoomId, ')');
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-availability`;
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -283,7 +284,7 @@ export function ReservationWidget() {
         reservation_date: fd.reservation_date,
         reservation_time: fd.reservation_time,
         party_size: fd.party_size,
-        room_id: fd.room_id,
+        room_id: roomId,
       }),
     });
 
@@ -378,8 +379,12 @@ export function ReservationWidget() {
           return;
         }
 
-        // Check availability before proceeding
-        const availability = await checkAvailability();
+        // Check availability before proceeding — pass room_id directly from current state
+        // to avoid the formDataRef stale-closure race condition when the user quickly
+        // clicks "Weiter" after changing the room dropdown.
+        const currentRoomId = formData.room_id;
+        formDataRef.current = { ...formDataRef.current, room_id: currentRoomId };
+        const availability = await checkAvailability(currentRoomId);
         if (!availability.available) {
           setAvailabilityChecked(false);
           setSelectedTables([]);
@@ -880,7 +885,11 @@ export function ReservationWidget() {
               </label>
               <select
                 value={formData.room_id}
-                onChange={(e) => setFormData(prev => ({ ...prev, room_id: e.target.value }))}
+                onChange={(e) => {
+                  const newRoomId = e.target.value;
+                  formDataRef.current = { ...formDataRef.current, room_id: newRoomId };
+                  setFormData(prev => ({ ...prev, room_id: newRoomId }));
+                }}
                 className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl text-base sm:text-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white"
               >
                 {rooms.map((room) => (
