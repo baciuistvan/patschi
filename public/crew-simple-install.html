@@ -3137,6 +3137,24 @@
           }
 
           bookingCodes.push(data.booking_code);
+
+          // Notify admins about new reservation (fire and forget)
+          fetch(`${SUPABASE_URL}/functions/v1/notify-admins-new-reservation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              reservation: {
+                id: data.reservation_id || data.id,
+                customer_name: baseData.customer_name,
+                party_size: baseData.party_size,
+                reservation_time: baseData.reservation_time,
+                reservation_date: date
+              }
+            })
+          }).catch(() => {});
         }
 
         // Hide loading and form sections
