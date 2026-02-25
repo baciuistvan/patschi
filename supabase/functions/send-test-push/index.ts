@@ -7,8 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// Manual base64url decode that avoids atob issues in Deno edge runtime
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
 function b64urlToBytes(s: string): Uint8Array {
   const str = s.trim().replace(/-/g, "+").replace(/_/g, "/");
   const bytes: number[] = [];
@@ -36,17 +36,10 @@ function bytesToB64url(b: Uint8Array): string {
   return out.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function concatBytes(...arrays: Uint8Array[]): Uint8Array {
-  const total = arrays.reduce((n, a) => n + a.length, 0);
-  const out = new Uint8Array(total);
-  let off = 0;
-  for (const a of arrays) { out.set(a, off); off += a.length; }
-  return out;
-}
-
 async function importECDSAKey(pubB64url: string, privB64url: string): Promise<CryptoKey> {
   const pub = b64urlToBytes(pubB64url);
   if (pub.length !== 65 || pub[0] !== 0x04) throw new Error(`Bad pubkey len=${pub.length}`);
+
   return crypto.subtle.importKey(
     "jwk",
     {
@@ -62,6 +55,7 @@ async function importECDSAKey(pubB64url: string, privB64url: string): Promise<Cr
   );
 }
 
+// Encrypt payload using Web Push (RFC 8291 / ece)
 async function encryptPayload(
   payload: string,
   p256dhB64url: string,
@@ -71,12 +65,23 @@ async function encryptPayload(
   const authSecret = b64urlToBytes(authB64url);
   const plaintext = new TextEncoder().encode(payload);
 
+  // Generate ephemeral key pair
   const ephemeral = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"]);
   const ephPubRaw = new Uint8Array(await crypto.subtle.exportKey("raw", ephemeral.publicKey));
+
+  // Import recipient public key
   const recipKey = await crypto.subtle.importKey("raw", recipientPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
+
+  // ECDH shared secret
   const sharedBits = await crypto.subtle.deriveBits({ name: "ECDH", public: recipKey }, ephemeral.privateKey, 256);
   const sharedSecret = new Uint8Array(sharedBits);
+
+  // Random salt
   const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // HKDF-SHA256 for auth
+  const authInput = new Uint8Array([...authSecret, ...sharedSecret]);
+  const prk = await crypto.subtle.importKey("raw", authInput, { name: "HKDF" }, false, ["deriveBits"]);
 
   const authInfo = new TextEncoder().encode("Content-Encoding: auth\0");
   const authBits = await crypto.subtle.deriveBits(
@@ -85,28 +90,44 @@ async function encryptPayload(
     256
   );
   const ikm = new Uint8Array(authBits);
+
+  // Key and nonce derivation
   const ikmKey = await crypto.subtle.importKey("raw", ikm, { name: "HKDF" }, false, ["deriveBits"]);
 
   const keyInfo = concatBytes(
     new TextEncoder().encode("Content-Encoding: aesgcm\0"),
-    new Uint8Array([0, 65]), recipientPub,
-    new Uint8Array([0, 65]), ephPubRaw
+    new Uint8Array([0, 65]),
+    recipientPub,
+    new Uint8Array([0, 65]),
+    ephPubRaw
   );
   const keyBits = await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: keyInfo }, ikmKey, 128);
   const encKey = await crypto.subtle.importKey("raw", keyBits, { name: "AES-GCM" }, false, ["encrypt"]);
 
   const nonceInfo = concatBytes(
     new TextEncoder().encode("Content-Encoding: nonce\0"),
-    new Uint8Array([0, 65]), recipientPub,
-    new Uint8Array([0, 65]), ephPubRaw
+    new Uint8Array([0, 65]),
+    recipientPub,
+    new Uint8Array([0, 65]),
+    ephPubRaw
   );
   const nonceBits = await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: nonceInfo }, ikmKey, 96);
   const nonce = new Uint8Array(nonceBits);
 
+  // Pad plaintext (2-byte padding length prefix)
   const padded = concatBytes(new Uint8Array(2), plaintext);
+
   const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, encKey, padded));
 
   return { ciphertext, salt, serverPublicKey: ephPubRaw };
+}
+
+function concatBytes(...arrays: Uint8Array[]): Uint8Array {
+  const total = arrays.reduce((n, a) => n + a.length, 0);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const a of arrays) { out.set(a, off); off += a.length; }
+  return out;
 }
 
 async function buildVapidJwt(origin: string, pubB64url: string, privB64url: string): Promise<string> {
@@ -141,46 +162,35 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { reservation } = await req.json();
-
-    if (!reservation) {
-      return new Response(
-        JSON.stringify({ error: "Missing reservation data" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { data: subscriptions, error: subError } = await supabase
+    const { data: subscriptions, error } = await supabase
       .from("admin_push_subscriptions")
       .select("*")
       .eq("is_active", true);
 
-    if (subError) throw new Error(`Failed to load subscriptions: ${subError.message}`);
+    if (error) throw new Error(error.message);
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, sent: 0, message: "No active subscriptions" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "No active push subscriptions found." }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const notificationPayload = JSON.stringify({
-      title: "Neue Reservierung",
-      body: `${reservation.customer_name} – ${reservation.party_size} Personen um ${reservation.reservation_time}`,
+    const payload = JSON.stringify({
+      title: "Test-Benachrichtigung",
+      body: "Push-Benachrichtigungen funktionieren korrekt!",
       icon: "/crew-icon-180.png",
       badge: "/crew-icon-180.png",
-      data: { reservationId: reservation.id, url: "/" },
     });
 
-    let sent = 0;
-    let failed = 0;
-    const staleEndpoints: string[] = [];
+    const results: { endpoint: string; status: string; httpStatus?: number }[] = [];
 
     for (const sub of subscriptions) {
       try {
         const { origin } = new URL(sub.endpoint);
         const jwt = await buildVapidJwt(origin, vapidPublicKey, vapidPrivateKey);
-        const { ciphertext, salt, serverPublicKey } = await encryptPayload(notificationPayload, sub.p256dh_key, sub.auth_key);
+
+        const { ciphertext, salt, serverPublicKey } = await encryptPayload(payload, sub.p256dh_key, sub.auth_key);
 
         const response = await fetch(sub.endpoint, {
           method: "POST",
@@ -195,35 +205,31 @@ Deno.serve(async (req: Request) => {
           body: ciphertext,
         });
 
-        if (response.ok || response.status === 201) {
-          sent++;
-        } else {
-          failed++;
-          if (response.status === 410 || response.status === 404) {
-            staleEndpoints.push(sub.endpoint);
-          }
+        const ok = response.ok || response.status === 201;
+        results.push({
+          endpoint: sub.endpoint.substring(0, 60) + "...",
+          status: ok ? "sent" : `failed: ${await response.text()}`,
+          httpStatus: response.status,
+        });
+
+        if (response.status === 410 || response.status === 404) {
+          await supabase.from("admin_push_subscriptions").update({ is_active: false }).eq("endpoint", sub.endpoint);
         }
-      } catch (err) {
-        failed++;
-        console.error("Push failed:", err);
+      } catch (subErr: any) {
+        results.push({ endpoint: sub.endpoint.substring(0, 60) + "...", status: "error: " + String(subErr), httpStatus: 0 });
       }
     }
 
-    if (staleEndpoints.length > 0) {
-      await supabase
-        .from("admin_push_subscriptions")
-        .update({ is_active: false })
-        .in("endpoint", staleEndpoints);
-    }
+    const sent = results.filter((r) => r.status === "sent").length;
+    const failed = results.filter((r) => r.status !== "sent").length;
 
     return new Response(
-      JSON.stringify({ success: true, sent, failed }),
+      JSON.stringify({ success: sent > 0, sent, failed, results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("notify-admins-new-reservation error:", error);
+  } catch (err) {
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
