@@ -21,7 +21,7 @@ Deno.serve(async (req: Request) => {
     const { data: settings } = await supabase
       .from("settings")
       .select("key, value")
-      .in("key", ["stripe_mode", "stripe_live_secret_key", "stripe_test_secret_key", "stripe_live_webhook_secret", "stripe_test_webhook_secret"]);
+      .in("key", ["stripe_mode", "stripe_live_secret_key", "stripe_test_secret_key", "stripe_live_webhook_secret", "stripe_test_webhook_secret", "stripe_webhook_secret"]);
 
     const settingsMap: Record<string, string> = {};
     settings?.forEach((s: { key: string; value: string }) => { settingsMap[s.key] = s.value; });
@@ -31,8 +31,8 @@ Deno.serve(async (req: Request) => {
       ? settingsMap["stripe_live_secret_key"]
       : settingsMap["stripe_test_secret_key"];
     const webhookSecret = stripeMode === "live"
-      ? settingsMap["stripe_live_webhook_secret"]
-      : settingsMap["stripe_test_webhook_secret"];
+      ? (settingsMap["stripe_live_webhook_secret"] || settingsMap["stripe_webhook_secret"])
+      : (settingsMap["stripe_test_webhook_secret"] || settingsMap["stripe_webhook_secret"]);
 
     if (!stripeKey || !webhookSecret) {
       throw new Error("Stripe configuration incomplete");
