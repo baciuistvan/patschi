@@ -30,6 +30,7 @@
       width: 100%;
       position: fixed;
       overflow: hidden;
+      background: #0f172a;
     }
 
     body {
@@ -39,20 +40,19 @@
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       height: 100vh;
-      height: -webkit-fill-available;
+      height: 100dvh;
       width: 100%;
       position: fixed;
       overflow: hidden;
+      background: #0f172a;
     }
 
-    /* Safe area support for iOS/iPad - include top and bottom for notch */
-    @supports (padding: max(0px)) {
-      body {
-        padding-left: max(0px, env(safe-area-inset-left));
-        padding-right: max(0px, env(safe-area-inset-right));
-        padding-top: max(0px, env(safe-area-inset-top));
-        padding-bottom: max(0px, env(safe-area-inset-bottom));
-      }
+    #app {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     /* Prevent zoom on input focus for iOS */
@@ -81,21 +81,33 @@
     .loading { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Nav safe area */
+    .nav-safe {
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-left: max(8px, env(safe-area-inset-left));
+      padding-right: max(8px, env(safe-area-inset-right));
+    }
+
     /* Responsive layout improvements */
     .main-container {
-      height: calc(var(--vh, 1vh) * 100 - 70px);
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Bottom safe area padding for scrollable list */
+    .safe-bottom {
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
     }
 
     @media (max-width: 767px) {
       .main-container {
-        height: calc(var(--vh, 1vh) * 100 - 60px);
         flex-direction: column-reverse;
         overflow: hidden;
       }
 
       .sidebar-mobile {
-        height: calc(var(--vh, 1vh) * 100 - 60px);
-        max-height: none;
+        flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
         display: flex;
@@ -118,8 +130,9 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         flex: 1 1 auto;
-        min-height: 200px;
+        min-height: 0;
         max-height: 100%;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
         scrollbar-width: thin;
         scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
       }
@@ -409,13 +422,14 @@
 
       /* Modal improvements for mobile */
       .modal-content {
-        max-height: calc(var(--vh, 1vh) * 90);
+        max-height: 90dvh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         margin: 0;
         width: 100%;
         max-width: 100vw;
         border-radius: 1rem 1rem 0 0;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
       }
 
       /* Ensure modals are properly centered and scrollable */
@@ -485,7 +499,8 @@
     /* Landscape orientation on mobile */
     @media (max-width: 767px) and (orientation: landscape) {
       .sidebar-mobile {
-        height: calc(var(--vh, 1vh) * 100 - 60px);
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
       .sidebar-mobile > div:last-child {
@@ -494,9 +509,9 @@
       }
 
       .main-container {
-        height: calc(var(--vh, 1vh) * 100 - 60px);
+        flex: 1 1 auto;
+        min-height: 0;
       }
-
     }
 
     /* iPad portrait - use regular mobile calendar view */
@@ -1086,9 +1101,9 @@
       window.timelineBookingCounts = await getTimelineBookingCounts();
 
       return `
-        <div class="min-h-screen bg-slate-900">
-          <nav class="bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 border-b border-slate-700 shadow-lg">
-            <div class="max-w-full px-2 sm:px-4 py-3">
+        <div class="bg-slate-900 flex flex-col" style="height:100%;height:100dvh;">
+          <nav class="bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 border-b border-slate-700 shadow-lg flex-shrink-0">
+            <div class="max-w-full px-2 sm:px-4 pb-3 nav-safe">
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
                 <div class="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                   <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
@@ -1136,7 +1151,7 @@
             </div>
           </nav>
 
-          <div class="flex flex-col md:flex-row main-container w-full overflow-hidden" style="height: calc(100vh - 76px);">
+          <div class="flex flex-col md:flex-row main-container w-full overflow-hidden">
             <!-- Floor Plan -->
             <div class="hidden md:block flex-1 p-2 sm:p-4 overflow-auto floor-plan-container floor-plan-mobile min-w-0 order-2 md:order-1">
               <div class="floor-plan-inner">
@@ -3182,24 +3197,6 @@
         lastTouchEnd = now;
       }, false);
 
-      // Fix iOS viewport height issue
-      function setViewportHeight() {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-      }
-      setViewportHeight();
-
-      // Update on resize with debounce
-      let resizeTimer;
-      window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(setViewportHeight, 100);
-      });
-
-      window.addEventListener('orientationchange', function() {
-        setTimeout(setViewportHeight, 200);
-      });
-
       // Prevent iOS keyboard from pushing content
       const viewport = document.querySelector('meta[name="viewport"]');
       const originalContent = viewport.getAttribute('content');
@@ -3212,7 +3209,6 @@
 
       window.addEventListener('focusout', function() {
         viewport.setAttribute('content', originalContent);
-        setTimeout(setViewportHeight, 100);
       });
 
       // Register service worker for offline support and better installability
