@@ -58,30 +58,6 @@ Deno.serve(async (req: Request) => {
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-    const { data: giftCard, error: dbError } = await supabase
-      .from("gift_cards")
-      .insert({
-        code,
-        barcode,
-        original_amount: amount,
-        current_balance: amount,
-        recipient_name: recipientName || null,
-        recipient_email: recipientEmail || null,
-        purchaser_name: buyerName,
-        purchaser_email: buyerEmail,
-        message: message || null,
-        status: "pending",
-        payment_status: "pending",
-        purchase_date: new Date().toISOString(),
-        expiry_date: expiryDate.toISOString(),
-      })
-      .select()
-      .single();
-
-    if (dbError || !giftCard) {
-      throw new Error(`Gutschein konnte nicht erstellt werden: ${dbError?.message}`);
-    }
-
     const origin = req.headers.get("origin")
       || req.headers.get("referer")?.split("/").slice(0, 3).join("/")
       || supabaseUrl;
@@ -103,12 +79,15 @@ Deno.serve(async (req: Request) => {
       "cancel_url": cancelUrl,
       "customer_email": buyerEmail,
       "metadata[type]": "gift_card",
-      "metadata[gift_card_id]": giftCard.id,
       "metadata[gift_card_code]": code,
+      "metadata[gift_card_barcode]": barcode,
+      "metadata[gift_card_expiry]": expiryDate.toISOString(),
+      "metadata[gift_card_amount]": amount.toString(),
       "metadata[buyer_name]": buyerName,
       "metadata[buyer_email]": buyerEmail,
       "metadata[recipient_name]": recipientName || "",
       "metadata[recipient_email]": recipientEmail || "",
+      "metadata[message]": message || "",
     });
 
     const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -122,23 +101,13 @@ Deno.serve(async (req: Request) => {
 
     if (!stripeResponse.ok) {
       const stripeError = await stripeResponse.json();
-      await supabase.from("gift_cards").delete().eq("id", giftCard.id);
       throw new Error(`Stripe Fehler: ${stripeError.error?.message || "Unbekannter Fehler"}`);
     }
 
     const session = await stripeResponse.json();
 
-    const { error: updateError } = await supabase
-      .from("gift_cards")
-      .update({ stripe_session_id: session.id })
-      .eq("id", giftCard.id);
-
-    if (updateError) {
-      console.error("Failed to store stripe_session_id:", updateError);
-    }
-
     return new Response(
-      JSON.stringify({ success: true, checkoutUrl: session.url, giftCardId: giftCard.id }),
+      JSON.stringify({ success: true, checkoutUrl: session.url }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

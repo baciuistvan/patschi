@@ -53,27 +53,44 @@ Deno.serve(async (req: Request) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      if (session.metadata?.type === "gift_card" && session.metadata?.gift_card_id) {
-        const giftCardId = session.metadata.gift_card_id;
+      if (session.metadata?.type === "gift_card") {
+        const meta = session.metadata;
+        const code = meta.gift_card_code;
+        const barcode = meta.gift_card_barcode;
+        const amount = parseFloat(meta.gift_card_amount);
+        const expiryDate = meta.gift_card_expiry;
 
-        console.log("Processing gift card payment for:", giftCardId);
+        console.log("Processing gift card payment, code:", code);
 
-        const { error: updateError } = await supabase
+        const { data: giftCard, error: insertError } = await supabase
           .from("gift_cards")
-          .update({
+          .insert({
+            code,
+            barcode,
+            original_amount: amount,
+            current_balance: amount,
+            recipient_name: meta.recipient_name || null,
+            recipient_email: meta.recipient_email || null,
+            purchaser_name: meta.buyer_name,
+            purchaser_email: meta.buyer_email,
+            message: meta.message || null,
             status: "active",
             payment_status: "paid",
+            stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent as string,
+            purchase_date: new Date().toISOString(),
+            expiry_date: expiryDate,
           })
-          .eq("id", giftCardId)
-          .eq("status", "pending");
+          .select()
+          .single();
 
-        if (updateError) {
-          console.error("Failed to activate gift card:", updateError);
-          throw updateError;
+        if (insertError || !giftCard) {
+          console.error("Failed to create gift card:", insertError);
+          throw insertError;
         }
 
-        console.log("Gift card activated:", giftCardId);
+        const giftCardId = giftCard.id;
+        console.log("Gift card created and activated:", giftCardId);
 
         try {
           const pdfResponse = await fetch(`${supabaseUrl}/functions/v1/generate-gift-card-pdf`, {
@@ -117,17 +134,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (event.type === "checkout.session.expired") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      if (session.metadata?.type === "gift_card" && session.metadata?.gift_card_id) {
-        await supabase
-          .from("gift_cards")
-          .update({ status: "cancelled", payment_status: "failed" })
-          .eq("id", session.metadata.gift_card_id)
-          .eq("status", "pending");
-        console.log("Cancelled expired pending gift card:", session.metadata.gift_card_id);
-      }
-    }
 
     return new Response(
       JSON.stringify({ received: true }),
