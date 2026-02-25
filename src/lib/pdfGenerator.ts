@@ -110,22 +110,27 @@ export async function generateGiftCardPDF(giftCard: GiftCard): Promise<Blob> {
   pdf.setTextColor(0, 0, 0);
   pdf.text(`€ ${parseFloat(String(giftCard.current_balance)).toFixed(2)}`, pageWidth / 2, 130, { align: 'center' });
 
-  pdf.setFillColor(248, 249, 250);
-  pdf.roundedRect(20, 145, cardWidth - 40, 22, 3, 3, 'F');
+  let currentSectionY = 145;
 
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(102, 102, 102);
-  pdf.text('GESCHENK FÜR:', pageWidth / 2, 153, { align: 'center' });
+  if (giftCard.recipient_name) {
+    pdf.setFillColor(248, 249, 250);
+    pdf.roundedRect(20, currentSectionY, cardWidth - 40, 22, 3, 3, 'F');
 
-  pdf.setFontSize(18);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(220, 38, 38);
-  pdf.text(giftCard.recipient_name, pageWidth / 2, 162, { align: 'center' });
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(102, 102, 102);
+    pdf.text('GESCHENK FÜR:', pageWidth / 2, currentSectionY + 8, { align: 'center' });
+
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(220, 38, 38);
+    pdf.text(giftCard.recipient_name, pageWidth / 2, currentSectionY + 17, { align: 'center' });
+    currentSectionY += 30;
+  }
 
   if (giftCard.message) {
     pdf.setFillColor(240, 247, 241);
-    const messageY = 175;
+    const messageY = currentSectionY;
     const messageHeight = 20;
     pdf.roundedRect(20, messageY, cardWidth - 40, messageHeight, 2, 2, 'F');
 
@@ -138,11 +143,12 @@ export async function generateGiftCardPDF(giftCard: GiftCard): Promise<Blob> {
     pdf.setTextColor(85, 85, 85);
     const messageLines = pdf.splitTextToSize(`"${giftCard.message}"`, cardWidth - 50);
     pdf.text(messageLines, pageWidth / 2, messageY + 6, { align: 'center', maxWidth: cardWidth - 50 });
+    currentSectionY += messageHeight + 5;
   }
 
   pdf.setDrawColor(0, 0, 0);
   pdf.setLineWidth(0.5);
-  const dividerY = giftCard.message ? 200 : 175;
+  const dividerY = currentSectionY;
   pdf.line(75, dividerY, 135, dividerY);
 
   // GT CODE section

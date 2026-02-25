@@ -170,24 +170,44 @@ export function CreateGiftCard() {
 
     setDownloadingPdf(true);
     try {
-      // Get the gift card to retrieve the PDF URL
-      const { data: giftCard, error } = await supabase
+      const { data: giftCard } = await supabase
         .from('gift_cards')
-        .select('pdf_url')
+        .select('pdf_url, current_balance, recipient_name, purchaser_name, message, expiry_date')
         .eq('id', createdGiftCardId)
-        .single();
+        .maybeSingle();
 
-      if (error || !giftCard?.pdf_url) {
-        throw new Error('PDF nicht gefunden');
+      let blob: Blob;
+
+      if (giftCard?.pdf_url) {
+        const response = await fetch(giftCard.pdf_url);
+        if (response.ok) {
+          blob = await response.blob();
+        } else {
+          blob = await generateGiftCardPDF({
+            code: createdCode,
+            current_balance: giftCard.current_balance,
+            recipient_name: giftCard.recipient_name || '',
+            purchaser_name: giftCard.purchaser_name || '',
+            message: giftCard.message || '',
+            expiry_date: giftCard.expiry_date,
+            showPurchaser: false,
+          });
+        }
+      } else {
+        const finalAmount = isCustomAmount ? parseFloat(formData.customAmount) : formData.amount;
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+        blob = await generateGiftCardPDF({
+          code: createdCode,
+          current_balance: finalAmount,
+          recipient_name: formData.recipientName || '',
+          purchaser_name: adminUser?.full_name || 'Admin',
+          message: formData.message || '',
+          expiry_date: expiryDate.toISOString(),
+          showPurchaser: false,
+        });
       }
 
-      // Download the PDF from storage
-      const response = await fetch(giftCard.pdf_url);
-      if (!response.ok) {
-        throw new Error('PDF konnte nicht heruntergeladen werden');
-      }
-
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
