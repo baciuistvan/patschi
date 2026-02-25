@@ -988,6 +988,7 @@
           await fetchRooms();
           await fetchTables();
           await fetchReservations();
+          if (window._startAutoRefresh) window._startAutoRefresh();
         }
       } catch (err) {
         state.error = err.message;
@@ -999,6 +1000,7 @@
 
     // Logout function
     async function logout() {
+      if (window.stopAutoRefresh) window.stopAutoRefresh();
       state.user = null;
       state.view = 'login';
       localStorage.removeItem('crew_user');
@@ -3243,6 +3245,123 @@
       document.addEventListener('DOMContentLoaded', setupIOSWebApp);
     } else {
       setupIOSWebApp();
+    }
+
+    // Auto-refresh: Realtime subscription + polling fallback
+    let realtimeChannel = null;
+    let pollingInterval = null;
+    let isRefreshing = false;
+
+    async function silentRefresh() {
+      if (isRefreshing || state.view !== 'dashboard') return;
+      isRefreshing = true;
+      try {
+        const prevCount = state.reservations.length;
+        await fetchReservations();
+        if (state.reservations.length !== prevCount) {
+          await render();
+          showRefreshToast();
+        } else {
+          await render();
+        }
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    function showRefreshToast() {
+      const existing = document.getElementById('refresh-toast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.id = 'refresh-toast';
+      toast.style.cssText = `
+        position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+        background: #1e293b; color: #e2e8f0; padding: 8px 18px;
+        border-radius: 999px; font-size: 13px; font-weight: 500;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 9999;
+        pointer-events: none; transition: opacity 0.4s;
+      `;
+      toast.textContent = 'Aktualisiert';
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+      setTimeout(() => toast.remove(), 2200);
+    }
+
+    function setupRealtimeSubscription() {
+      if (realtimeChannel) return;
+      try {
+        const ws = new WebSocket(
+          `wss://${SUPABASE_URL.replace('https://', '')}/realtime/v1/websocket?apikey=${SUPABASE_ANON_KEY}&vsn=1.0.0`
+        );
+        let joined = false;
+
+        ws.onopen = () => {
+          ws.send(JSON.stringify({
+            topic: 'realtime:public:reservations',
+            event: 'phx_join',
+            payload: { config: { broadcast: { self: false }, presence: { key: '' } } },
+            ref: '1'
+          }));
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.event === 'phx_reply' && msg.payload?.status === 'ok') joined = true;
+            if (joined && (msg.event === 'INSERT' || msg.event === 'UPDATE' || msg.event === 'DELETE')) {
+              silentRefresh();
+            }
+          } catch {}
+        };
+
+        ws.onerror = () => {};
+        ws.onclose = () => {
+          realtimeChannel = null;
+          setTimeout(() => { if (state.view === 'dashboard') setupRealtimeSubscription(); }, 5000);
+        };
+
+        realtimeChannel = ws;
+
+        ws.addEventListener('open', () => {
+          setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: null }));
+            }
+          }, 25000);
+        });
+      } catch (err) {
+        console.warn('Realtime not available, using polling only');
+      }
+    }
+
+    function startPolling() {
+      if (pollingInterval) return;
+      pollingInterval = setInterval(silentRefresh, 30000);
+    }
+
+    function stopAutoRefresh() {
+      if (realtimeChannel) { realtimeChannel.close(); realtimeChannel = null; }
+      if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+    }
+    window.stopAutoRefresh = stopAutoRefresh;
+
+    window._startAutoRefresh = function() {
+      setupRealtimeSubscription();
+      startPolling();
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && state.view === 'dashboard') {
+        silentRefresh();
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if (state.view === 'dashboard') silentRefresh();
+    });
+
+    if (state.view === 'dashboard') {
+      window._startAutoRefresh();
     }
   </script>
 </body>
