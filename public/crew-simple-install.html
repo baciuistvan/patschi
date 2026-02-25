@@ -3138,7 +3138,6 @@
 
           bookingCodes.push(data.booking_code);
 
-          // Notify admins about new reservation (fire and forget)
           fetch(`${SUPABASE_URL}/functions/v1/notify-admins-new-reservation`, {
             method: 'POST',
             headers: {
@@ -3147,14 +3146,14 @@
             },
             body: JSON.stringify({
               reservation: {
-                id: data.reservation_id || data.id,
+                id: (data.reservation && data.reservation.id) || data.reservation_id || data.id,
                 customer_name: baseData.customer_name,
                 party_size: baseData.party_size,
                 reservation_time: baseData.reservation_time,
                 reservation_date: date
               }
             })
-          }).catch(() => {});
+          }).catch(err => console.error('Notify admins failed:', err));
         }
 
         // Hide loading and form sections

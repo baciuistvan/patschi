@@ -391,6 +391,28 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Notify admins via push notification
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reservation: {
+            id: reservation.id,
+            customer_name,
+            party_size,
+            reservation_time,
+            reservation_date,
+          }
+        }),
+      });
+    } catch (notifyError) {
+      console.error('Error sending push notification:', notifyError);
+    }
+
     // Send confirmation email
     try {
       const emailApiUrl = `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`;
