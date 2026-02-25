@@ -218,7 +218,6 @@ Deno.serve(async (req: Request) => {
         };
         if (isApple) {
           pushHeaders["apns-push-type"] = "alert";
-          pushHeaders["apns-topic"] = `${vapidPublicKey}.push.web`;
           pushHeaders["apns-priority"] = "10";
         }
         const response = await fetch(sub.endpoint, {
