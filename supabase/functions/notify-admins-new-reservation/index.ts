@@ -44,6 +44,14 @@ function concatBytes(...arrays: Uint8Array[]): Uint8Array {
   return out;
 }
 
+function writeUint16BE(n: number): Uint8Array {
+  return new Uint8Array([(n >> 8) & 0xff, n & 0xff]);
+}
+
+function writeUint32BE(n: number): Uint8Array {
+  return new Uint8Array([(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]);
+}
+
 async function importECDSAKey(pubB64url: string, privB64url: string): Promise<CryptoKey> {
   const pub = b64urlToBytes(pubB64url);
   if (pub.length !== 65 || pub[0] !== 0x04) throw new Error(`Bad pubkey len=${pub.length}`);
@@ -62,51 +70,70 @@ async function importECDSAKey(pubB64url: string, privB64url: string): Promise<Cr
   );
 }
 
-async function encryptPayload(
+async function hkdf(
+  ikm: Uint8Array,
+  salt: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  const ikmKey = await crypto.subtle.importKey("raw", ikm, { name: "HKDF" }, false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt, info },
+    ikmKey,
+    length * 8
+  );
+  return new Uint8Array(bits);
+}
+
+async function encryptPayloadAes128gcm(
   payload: string,
   p256dhB64url: string,
   authB64url: string
-): Promise<{ ciphertext: Uint8Array; salt: Uint8Array; serverPublicKey: Uint8Array }> {
+): Promise<Uint8Array> {
   const recipientPub = b64urlToBytes(p256dhB64url);
   const authSecret = b64urlToBytes(authB64url);
   const plaintext = new TextEncoder().encode(payload);
 
-  const ephemeral = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"]);
+  const ephemeral = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const ephPubRaw = new Uint8Array(await crypto.subtle.exportKey("raw", ephemeral.publicKey));
   const recipKey = await crypto.subtle.importKey("raw", recipientPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
-  const sharedBits = await crypto.subtle.deriveBits({ name: "ECDH", public: recipKey }, ephemeral.privateKey, 256);
-  const sharedSecret = new Uint8Array(sharedBits);
+  const ecdhBits = await crypto.subtle.deriveBits({ name: "ECDH", public: recipKey }, ephemeral.privateKey, 256);
+  const ecdhSecret = new Uint8Array(ecdhBits);
+
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
-  const authInfo = new TextEncoder().encode("Content-Encoding: auth\0");
-  const authBits = await crypto.subtle.deriveBits(
-    { name: "HKDF", hash: "SHA-256", salt: authSecret, info: authInfo },
-    await crypto.subtle.importKey("raw", sharedSecret, { name: "HKDF" }, false, ["deriveBits"]),
-    256
+  // RFC 8291 key derivation
+  const prk = await hkdf(
+    ecdhSecret,
+    authSecret,
+    concatBytes(
+      new TextEncoder().encode("WebPush: info\0"),
+      recipientPub,
+      ephPubRaw
+    ),
+    32
   );
-  const ikm = new Uint8Array(authBits);
-  const ikmKey = await crypto.subtle.importKey("raw", ikm, { name: "HKDF" }, false, ["deriveBits"]);
 
-  const keyInfo = concatBytes(
-    new TextEncoder().encode("Content-Encoding: aesgcm\0"),
-    new Uint8Array([0, 65]), recipientPub,
-    new Uint8Array([0, 65]), ephPubRaw
-  );
-  const keyBits = await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: keyInfo }, ikmKey, 128);
-  const encKey = await crypto.subtle.importKey("raw", keyBits, { name: "AES-GCM" }, false, ["encrypt"]);
+  const cek = await hkdf(prk, salt, new TextEncoder().encode("Content-Encoding: aes128gcm\0"), 16);
+  const nonce = await hkdf(prk, salt, new TextEncoder().encode("Content-Encoding: nonce\0"), 12);
 
-  const nonceInfo = concatBytes(
-    new TextEncoder().encode("Content-Encoding: nonce\0"),
-    new Uint8Array([0, 65]), recipientPub,
-    new Uint8Array([0, 65]), ephPubRaw
-  );
-  const nonceBits = await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: nonceInfo }, ikmKey, 96);
-  const nonce = new Uint8Array(nonceBits);
+  const encKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]);
 
-  const padded = concatBytes(new Uint8Array(2), plaintext);
+  // Pad with a single \x02 delimiter byte (RFC 8291 section 4)
+  const padded = concatBytes(plaintext, new Uint8Array([2]));
   const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, encKey, padded));
 
-  return { ciphertext, salt, serverPublicKey: ephPubRaw };
+  // Build RFC 8188 content-encoding header:
+  // salt (16) + rs (4, uint32be) + idlen (1) + keyid (65 bytes = uncompressed ephemeral pub)
+  const rs = 4096;
+  const header = concatBytes(
+    salt,
+    writeUint32BE(rs),
+    new Uint8Array([ephPubRaw.length]),
+    ephPubRaw
+  );
+
+  return concatBytes(header, ciphertext);
 }
 
 async function buildVapidJwt(origin: string, pubB64url: string, privB64url: string): Promise<string> {
@@ -180,25 +207,25 @@ Deno.serve(async (req: Request) => {
       try {
         const { origin } = new URL(sub.endpoint);
         const jwt = await buildVapidJwt(origin, vapidPublicKey, vapidPrivateKey);
-        const { ciphertext, salt, serverPublicKey } = await encryptPayload(notificationPayload, sub.p256dh_key, sub.auth_key);
+        const body = await encryptPayloadAes128gcm(notificationPayload, sub.p256dh_key, sub.auth_key);
 
         const response = await fetch(sub.endpoint, {
           method: "POST",
           headers: {
             Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`,
             "Content-Type": "application/octet-stream",
-            "Content-Encoding": "aesgcm",
-            Encryption: `salt=${bytesToB64url(salt)}`,
-            "Crypto-Key": `dh=${bytesToB64url(serverPublicKey)};p256ecdsa=${vapidPublicKey}`,
+            "Content-Encoding": "aes128gcm",
             TTL: "86400",
           },
-          body: ciphertext,
+          body,
         });
 
         if (response.ok || response.status === 201) {
           sent++;
         } else {
           failed++;
+          const responseText = await response.text().catch(() => "");
+          console.error(`Push failed: status=${response.status} body=${responseText}`);
           if (response.status === 410 || response.status === 404) {
             staleEndpoints.push(sub.endpoint);
           }
@@ -223,7 +250,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error("notify-admins-new-reservation error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: (error as Error).message || "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
