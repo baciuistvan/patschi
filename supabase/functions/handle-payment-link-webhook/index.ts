@@ -229,6 +229,20 @@ Deno.serve(async (req: Request) => {
 
         console.log("Reservation updated successfully:", reservation.id);
 
+        // Notify admins via push notification
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({ reservation }),
+          });
+        } catch (notifyError) {
+          console.error("[WEBHOOK] Error sending push notification:", notifyError);
+        }
+
         // Send payment confirmation email
         try {
           const emailUrl = `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`;
