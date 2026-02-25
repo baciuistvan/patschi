@@ -10,10 +10,7 @@ const corsHeaders = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -21,31 +18,27 @@ Deno.serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get Stripe settings
     const { data: settings } = await supabase
       .from("settings")
-      .select("stripe_live_secret_key, stripe_test_secret_key, stripe_live_webhook_secret, stripe_test_webhook_secret, stripe_mode")
-      .single();
+      .select("key, value")
+      .in("key", ["stripe_mode", "stripe_live_secret_key", "stripe_test_secret_key", "stripe_live_webhook_secret", "stripe_test_webhook_secret"]);
 
-    if (!settings) {
-      throw new Error("Stripe settings not configured");
-    }
+    const settingsMap: Record<string, string> = {};
+    settings?.forEach((s: { key: string; value: string }) => { settingsMap[s.key] = s.value; });
 
-    const stripeKey = settings.stripe_mode === "test"
-      ? settings.stripe_test_secret_key
-      : settings.stripe_live_secret_key;
-
-    const webhookSecret = settings.stripe_mode === "test"
-      ? settings.stripe_test_webhook_secret
-      : settings.stripe_live_webhook_secret;
+    const stripeMode = settingsMap["stripe_mode"] || "test";
+    const stripeKey = stripeMode === "live"
+      ? settingsMap["stripe_live_secret_key"]
+      : settingsMap["stripe_test_secret_key"];
+    const webhookSecret = stripeMode === "live"
+      ? settingsMap["stripe_live_webhook_secret"]
+      : settingsMap["stripe_test_webhook_secret"];
 
     if (!stripeKey || !webhookSecret) {
       throw new Error("Stripe configuration incomplete");
     }
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2024-11-20.acacia",
-    });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
 
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
@@ -57,59 +50,94 @@ Deno.serve(async (req: Request) => {
 
     console.log("Gift card webhook event:", event.type);
 
-    // Handle checkout.session.completed for gift cards
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Check if this is a gift card purchase
       if (session.metadata?.type === "gift_card" && session.metadata?.gift_card_id) {
         const giftCardId = session.metadata.gift_card_id;
 
         console.log("Processing gift card payment for:", giftCardId);
 
-        // Update gift card status to active
         const { error: updateError } = await supabase
           .from("gift_cards")
           .update({
             status: "active",
+            payment_status: "paid",
             stripe_payment_intent_id: session.payment_intent as string,
           })
-          .eq("id", giftCardId);
+          .eq("id", giftCardId)
+          .eq("status", "pending");
 
         if (updateError) {
-          console.error("Failed to update gift card:", updateError);
+          console.error("Failed to activate gift card:", updateError);
           throw updateError;
         }
 
-        console.log("Gift card activated successfully");
+        console.log("Gift card activated:", giftCardId);
 
-        // Trigger PDF generation and email sending
-        // This will be handled by the frontend after redirect
+        try {
+          const pdfResponse = await fetch(`${supabaseUrl}/functions/v1/generate-gift-card-pdf`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ giftCardId }),
+          });
+
+          if (!pdfResponse.ok) {
+            const pdfError = await pdfResponse.text();
+            console.error("PDF generation failed:", pdfError);
+          } else {
+            console.log("PDF generated successfully");
+          }
+        } catch (pdfErr) {
+          console.error("Error generating PDF:", pdfErr);
+        }
+
+        try {
+          const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-gift-card-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ giftCardId }),
+          });
+
+          if (!emailResponse.ok) {
+            const emailError = await emailResponse.text();
+            console.error("Email sending failed:", emailError);
+          } else {
+            console.log("Gift card email sent successfully");
+          }
+        } catch (emailErr) {
+          console.error("Error sending email:", emailErr);
+        }
+      }
+    }
+
+    if (event.type === "checkout.session.expired") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.type === "gift_card" && session.metadata?.gift_card_id) {
+        await supabase
+          .from("gift_cards")
+          .update({ status: "cancelled", payment_status: "failed" })
+          .eq("id", session.metadata.gift_card_id)
+          .eq("status", "pending");
+        console.log("Cancelled expired pending gift card:", session.metadata.gift_card_id);
       }
     }
 
     return new Response(
       JSON.stringify({ received: true }),
-      {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Webhook error:", error);
     return new Response(
-      JSON.stringify({
-        error: error.message || "Webhook processing failed",
-      }),
-      {
-        status: 400,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      JSON.stringify({ error: error.message || "Webhook processing failed" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
