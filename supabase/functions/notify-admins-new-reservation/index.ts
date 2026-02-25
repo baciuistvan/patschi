@@ -209,14 +209,21 @@ Deno.serve(async (req: Request) => {
         const jwt = await buildVapidJwt(origin, vapidPublicKey, vapidPrivateKey);
         const body = await encryptPayloadAes128gcm(notificationPayload, sub.p256dh_key, sub.auth_key);
 
+        const isApple = sub.endpoint.includes("web.push.apple.com");
+        const pushHeaders: Record<string, string> = {
+          Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`,
+          "Content-Type": "application/octet-stream",
+          "Content-Encoding": "aes128gcm",
+          TTL: "86400",
+        };
+        if (isApple) {
+          pushHeaders["apns-push-type"] = "alert";
+          pushHeaders["apns-topic"] = `${vapidPublicKey}.push.web`;
+          pushHeaders["apns-priority"] = "10";
+        }
         const response = await fetch(sub.endpoint, {
           method: "POST",
-          headers: {
-            Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`,
-            "Content-Type": "application/octet-stream",
-            "Content-Encoding": "aes128gcm",
-            TTL: "86400",
-          },
+          headers: pushHeaders,
           body,
         });
 
