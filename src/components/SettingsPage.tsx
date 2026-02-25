@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, Palette, Gift, Upload, Mail, Bell, CreditCard } from 'lucide-react';
 import { GiftCardEmailSettings } from './GiftCardEmailSettings';
 import { GiftCardStripeSettings } from './GiftCardStripeSettings';
@@ -13,6 +13,19 @@ type SettingsSection = 'templates' | 'stripe' | 'widget' | 'hosting' | 'smtp' | 
 export function SettingsPage() {
   const [expandedSection, setExpandedSection] = useState<SettingsSection>(null);
   const [hasHostingConfig, setHasHostingConfig] = useState(false);
+  const [stripeMode, setStripeMode] = useState<'test' | 'live' | null>(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toggle-stripe-mode`, {
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.mode) setStripeMode(data.mode); })
+      .catch(() => {});
+  }, [expandedSection]);
 
   const toggleSection = (section: SettingsSection) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -63,7 +76,18 @@ export function SettingsPage() {
                 <CreditCard className="w-5 h-5 text-amber-600" />
               </div>
               <div className="text-left">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Stripe Test / Live Modus</h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Stripe Test / Live Modus</h3>
+                  {stripeMode && (
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                      stripeMode === 'test'
+                        ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                        : 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300'
+                    }`}>
+                      {stripeMode === 'test' ? 'Test' : 'Live'}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-slate-600 dark:text-slate-400">Zwischen Test- und Live-Zahlungen umschalten</p>
               </div>
             </div>
