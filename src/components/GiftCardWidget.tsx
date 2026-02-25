@@ -75,30 +75,38 @@ export function GiftCardWidget() {
         setProcessingPayment(true);
 
         try {
-          const { data: giftCard, error: fetchError } = await supabase
-            .from('gift_cards')
-            .select('*')
-            .eq('stripe_session_id', sessionId)
-            .maybeSingle();
+          const successResponse = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gift-card-success`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({ sessionId }),
+            }
+          );
 
-          if (fetchError || !giftCard) {
-            console.error('Gift card not found:', fetchError);
+          const successResult = await successResponse.json();
+
+          if (!successResponse.ok || !successResult.success) {
+            console.error('Gift card processing failed:', successResult);
             setSuccess(true);
             window.history.replaceState({}, '', window.location.pathname);
             return;
           }
 
+          const giftCard = successResult.giftCard;
+
           if (!giftCard.pdf_url) {
-            console.log('Generating PDF for gift card:', giftCard.code);
             const pdfBlob = await generateGiftCardPDF({
               ...giftCard,
               showPurchaser: true
             });
 
-            console.log('Uploading PDF to hosting server...');
-            const formData = new FormData();
-            formData.append('giftCardId', giftCard.id);
-            formData.append('pdf', pdfBlob, `gift-card-${giftCard.code}.pdf`);
+            const pdfFormData = new FormData();
+            pdfFormData.append('giftCardId', giftCard.id);
+            pdfFormData.append('pdf', pdfBlob, `gift-card-${giftCard.code}.pdf`);
 
             const uploadResponse = await fetch(
               `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-gift-card-pdf`,
@@ -107,51 +115,13 @@ export function GiftCardWidget() {
                 headers: {
                   'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
                 },
-                body: formData,
+                body: pdfFormData,
               }
             );
 
             if (!uploadResponse.ok) {
-              const uploadError = await uploadResponse.json();
-              console.error('Failed to upload PDF:', uploadError);
-              throw new Error(uploadError.error || 'Failed to upload PDF');
+              console.error('Failed to upload PDF:', await uploadResponse.json());
             }
-
-            const uploadResult = await uploadResponse.json();
-            console.log('PDF uploaded to hosting:', uploadResult.pdf_url);
-
-            console.log('Sending gift card email...');
-            console.log('Gift card has recipient email:', giftCard.recipient_email);
-
-            if (!giftCard.recipient_email) {
-              console.warn('No recipient email provided - skipping email send');
-              console.log('Buyer will need to download gift card manually or provide recipient email');
-              setSuccess(true);
-              return;
-            }
-
-            const emailResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-gift-card-email`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-              },
-              body: JSON.stringify({ giftCardId: giftCard.id })
-            });
-
-            const emailResult = await emailResponse.json().catch(() => ({}));
-
-            if (!emailResponse.ok) {
-              console.error('Failed to send email:', emailResult);
-              console.error('Full error details:', emailResult);
-              alert('⚠️ Payment successful! Gift card created but email could not be sent.\n\n' +
-                    'Error: ' + (emailResult.details || emailResult.error || 'Unknown error') + '\n\n' +
-                    'Please download the gift card from the admin panel and send it manually to: ' + giftCard.recipient_email);
-            } else {
-              console.log('Email sent successfully:', emailResult);
-            }
-          } else {
-            console.log('Gift card already has PDF, skipping generation');
           }
 
           setSuccess(true);

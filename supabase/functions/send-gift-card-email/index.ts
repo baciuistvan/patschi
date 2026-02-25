@@ -37,8 +37,9 @@ Deno.serve(async (req: Request) => {
       throw new Error("Gift card not found");
     }
 
-    if (!giftCard.recipient_email) {
-      throw new Error("No recipient email address");
+    const emailTo = giftCard.recipient_email || giftCard.purchaser_email;
+    if (!emailTo) {
+      throw new Error("No email address available");
     }
 
     // PDF is optional - if not available, we'll send email without it
@@ -160,7 +161,7 @@ Wir freuen uns auf Ihren Besuch!
 
     // Send email using SMTP
     const emailPayload = {
-      to: giftCard.recipient_email,
+      to: emailTo,
       from: {
         email: settings.smtp_from_email,
         name: fromName,
