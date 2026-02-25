@@ -72,7 +72,8 @@ Deno.serve(async (req: Request) => {
     const viennaMinute = parseInt(viennaParts.find(p => p.type === 'minute')!.value, 10);
     const viennaTimeInMinutes = viennaHour * 60 + viennaMinute;
 
-    if (reservation_date === viennaDateStr && viennaTimeInMinutes >= 12 * 60) {
+    const isManualEntry = booking_method === 'manual' || booking_method === 'free';
+    if (!isManualEntry && reservation_date === viennaDateStr && viennaTimeInMinutes >= 12 * 60) {
       return new Response(
         JSON.stringify({
           error: 'Reservierungen für heute sind nur bis 12:00 Uhr möglich. Bitte wählen Sie ein Datum ab morgen.',
