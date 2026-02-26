@@ -1327,15 +1327,15 @@ export function ReservationManager() {
                           <h3 className="text-lg font-semibold text-white print:text-black print:text-base">{reservation.customer_name}</h3>
                           <div className="flex items-center gap-3 flex-wrap">
                             {(reservation as any).booking_code && (
-                              <span className="text-sm font-mono font-semibold text-blue-400 bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-500/50 print:bg-transparent print:border-0 print:text-gray-900">
+                              <span className="text-sm font-mono font-semibold text-purple-400 bg-purple-900/30 px-3 py-1.5 rounded-lg border border-purple-500/50 print:bg-transparent print:border-0 print:text-gray-900">
                                 Code: {(reservation as any).booking_code}
                               </span>
                             )}
                             <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
                               ((reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid') || ((reservation as any).payment_link_url && reservation.payment_status === 'paid')
-                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                                ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                                 : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
-                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                                ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                                 : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
                                 ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
@@ -1564,15 +1564,15 @@ export function ReservationManager() {
                   <h3 className="text-lg font-semibold text-white print:text-black print:text-base">{reservation.customer_name}</h3>
                   <div className="flex items-center gap-3 flex-wrap">
                     {(reservation as any).booking_code && (
-                      <span className="text-sm font-mono font-semibold text-blue-400 bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-500/50 print:bg-transparent print:border-0 print:text-gray-900">
+                      <span className="text-sm font-mono font-semibold text-purple-400 bg-purple-900/30 px-3 py-1.5 rounded-lg border border-purple-500/50 print:bg-transparent print:border-0 print:text-gray-900">
                         Code: {(reservation as any).booking_code}
                       </span>
                     )}
                     <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
                       ((reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid') || ((reservation as any).payment_link_url && reservation.payment_status === 'paid')
-                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                        ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                         : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
-                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                        ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                         : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
                         ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
