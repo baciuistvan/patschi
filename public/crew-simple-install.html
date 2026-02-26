@@ -277,6 +277,12 @@
       background: #1e293b;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
+      cursor: grab;
+    }
+
+    .floor-plan-container.pinching {
+      overflow: hidden;
+      cursor: default;
     }
 
     .floor-plan-inner {
@@ -287,6 +293,9 @@
       margin: 0;
       padding-left: 32px;
       padding-top: 38px;
+      transform-origin: top left;
+      transition: none;
+      will-change: transform;
     }
 
     .table-item.circle {
@@ -1957,6 +1966,7 @@
       } else {
         app.innerHTML = await renderDashboard();
         scrollTimelineToCenter();
+        if (window.initFloorPlanZoom) window.initFloorPlanZoom();
       }
     }
 
@@ -3194,9 +3204,11 @@
         }
       }, { passive: false });
 
-      // Prevent double-tap zoom
+      // Prevent double-tap zoom (skip floor plan and multi-touch)
       let lastTouchEnd = 0;
       document.addEventListener('touchend', function(e) {
+        if (e.touches.length > 0) return;
+        if (e.target.closest('.floor-plan-container')) return;
         const now = Date.now();
         if (now - lastTouchEnd <= 300) {
           e.preventDefault();
@@ -3241,8 +3253,86 @@
     }
 
 
+    // ── Pinch-to-zoom for floor plan ──────────────────────────────────────
+    let fpScale = 1;
+    let fpPinchActive = false;
+    let fpInitialDist = 0;
+    let fpScaleAtStart = 1;
+    let fpOriginX = 0;
+    let fpOriginY = 0;
+
+    const FP_MIN = 0.35;
+    const FP_MAX = 3.0;
+
+    function fpGetDist(t) {
+      const dx = t[0].clientX - t[1].clientX;
+      const dy = t[0].clientY - t[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function fpMidpoint(t) {
+      return {
+        x: (t[0].clientX + t[1].clientX) / 2,
+        y: (t[0].clientY + t[1].clientY) / 2,
+      };
+    }
+
+    function fpApply(container, inner) {
+      inner.style.transform = `scale(${fpScale})`;
+      inner.style.transformOrigin = `${fpOriginX}px ${fpOriginY}px`;
+    }
+
+    function initFloorPlanZoom() {
+      const container = document.querySelector('.floor-plan-container');
+      const inner = document.querySelector('.floor-plan-inner');
+      if (!container || !inner) return;
+
+      inner.style.transform = `scale(${fpScale})`;
+      inner.style.transformOrigin = `${fpOriginX}px ${fpOriginY}px`;
+
+      container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+          fpPinchActive = true;
+          fpInitialDist = fpGetDist(e.touches);
+          fpScaleAtStart = fpScale;
+          const mid = fpMidpoint(e.touches);
+          const rect = container.getBoundingClientRect();
+          const scrollLeft = container.scrollLeft;
+          const scrollTop = container.scrollTop;
+          fpOriginX = (mid.x - rect.left + scrollLeft) / fpScale;
+          fpOriginY = (mid.y - rect.top + scrollTop) / fpScale;
+          container.classList.add('pinching');
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchmove', function(e) {
+        if (!fpPinchActive || e.touches.length !== 2) return;
+        e.preventDefault();
+        const dist = fpGetDist(e.touches);
+        let newScale = fpScaleAtStart * (dist / fpInitialDist);
+        newScale = Math.min(FP_MAX, Math.max(FP_MIN, newScale));
+        fpScale = newScale;
+        fpApply(container, inner);
+      }, { passive: false });
+
+      container.addEventListener('touchend', function(e) {
+        if (fpPinchActive && e.touches.length < 2) {
+          fpPinchActive = false;
+          container.classList.remove('pinching');
+          const innerWidth = parseFloat(inner.style.width || inner.offsetWidth) * fpScale;
+          const innerHeight = parseFloat(inner.style.height || inner.offsetHeight) * fpScale;
+          inner.style.width = inner.offsetWidth + 'px';
+        }
+      }, { passive: true });
+    }
+
+    window.initFloorPlanZoom = initFloorPlanZoom;
+    // ─────────────────────────────────────────────────────────────────────
+
     // Initial render
     render();
+    initFloorPlanZoom();
 
     // Setup iOS enhancements when DOM is ready
     if (document.readyState === 'loading') {
