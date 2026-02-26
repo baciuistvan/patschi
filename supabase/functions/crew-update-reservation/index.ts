@@ -243,6 +243,21 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Write activity log
+    try {
+      const crewUser = (session as any).crew_users;
+      await supabase.from('activity_logs').insert({
+        event_type:  'reservation_updated',
+        actor_type:  'crew',
+        actor_id:    session.crew_user_id,
+        actor_name:  crewUser?.name ?? null,
+        entity_type: 'reservation',
+        entity_id:   reservation_id,
+        description: `Crew-Update: ${data.customer_name} – Status: ${data.status}`,
+        metadata: { updated_fields: Object.keys(updateData), reservation_id },
+      });
+    } catch (_logErr) { /* non-blocking */ }
+
     return new Response(
       JSON.stringify({ success: true, reservation: data }),
       {

@@ -153,6 +153,27 @@ Deno.serve(async (req: Request) => {
       throw deleteError;
     }
 
+    // Write activity log
+    try {
+      await supabase.from('activity_logs').insert({
+        event_type:  'reservation_deleted',
+        actor_type:  'crew',
+        actor_id:    session.crew_user_id,
+        actor_name:  null,
+        entity_type: 'reservation',
+        entity_id:   reservation_id,
+        description: `Crew hat Reservierung gelöscht: ${reservation.customer_name} (${reservation.party_size} Gäste) am ${reservation.reservation_date}`,
+        metadata: {
+          customer_name:    reservation.customer_name,
+          customer_email:   reservation.customer_email,
+          party_size:       reservation.party_size,
+          reservation_date: reservation.reservation_date,
+          reservation_time: reservation.reservation_time,
+          status:           reservation.status,
+        },
+      });
+    } catch (_logErr) { /* non-blocking */ }
+
     console.log("Reservation deleted successfully");
     return new Response(
       JSON.stringify({ success: true, message: "Reservation deleted" }),

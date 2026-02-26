@@ -394,6 +394,28 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Write activity log (online booking)
+    try {
+      await supabase.from('activity_logs').insert({
+        event_type:  'reservation_created',
+        actor_type:  'online',
+        actor_id:    null,
+        actor_name:  null,
+        entity_type: 'reservation',
+        entity_id:   reservation.id,
+        description: `Online-Reservierung: ${customer_name} (${party_size} Gäste) am ${reservation_date} um ${reservation_time}`,
+        metadata: {
+          customer_name,
+          customer_email,
+          party_size,
+          reservation_date,
+          reservation_time,
+          booking_code,
+          booking_method: booking_method || 'online',
+        },
+      });
+    } catch (_logErr) { /* non-blocking */ }
+
     // Notify admins via push notification
     try {
       await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {

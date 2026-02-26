@@ -370,6 +370,26 @@ export function ReservationManager() {
         return;
       }
 
+      // Log admin deletion
+      if (!isAbandoned) {
+        supabase.from('activity_logs').insert({
+          event_type:  'reservation_deleted',
+          actor_type:  'admin',
+          actor_id:    adminUser?.id ?? null,
+          actor_name:  adminUser?.full_name ?? adminUser?.email ?? null,
+          entity_type: 'reservation',
+          entity_id:   reservationId,
+          description: `Admin gelöscht: ${reservation.customer_name} (${reservation.party_size} Gäste) am ${reservation.reservation_date}`,
+          metadata: {
+            customer_name:    reservation.customer_name,
+            reservation_date: reservation.reservation_date,
+            reservation_time: reservation.reservation_time,
+            status:           reservation.status,
+            is_online_booking: isOnlineBooking,
+          },
+        }).then(() => {});
+      }
+
       console.log('Reservation deleted successfully from', tableName);
 
       // Show different success messages
@@ -563,6 +583,27 @@ export function ReservationManager() {
         stripe_payment_intent_id: null,
         booking_method: bookingMethod === 'free' ? 'free' : (paidWithCash ? 'manual' : 'free'),
       }]).select().single();
+
+      if (!error && reservation) {
+        // Log admin reservation creation
+        supabase.from('activity_logs').insert({
+          event_type:  'reservation_created',
+          actor_type:  'admin',
+          actor_id:    adminUser?.id ?? null,
+          actor_name:  adminUser?.full_name ?? adminUser?.email ?? null,
+          entity_type: 'reservation',
+          entity_id:   reservation.id,
+          description: `Admin erstellt: ${reservation.customer_name} (${reservation.party_size} Gäste) am ${date} um ${newReservation.reservation_time}`,
+          metadata: {
+            customer_name:    reservation.customer_name,
+            customer_email:   reservation.customer_email,
+            party_size:       reservation.party_size,
+            reservation_date: date,
+            reservation_time: newReservation.reservation_time,
+            payment_method:   paidWithCash ? 'cash' : 'none',
+          },
+        }).then(() => {});
+      }
 
       if (!error && reservation && selectedTables.length > 0) {
         const tableLinks = selectedTables.map(tableId => ({

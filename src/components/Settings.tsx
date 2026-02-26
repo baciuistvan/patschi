@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Building2, Code, CreditCard, Clock, Mail, Upload, ChevronDown, Check, TrendingDown, LayoutGrid } from 'lucide-react';
+import { Building2, Code, CreditCard, Clock, Mail, Upload, ChevronDown, Check, TrendingDown, LayoutGrid, ScrollText } from 'lucide-react';
 import { RoomSettings } from './RoomSettings';
 import { WidgetSettings } from './WidgetSettings';
 import { StripeSettings } from './StripeSettings';
@@ -9,9 +9,10 @@ import HostingConfiguration from './HostingConfiguration';
 import FileUploadManager from './FileUploadManager';
 import { AbandonedReservations } from './AbandonedReservations';
 import { FloorPlanManager } from './FloorPlanManager';
+import { SystemLogs } from './SystemLogs';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type SettingsTab = 'rooms' | 'floor-plan' | 'widget' | 'stripe' | 'hours' | 'email' | 'hosting' | 'abandoned';
+type SettingsTab = 'rooms' | 'floor-plan' | 'widget' | 'stripe' | 'hours' | 'email' | 'hosting' | 'abandoned' | 'logs';
 
 interface SettingsOption {
   id: SettingsTab;
@@ -36,6 +37,7 @@ export function Settings() {
     { id: 'abandoned', icon: TrendingDown, label: 'Abgebrochene Reservierungen' },
     { id: 'email', icon: Mail, label: t('settings.email') },
     { id: 'hosting', icon: Upload, label: 'Hosting Upload', showBadge: hasHostingConfig },
+    { id: 'logs', icon: ScrollText, label: 'Systemprotokoll' },
   ];
 
   const activeOption = settingsOptions.find(opt => opt.id === activeTab);
@@ -154,6 +156,7 @@ export function Settings() {
             <FileUploadManager hasConfiguration={hasHostingConfig} />
           </div>
         )}
+        {activeTab === 'logs' && <SystemLogs />}
       </div>
     </div>
   );
