@@ -1337,7 +1337,7 @@ export function ReservationManager() {
                                 : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
                                 ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                                 : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
-                                ? 'bg-blue-900/30 text-blue-400 border border-blue-500/50'
+                                ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                                 ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                                 : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
@@ -1574,7 +1574,7 @@ export function ReservationManager() {
                         : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
                         ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                         : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
-                        ? 'bg-blue-900/30 text-blue-400 border border-blue-500/50'
+                        ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                         ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                         : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
