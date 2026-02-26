@@ -3258,6 +3258,8 @@
 
     async function silentRefresh() {
       if (isRefreshing || state.view !== 'dashboard') return;
+      const modal = document.getElementById('reservationModal');
+      if (modal && !modal.classList.contains('hidden')) return;
       isRefreshing = true;
       try {
         const prevCount = state.reservations.length;
