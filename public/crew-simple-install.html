@@ -1696,7 +1696,7 @@
 
           <!-- Reservation Modal -->
           <div id="reservationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-start justify-center md:p-4 z-50 overflow-y-auto" onclick="closeReservationModalOnBackdrop(event)">
-            <div class="bg-slate-800 rounded-none md:rounded-2xl max-w-3xl w-full md:my-8 border-0 md:border border-slate-700 min-h-screen md:min-h-0 md:max-h-[98vh] overflow-y-auto">
+            <div class="bg-slate-800 rounded-none md:rounded-2xl max-w-3xl w-full md:my-8 border-0 md:border border-slate-700 min-h-screen md:min-h-0 md:max-h-[98vh] overflow-y-auto" onclick="event.stopPropagation()">
               <div class="sticky top-0 bg-slate-800 z-10 pb-2 border-b border-slate-700 p-4 sm:p-6">
                 <div class="flex items-center justify-between">
                   <h2 id="reservationModalTitle" class="text-lg sm:text-xl font-bold text-white flex items-center">
@@ -2750,9 +2750,12 @@
     };
 
     window.closeReservationModalOnBackdrop = function(event) {
-      if (event.target.id === 'reservationModal') {
-        closeReservationModal();
-      }
+      if (event.target.id !== 'reservationModal') return;
+      const active = document.activeElement;
+      const modal = document.getElementById('reservationModal');
+      if (active && modal.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
+      if (Date.now() - (window._lastKeyboardDismiss || 0) < 400) return;
+      closeReservationModal();
     };
 
     window.resetReservationModal = function() {
@@ -3221,6 +3224,7 @@
 
       window.addEventListener('focusout', function() {
         viewport.setAttribute('content', originalContent);
+        window._lastKeyboardDismiss = Date.now();
       });
 
       // Register service worker for offline support and better installability
