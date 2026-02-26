@@ -1343,11 +1343,11 @@ export function ReservationManager() {
                                 : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                             } print:bg-transparent print:border-0 print:text-gray-800`}>
                               {(reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid'
-                                ? `Stripe €${reservation.payment_amount.toFixed(2)}`
+                                ? `Online €${reservation.payment_amount.toFixed(2)}`
                                 : (reservation as any).booking_method === 'payment_link' && reservation.payment_amount > 0
                                 ? `Zahlungslink €${reservation.payment_amount.toFixed(2)}`
                                 : (reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid'
-                                ? reservation.payment_amount > 0 ? `Stripe €${reservation.payment_amount.toFixed(2)}` : 'Stripe bezahlt'
+                                ? reservation.payment_amount > 0 ? `Online €${reservation.payment_amount.toFixed(2)}` : 'Online bezahlt'
                                 : (reservation as any).booking_method === 'online' && reservation.payment_status === 'paid'
                                 ? reservation.payment_amount > 0 ? `Online €${reservation.payment_amount.toFixed(2)}` : 'Online'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
@@ -1580,11 +1580,11 @@ export function ReservationManager() {
                         : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                     } print:bg-transparent print:border-0 print:text-gray-800`}>
                       {(reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid'
-                        ? `Stripe €${reservation.payment_amount.toFixed(2)}`
+                        ? `Online €${reservation.payment_amount.toFixed(2)}`
                         : (reservation as any).booking_method === 'payment_link' && reservation.payment_amount > 0
                         ? `Zahlungslink €${reservation.payment_amount.toFixed(2)}`
                         : (reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid'
-                        ? reservation.payment_amount > 0 ? `Stripe €${reservation.payment_amount.toFixed(2)}` : 'Stripe bezahlt'
+                        ? reservation.payment_amount > 0 ? `Online €${reservation.payment_amount.toFixed(2)}` : 'Online bezahlt'
                         : (reservation as any).booking_method === 'online' && reservation.payment_status === 'paid'
                         ? reservation.payment_amount > 0 ? `Online €${reservation.payment_amount.toFixed(2)}` : 'Online'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
