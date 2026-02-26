@@ -1333,21 +1333,21 @@ export function ReservationManager() {
                             )}
                             <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
                               ((reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid') || ((reservation as any).payment_link_url && reservation.payment_status === 'paid')
-                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                                ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
                                 : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
-                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                                ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
                                 : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
-                                ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
+                                ? 'bg-[#635bff]/10 text-[#a29bfe]/70 border border-[#635bff]/30'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                                 ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                                 : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                             } print:bg-transparent print:border-0 print:text-gray-800`}>
                               {(reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid'
-                                ? `Online bezahlt €${reservation.payment_amount.toFixed(2)}`
+                                ? `Stripe €${reservation.payment_amount.toFixed(2)}`
                                 : (reservation as any).booking_method === 'payment_link' && reservation.payment_amount > 0
                                 ? `Zahlungslink €${reservation.payment_amount.toFixed(2)}`
                                 : (reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid'
-                                ? reservation.payment_amount > 0 ? `Online bezahlt €${reservation.payment_amount.toFixed(2)}` : 'Online bezahlt'
+                                ? reservation.payment_amount > 0 ? `Stripe €${reservation.payment_amount.toFixed(2)}` : 'Stripe bezahlt'
                                 : (reservation as any).booking_method === 'online' && reservation.payment_status === 'paid'
                                 ? reservation.payment_amount > 0 ? `Online €${reservation.payment_amount.toFixed(2)}` : 'Online'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
@@ -1570,21 +1570,21 @@ export function ReservationManager() {
                     )}
                     <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
                       ((reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid') || ((reservation as any).payment_link_url && reservation.payment_status === 'paid')
-                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                        ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
                         : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
-                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
+                        ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
                         : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
-                        ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50'
+                        ? 'bg-[#635bff]/10 text-[#a29bfe]/70 border border-[#635bff]/30'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
                         ? 'bg-green-900/30 text-green-400 border border-green-500/50'
                         : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                     } print:bg-transparent print:border-0 print:text-gray-800`}>
                       {(reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid'
-                        ? `Online bezahlt €${reservation.payment_amount.toFixed(2)}`
+                        ? `Stripe €${reservation.payment_amount.toFixed(2)}`
                         : (reservation as any).booking_method === 'payment_link' && reservation.payment_amount > 0
                         ? `Zahlungslink €${reservation.payment_amount.toFixed(2)}`
                         : (reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid'
-                        ? reservation.payment_amount > 0 ? `Online bezahlt €${reservation.payment_amount.toFixed(2)}` : 'Online bezahlt'
+                        ? reservation.payment_amount > 0 ? `Stripe €${reservation.payment_amount.toFixed(2)}` : 'Stripe bezahlt'
                         : (reservation as any).booking_method === 'online' && reservation.payment_status === 'paid'
                         ? reservation.payment_amount > 0 ? `Online €${reservation.payment_amount.toFixed(2)}` : 'Online'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
