@@ -3,6 +3,7 @@ import { supabase, Reservation, Table, Room } from '../lib/supabase';
 import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle, Info, List, LayoutGrid } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ReservationFloorPlanView } from './ReservationFloorPlanView';
+import { useAuth } from '../contexts/AuthContext';
 
 type ReservationWithTable = Reservation & {
   table?: Table;
@@ -11,6 +12,7 @@ type ReservationWithTable = Reservation & {
 
 export function ReservationManager() {
   const { t } = useLanguage();
+  const { adminUser } = useAuth();
 
   const formatDateLocal = (date: Date): string => {
     const year = date.getFullYear();
@@ -566,6 +568,9 @@ export function ReservationManager() {
         const tableLinks = selectedTables.map(tableId => ({
           reservation_id: reservation.id,
           table_id: tableId,
+          assigned_by_type: 'admin',
+          assigned_by_id: adminUser?.id ?? null,
+          assigned_by_name: adminUser?.full_name ?? adminUser?.email ?? null,
         }));
         await supabase.from('reservation_tables').insert(tableLinks);
 
@@ -799,6 +804,9 @@ export function ReservationManager() {
         const tableLinks = selectedTables.map(tableId => ({
           reservation_id: editingReservation.id,
           table_id: tableId,
+          assigned_by_type: 'admin',
+          assigned_by_id: adminUser?.id ?? null,
+          assigned_by_name: adminUser?.full_name ?? adminUser?.email ?? null,
         }));
         const { error: insertError } = await supabase.from('reservation_tables').insert(tableLinks);
         if (insertError) {
@@ -835,6 +843,9 @@ export function ReservationManager() {
               selectedTables.map(tableId => ({
                 reservation_id: reservation.id,
                 table_id: tableId,
+                assigned_by_type: 'admin',
+                assigned_by_id: adminUser?.id ?? null,
+                assigned_by_name: adminUser?.full_name ?? adminUser?.email ?? null,
               }))
             );
             await supabase.from('reservation_tables').insert(allTableLinks);

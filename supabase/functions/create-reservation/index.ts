@@ -326,7 +326,10 @@ Deno.serve(async (req: Request) => {
     // Link tables — required, throw on failure so the reservation is not left without a table
     const tableLinks = finalSelectedTables.map((tableId: string) => ({
       reservation_id: reservation.id,
-      table_id: tableId
+      table_id: tableId,
+      assigned_by_type: 'online',
+      assigned_by_id: null,
+      assigned_by_name: null,
     }));
 
     const { error: tablesError } = await supabase

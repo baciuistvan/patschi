@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     // Validate crew session token
     const { data: session, error: sessionError } = await supabase
       .from("crew_sessions")
-      .select("crew_user_id, expires_at")
+      .select("crew_user_id, expires_at, crew_users(id, name)")
       .eq("token", token)
       .maybeSingle();
 
@@ -219,9 +219,13 @@ Deno.serve(async (req: Request) => {
 
       // Then add new table assignments
       if (selected_tables.length > 0) {
+        const crewUser = (session as any).crew_users;
         const tableAssignments = selected_tables.map(tableId => ({
           reservation_id: reservation_id,
-          table_id: tableId
+          table_id: tableId,
+          assigned_by_type: 'crew',
+          assigned_by_id: session.crew_user_id,
+          assigned_by_name: crewUser?.name ?? null,
         }));
 
         console.log('Inserting table assignments:', tableAssignments);
