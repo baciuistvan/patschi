@@ -300,6 +300,137 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Handle payment_intent.succeeded — catches cases where the frontend
+    // successfully charged the customer but crashed before calling create-reservation
+    if (event.type === "payment_intent.succeeded") {
+      const paymentIntent = event.data.object;
+      const paymentIntentId = paymentIntent.id;
+      const metadata = paymentIntent.metadata || {};
+
+      console.log("[WEBHOOK] payment_intent.succeeded:", paymentIntentId);
+      console.log("[WEBHOOK] Metadata:", metadata);
+
+      // Check if a reservation already exists for this payment intent
+      const { data: existing } = await supabase
+        .from("reservations")
+        .select("id, booking_code")
+        .eq("stripe_payment_intent_id", paymentIntentId)
+        .maybeSingle();
+
+      if (existing) {
+        console.log("[WEBHOOK] Reservation already exists:", existing.id, "— skipping");
+        return new Response(
+          JSON.stringify({ success: true, message: "Reservation already exists", reservationId: existing.id }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Only proceed if we have enough metadata to create a reservation
+      const { customer_name, customer_email, reservation_date, reservation_time, party_size } = metadata;
+
+      if (!customer_name || !customer_email || !reservation_date || !reservation_time || !party_size) {
+        console.log("[WEBHOOK] Insufficient metadata to auto-create reservation — manual intervention needed");
+        console.log("[WEBHOOK] Available metadata keys:", Object.keys(metadata));
+        return new Response(
+          JSON.stringify({ success: true, message: "Insufficient metadata for auto-creation" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Generate booking code
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let booking_code = '';
+      for (let i = 0; i < 8; i++) {
+        booking_code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const amountPaid = paymentIntent.amount ? paymentIntent.amount / 100 : 0;
+
+      const { data: reservation, error: createError } = await supabase
+        .from("reservations")
+        .insert({
+          customer_name,
+          customer_email,
+          customer_phone: metadata.customer_phone || '',
+          party_size: parseInt(party_size, 10),
+          reservation_date,
+          reservation_time,
+          duration_minutes: 120,
+          status: 'confirmed',
+          special_requests: metadata.special_requests || '',
+          payment_status: 'paid',
+          payment_amount: amountPaid,
+          amount_paid: amountPaid,
+          payment_method: 'stripe',
+          stripe_payment_intent_id: paymentIntentId,
+          booking_method: 'online',
+          booking_code,
+          room_id: metadata.room_id || null,
+        })
+        .select('*')
+        .single();
+
+      if (createError) {
+        console.error("[WEBHOOK] Failed to auto-create reservation:", createError);
+        return new Response(
+          JSON.stringify({ error: "Failed to auto-create reservation" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("[WEBHOOK] Auto-created reservation:", reservation.id, "booking_code:", booking_code);
+
+      // Log the recovery
+      try {
+        await supabase.from('activity_logs').insert({
+          event_type: 'reservation_created',
+          actor_type: 'system',
+          actor_id: null,
+          actor_name: 'Webhook Auto-Recovery',
+          entity_type: 'reservation',
+          entity_id: reservation.id,
+          description: `Auto-created via payment_intent.succeeded webhook: ${customer_name} am ${reservation_date} um ${reservation_time}`,
+          metadata: { booking_code, payment_intent_id: paymentIntentId, auto_recovery: true },
+        });
+      } catch (_logErr) { /* non-blocking */ }
+
+      // Send confirmation email
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-reservation-confirmation-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            reservationId: reservation.id,
+            is_payment_confirmation: true,
+          }),
+        });
+      } catch (emailError) {
+        console.error("[WEBHOOK] Error sending confirmation email:", emailError);
+      }
+
+      // Notify admins
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({ reservation }),
+        });
+      } catch (notifyError) {
+        console.error("[WEBHOOK] Error sending push notification:", notifyError);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Reservation auto-created", reservationId: reservation.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Return success for other event types
     return new Response(
       JSON.stringify({
