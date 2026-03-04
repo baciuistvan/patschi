@@ -176,6 +176,20 @@ Deno.serve(async (req: Request) => {
         findError = error;
       }
 
+      // If still not found, try by payment_link_id (Stripe payment links set this on the session)
+      if (!reservation && session.payment_link) {
+        console.log("Looking for reservation by payment_link_id:", session.payment_link);
+        const { data, error } = await supabase
+          .from("reservations")
+          .select("*")
+          .eq("payment_link_id", session.payment_link)
+          .eq("payment_status", "unpaid")
+          .maybeSingle();
+
+        reservation = data;
+        findError = error;
+      }
+
       // If still not found, try by payment intent or customer email
       if (!reservation && (paymentIntentId || customerEmail)) {
         console.log("Looking for reservation by payment_intent or email");
