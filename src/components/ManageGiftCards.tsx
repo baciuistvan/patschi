@@ -422,9 +422,11 @@ export function ManageGiftCards() {
               <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Aktuelles Guthaben</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Status</span>
                 </div>
-                <p className="text-xl font-bold text-slate-900 dark:text-white">€{Number(giftCard.current_balance).toFixed(2)}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {giftCard.status === 'redeemed' ? 'Eingelöst' : giftCard.status === 'active' ? 'Aktiv' : giftCard.status === 'expired' ? 'Abgelaufen' : 'Storniert'}
+                </p>
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
@@ -583,7 +585,7 @@ export function ManageGiftCards() {
                       <p className="text-xs text-slate-600 dark:text-slate-400">{card.recipient_email}</p>
                     </td>
                     <td className="py-3 px-4">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">€{Number(card.current_balance).toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">€{Number(card.original_amount).toFixed(2)}</p>
                     </td>
                     <td className="py-3 px-4">
                       <button
