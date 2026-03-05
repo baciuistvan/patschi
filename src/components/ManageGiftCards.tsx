@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, Check, X, CreditCard, Calendar, DollarSign, User, Mail, Download, Edit2, Trash2 } from 'lucide-react';
+import { Search, Loader2, Check, X, CreditCard, Calendar, DollarSign, User, Mail, Download, CreditCard as Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { generateGiftCardPDF } from '../lib/pdfGenerator';
 
