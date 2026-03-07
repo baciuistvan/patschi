@@ -568,18 +568,20 @@
     /* Desktop: floor plan fills available space */
     @media (min-width: 1024px) {
       .floor-plan-container {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        position: relative !important;
         overflow: hidden !important;
         height: 100% !important;
         width: 100% !important;
-        padding: 16px !important;
+        padding: 0 !important;
+        cursor: default !important;
+        display: block !important;
       }
 
       .floor-plan-inner {
-        transform-origin: center center !important;
-        flex-shrink: 0;
+        position: absolute !important;
+        transform-origin: top left !important;
+        top: 0 !important;
+        left: 0 !important;
       }
     }
 
@@ -1986,7 +1988,10 @@
         app.innerHTML = await renderDashboard();
         scrollTimelineToCenter();
         if (window.initFloorPlanZoom) window.initFloorPlanZoom();
-        if (window.fitFloorPlanDesktop) window.fitFloorPlanDesktop();
+        if (window.fitFloorPlanDesktop) {
+          window.fitFloorPlanDesktop();
+          setTimeout(window.fitFloorPlanDesktop, 50);
+        }
       }
     }
 
@@ -3360,13 +3365,17 @@
         if (!containerW || !containerH) return;
         const innerW = 704;
         const innerH = 397;
-        const padding = 24;
+        const padding = 32;
         const scaleX = (containerW - padding) / innerW;
         const scaleY = (containerH - padding) / innerH;
         const scale = Math.min(scaleX, scaleY, 2.0);
         fpScale = scale;
-        inner.style.transformOrigin = 'center center';
-        inner.style.transform = `scale(${scale})`;
+        const scaledW = innerW * scale;
+        const scaledH = innerH * scale;
+        const offsetX = (containerW - scaledW) / 2;
+        const offsetY = (containerH - scaledH) / 2;
+        inner.style.transformOrigin = 'top left';
+        inner.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
       });
     }
 
@@ -3383,6 +3392,9 @@
     render();
     initFloorPlanZoom();
     fitFloorPlanDesktop();
+    // Re-run after full paint to ensure container has final dimensions
+    setTimeout(fitFloorPlanDesktop, 50);
+    setTimeout(fitFloorPlanDesktop, 200);
 
     // Setup iOS enhancements when DOM is ready
     if (document.readyState === 'loading') {
