@@ -3363,8 +3363,22 @@
         const containerW = container.clientWidth;
         const containerH = container.clientHeight;
         if (!containerW || !containerH) return;
-        const innerW = 704;
-        const innerH = 397;
+
+        // Measure actual content bounds from table items
+        const items = inner.querySelectorAll('.table-item');
+        let contentW = 0, contentH = 0;
+        items.forEach(function(item) {
+          const right = (parseFloat(item.style.left) || 0) + (parseFloat(item.style.width) || item.offsetWidth);
+          const bottom = (parseFloat(item.style.top) || 0) + (parseFloat(item.style.height) || item.offsetHeight);
+          if (right > contentW) contentW = right;
+          if (bottom > contentH) contentH = bottom;
+        });
+        // Add padding inside floor plan inner (from CSS)
+        const innerPL = parseFloat(getComputedStyle(inner).paddingLeft) || 32;
+        const innerPT = parseFloat(getComputedStyle(inner).paddingTop) || 38;
+        const innerW = contentW > 0 ? contentW + innerPL + 20 : inner.offsetWidth;
+        const innerH = contentH > 0 ? contentH + innerPT + 20 : inner.offsetHeight;
+
         const padding = 32;
         const scaleX = (containerW - padding) / innerW;
         const scaleY = (containerH - padding) / innerH;
