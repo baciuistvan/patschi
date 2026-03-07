@@ -564,6 +564,20 @@
       }
     }
 
+    /* Desktop: floor plan fills available space */
+    @media (min-width: 1024px) {
+      .floor-plan-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .floor-plan-inner {
+        transform-origin: center center !important;
+      }
+    }
+
     /* Standalone mode specific styles */
     .standalone-mode {
       padding-top: env(safe-area-inset-top);
@@ -1967,6 +1981,7 @@
         app.innerHTML = await renderDashboard();
         scrollTimelineToCenter();
         if (window.initFloorPlanZoom) window.initFloorPlanZoom();
+        if (window.fitFloorPlanDesktop) window.fitFloorPlanDesktop();
       }
     }
 
@@ -3328,11 +3343,38 @@
     }
 
     window.initFloorPlanZoom = initFloorPlanZoom;
+
+    function fitFloorPlanDesktop() {
+      if (window.innerWidth < 1024) return;
+      const container = document.querySelector('.floor-plan-container');
+      const inner = document.querySelector('.floor-plan-inner');
+      if (!container || !inner) return;
+      const containerW = container.clientWidth;
+      const containerH = container.clientHeight;
+      const innerW = 704;
+      const innerH = 397;
+      const padding = 32;
+      const scaleX = (containerW - padding) / innerW;
+      const scaleY = (containerH - padding) / innerH;
+      const scale = Math.min(scaleX, scaleY, 1.5);
+      fpScale = scale;
+      inner.style.transformOrigin = 'center center';
+      inner.style.transform = `scale(${scale})`;
+    }
+
+    window.fitFloorPlanDesktop = fitFloorPlanDesktop;
+
+    window.addEventListener('resize', function() {
+      if (window.innerWidth >= 1024) {
+        fitFloorPlanDesktop();
+      }
+    });
     // ─────────────────────────────────────────────────────────────────────
 
     // Initial render
     render();
     initFloorPlanZoom();
+    fitFloorPlanDesktop();
 
     // Setup iOS enhancements when DOM is ready
     if (document.readyState === 'loading') {
