@@ -93,6 +93,7 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow: hidden;
+      height: 100%;
     }
 
     /* Bottom safe area padding for scrollable list */
@@ -567,14 +568,18 @@
     /* Desktop: floor plan fills available space */
     @media (min-width: 1024px) {
       .floor-plan-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        height: 100% !important;
+        width: 100% !important;
+        padding: 16px !important;
       }
 
       .floor-plan-inner {
         transform-origin: center center !important;
+        flex-shrink: 0;
       }
     }
 
@@ -3346,20 +3351,23 @@
 
     function fitFloorPlanDesktop() {
       if (window.innerWidth < 1024) return;
-      const container = document.querySelector('.floor-plan-container');
-      const inner = document.querySelector('.floor-plan-inner');
-      if (!container || !inner) return;
-      const containerW = container.clientWidth;
-      const containerH = container.clientHeight;
-      const innerW = 704;
-      const innerH = 397;
-      const padding = 32;
-      const scaleX = (containerW - padding) / innerW;
-      const scaleY = (containerH - padding) / innerH;
-      const scale = Math.min(scaleX, scaleY, 1.5);
-      fpScale = scale;
-      inner.style.transformOrigin = 'center center';
-      inner.style.transform = `scale(${scale})`;
+      requestAnimationFrame(function() {
+        const container = document.querySelector('.floor-plan-container');
+        const inner = document.querySelector('.floor-plan-inner');
+        if (!container || !inner) return;
+        const containerW = container.clientWidth;
+        const containerH = container.clientHeight;
+        if (!containerW || !containerH) return;
+        const innerW = 704;
+        const innerH = 397;
+        const padding = 24;
+        const scaleX = (containerW - padding) / innerW;
+        const scaleY = (containerH - padding) / innerH;
+        const scale = Math.min(scaleX, scaleY, 2.0);
+        fpScale = scale;
+        inner.style.transformOrigin = 'center center';
+        inner.style.transform = `scale(${scale})`;
+      });
     }
 
     window.fitFloorPlanDesktop = fitFloorPlanDesktop;
