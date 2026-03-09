@@ -57,27 +57,27 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
         }`}
       >
         {/* Brand */}
-        <div className={`flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-800 ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="w-9 h-9 bg-slate-900 dark:bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white dark:text-slate-900 font-bold text-base">P</span>
+        <div className={`flex items-center h-20 px-5 border-b border-slate-200 dark:border-slate-800 ${sidebarCollapsed ? 'justify-center' : 'gap-4'}`}>
+          <div className="w-11 h-11 bg-slate-900 dark:bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="text-white dark:text-slate-900 font-bold text-lg">P</span>
           </div>
           {!sidebarCollapsed && (
             <div className="overflow-hidden">
-              <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">{t('app.title')}</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{t('app.subtitle')}</p>
+              <p className="text-base font-bold text-slate-900 dark:text-white leading-tight truncate">{t('app.title')}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{t('app.subtitle')}</p>
             </div>
           )}
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
+        <nav className="flex-1 py-5 space-y-1 px-3 overflow-y-auto">
           {NAV_ITEMS.map(({ view, icon: Icon, labelKey }) => {
             const active = currentView === view;
             return (
               <button
                 key={view}
                 onClick={() => setCurrentView(view)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative ${
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 group relative ${
                   active
                     ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
@@ -85,11 +85,11 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
                 title={sidebarCollapsed ? navLabel(labelKey) : undefined}
               >
                 {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 dark:bg-blue-400 rounded-r-full" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-blue-600 dark:bg-blue-400 rounded-r-full" />
                 )}
-                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : ''}`} style={{ width: 18, height: 18 }} />
+                <Icon className={`flex-shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : ''}`} style={{ width: 20, height: 20 }} />
                 {!sidebarCollapsed && (
-                  <span className="text-sm font-medium">{navLabel(labelKey)}</span>
+                  <span className="text-sm font-semibold">{navLabel(labelKey)}</span>
                 )}
               </button>
             );
@@ -97,75 +97,75 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
         </nav>
 
         {/* Bottom controls */}
-        <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-1">
+        <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-1.5">
           {onSwitchSystem && !sidebarCollapsed && (
             <button
               onClick={onSwitchSystem}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition text-sm"
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
             >
-              <Gift style={{ width: 18, height: 18 }} className="flex-shrink-0" />
-              <span className="font-medium">Gift Cards</span>
+              <Gift style={{ width: 20, height: 20 }} className="flex-shrink-0" />
+              <span className="text-sm font-semibold">Gift Cards</span>
             </button>
           )}
           <button
             onClick={() => window.open('https://patschi.services/crew-simple-install.html', '_blank')}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition text-sm"
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
             title={sidebarCollapsed ? 'Crew' : undefined}
           >
-            <Users style={{ width: 18, height: 18 }} className="flex-shrink-0" />
-            {!sidebarCollapsed && <span className="font-medium">Crew</span>}
+            <Users style={{ width: 20, height: 20 }} className="flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-semibold">Crew</span>}
           </button>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition text-sm"
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
             title={sidebarCollapsed ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
           >
-            {theme === 'dark' ? <Moon style={{ width: 18, height: 18 }} className="flex-shrink-0" /> : <Sun style={{ width: 18, height: 18 }} className="flex-shrink-0" />}
-            {!sidebarCollapsed && <span className="font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>}
+            {theme === 'dark' ? <Moon style={{ width: 20, height: 20 }} className="flex-shrink-0" /> : <Sun style={{ width: 20, height: 20 }} className="flex-shrink-0" />}
+            {!sidebarCollapsed && <span className="text-sm font-semibold">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>}
           </button>
 
           {/* User section */}
-          <div className={`flex items-center gap-2 px-3 py-2 mt-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-bold">
+          <div className={`flex items-center gap-3 px-4 py-3 mt-1 rounded-xl bg-slate-50 dark:bg-slate-800/60 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-bold">
                 {adminUser?.full_name?.charAt(0)?.toUpperCase() ?? 'A'}
               </span>
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{adminUser?.full_name}</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{adminUser?.role}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{adminUser?.full_name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{adminUser?.role}</p>
               </div>
             )}
           </div>
 
-          <div className={`flex gap-1 ${sidebarCollapsed ? 'flex-col' : 'flex-row'}`}>
+          <div className={`flex gap-2 ${sidebarCollapsed ? 'flex-col' : 'flex-row'}`}>
             <button
               onClick={() => setCurrentView('user-management')}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-xs"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-sm"
               title="Admin Einstellungen"
             >
-              <SettingsIcon style={{ width: 14, height: 14 }} />
-              {!sidebarCollapsed && <span>Admin</span>}
+              <SettingsIcon style={{ width: 15, height: 15 }} />
+              {!sidebarCollapsed && <span className="font-medium">Admin</span>}
             </button>
             <button
               onClick={handleSignOut}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition text-xs"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm"
               title={t('nav.sign_out')}
             >
-              <LogOut style={{ width: 14, height: 14 }} />
-              {!sidebarCollapsed && <span>Abmelden</span>}
+              <LogOut style={{ width: 15, height: 15 }} />
+              {!sidebarCollapsed && <span className="font-medium">Abmelden</span>}
             </button>
           </div>
 
           {/* Collapse toggle */}
           <button
             onClick={() => setSidebarCollapsed(c => !c)}
-            className="w-full flex items-center justify-center py-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+            className="w-full flex items-center justify-center py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
             title={sidebarCollapsed ? 'Erweitern' : 'Minimieren'}
           >
             <ChevronRight
-              style={{ width: 16, height: 16 }}
+              style={{ width: 17, height: 17 }}
               className={`transition-transform duration-300 ${sidebarCollapsed ? '' : 'rotate-180'}`}
             />
           </button>
