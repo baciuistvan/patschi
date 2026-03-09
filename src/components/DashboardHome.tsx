@@ -291,6 +291,7 @@ export function DashboardHome() {
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dailyOpen, setDailyOpen] = useState(false);
 
   const defaultRange = getPresetRange('30d');
   const [preset, setPreset] = useState<PresetKey>('30d');
@@ -535,45 +536,54 @@ export function DashboardHome() {
         </div>
       </div>
 
-      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('dashboard.daily_breakdown')}</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard.date')}</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard.reservations')}</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard.revenue')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.dailyStats.map((day) => (
-                <tr key={day.date} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-100/50 dark:hover:bg-slate-700/30 transition">
-                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white">
-                    {new Date(day.date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-right text-slate-700 dark:text-slate-300">
-                    {day.reservations}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-right font-semibold text-emerald-400">
-                    €{day.revenue}
-                  </td>
+      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+        <button
+          onClick={() => setDailyOpen(o => !o)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-700/40 transition"
+        >
+          <h3 className="text-lg font-semibold text-white">{t('dashboard.daily_breakdown')}</h3>
+          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${dailyOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {dailyOpen && (
+          <div className="overflow-x-auto border-t border-slate-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-300">{t('dashboard.date')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-300">{t('dashboard.reservations')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-300">{t('dashboard.revenue')}</th>
                 </tr>
-              ))}
-              {stats.dailyStats.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-8 text-center text-slate-400">
-                    Keine Reservierungen im ausgewählten Zeitraum
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {stats.dailyStats.map((day) => (
+                  <tr key={day.date} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+                    <td className="py-3 px-4 text-sm text-white">
+                      {new Date(day.date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-right text-slate-300">
+                      {day.reservations}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-right font-semibold text-emerald-400">
+                      €{day.revenue}
+                    </td>
+                  </tr>
+                ))}
+                {stats.dailyStats.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-slate-400">
+                      Keine Reservierungen im ausgewählten Zeitraum
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
