@@ -3212,19 +3212,44 @@
     function setupIOSWebApp() {
       // Prevent pull-to-refresh on iOS
       let startY = 0;
+      let startScrollTop = 0;
+      let scrollableAncestor = null;
+
       document.body.addEventListener('touchstart', function(e) {
         startY = e.touches[0].pageY;
+        scrollableAncestor = null;
+        startScrollTop = 0;
+        // Walk up the DOM to find the nearest scrollable ancestor
+        let el = e.target;
+        while (el && el !== document.body) {
+          const style = window.getComputedStyle(el);
+          const overflowY = style.overflowY;
+          if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+            scrollableAncestor = el;
+            startScrollTop = el.scrollTop;
+            break;
+          }
+          el = el.parentElement;
+        }
       }, { passive: true });
 
       document.body.addEventListener('touchmove', function(e) {
-        // Allow scrolling in scrollable areas
-        if (e.target.closest('.overflow-auto, .floor-plan-container, .sidebar-mobile, [class*="overflow-y"]')) {
+        const currentY = e.touches[0].pageY;
+        const dy = currentY - startY;
+
+        if (scrollableAncestor) {
+          const atTop = scrollableAncestor.scrollTop <= 0;
+          const atBottom = scrollableAncestor.scrollTop + scrollableAncestor.clientHeight >= scrollableAncestor.scrollHeight - 1;
+          // Prevent native bounce only when at boundary and trying to go further
+          if ((atTop && dy > 0) || (atBottom && dy < 0)) {
+            e.preventDefault();
+          }
+          // Otherwise let the element scroll normally
           return;
         }
 
-        // Prevent bounce/pull-to-refresh on body
-        const currentY = e.touches[0].pageY;
-        if (window.scrollY === 0 && currentY > startY) {
+        // No scrollable ancestor — prevent pull-to-refresh on body
+        if (window.scrollY === 0 && dy > 0) {
           e.preventDefault();
         }
       }, { passive: false });
