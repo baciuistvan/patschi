@@ -331,13 +331,13 @@ function StatCard({ label, value, sub, icon: Icon, color }: StatCardProps) {
   return (
     <div className="relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
       <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${c.bar} pointer-events-none`} />
-      <div className="relative">
-        <div className="flex items-start justify-between mb-5">
-          <div className={`w-11 h-11 ${c.iconBg} rounded-xl flex items-center justify-center ring-4 ${c.iconRing} shadow-sm`}>
+      <div className="relative flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`w-11 h-11 ${c.iconBg} rounded-xl flex items-center justify-center ring-4 ${c.iconRing} shadow-sm flex-shrink-0`}>
             <Icon className={`w-5 h-5 ${c.icon}`} />
           </div>
-          <span className={`text-xs font-bold uppercase tracking-widest ${c.accent} mt-1`}>{label}</span>
         </div>
+        <p className={`text-xs font-bold uppercase tracking-widest ${c.accent} mb-2`}>{label}</p>
         <p className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tight tabular-nums">{value}</p>
         {sub && (
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{sub}</p>
