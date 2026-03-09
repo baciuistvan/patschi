@@ -298,42 +298,51 @@ interface StatCardProps {
 function StatCard({ label, value, sub, icon: Icon, color }: StatCardProps) {
   const colorMap = {
     blue: {
-      bg: 'bg-blue-50 dark:bg-blue-900/30',
-      icon: 'text-blue-600 dark:text-blue-400',
-      border: 'border-t-blue-500',
-      glow: 'shadow-blue-100 dark:shadow-blue-900/20',
+      iconBg: 'bg-blue-500',
+      iconRing: 'ring-blue-400/30',
+      icon: 'text-white',
+      accent: 'text-blue-500 dark:text-blue-400',
+      bar: 'from-blue-500/10 to-transparent',
     },
     green: {
-      bg: 'bg-green-50 dark:bg-green-900/30',
-      icon: 'text-green-600 dark:text-green-400',
-      border: 'border-t-green-500',
-      glow: 'shadow-green-100 dark:shadow-green-900/20',
+      iconBg: 'bg-green-500',
+      iconRing: 'ring-green-400/30',
+      icon: 'text-white',
+      accent: 'text-green-500 dark:text-green-400',
+      bar: 'from-green-500/10 to-transparent',
     },
     emerald: {
-      bg: 'bg-emerald-50 dark:bg-emerald-900/30',
-      icon: 'text-emerald-600 dark:text-emerald-400',
-      border: 'border-t-emerald-500',
-      glow: 'shadow-emerald-100 dark:shadow-emerald-900/20',
+      iconBg: 'bg-emerald-500',
+      iconRing: 'ring-emerald-400/30',
+      icon: 'text-white',
+      accent: 'text-emerald-500 dark:text-emerald-400',
+      bar: 'from-emerald-500/10 to-transparent',
     },
     orange: {
-      bg: 'bg-orange-50 dark:bg-orange-900/30',
-      icon: 'text-orange-600 dark:text-orange-400',
-      border: 'border-t-orange-500',
-      glow: 'shadow-orange-100 dark:shadow-orange-900/20',
+      iconBg: 'bg-orange-500',
+      iconRing: 'ring-orange-400/30',
+      icon: 'text-white',
+      accent: 'text-orange-500 dark:text-orange-400',
+      bar: 'from-orange-500/10 to-transparent',
     },
   };
   const c = colorMap[color];
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-t-4 ${c.border} p-8 shadow-lg ${c.glow} hover:shadow-xl transition-shadow duration-300`}>
-      <div className="mb-6">
-        <div className={`w-14 h-14 ${c.bg} rounded-2xl flex items-center justify-center`}>
-          <Icon className={`w-7 h-7 ${c.icon}`} />
+    <div className="relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
+      <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${c.bar} pointer-events-none`} />
+      <div className="relative">
+        <div className="flex items-start justify-between mb-5">
+          <div className={`w-11 h-11 ${c.iconBg} rounded-xl flex items-center justify-center ring-4 ${c.iconRing} shadow-sm`}>
+            <Icon className={`w-5 h-5 ${c.icon}`} />
+          </div>
+          <span className={`text-xs font-bold uppercase tracking-widest ${c.accent} mt-1`}>{label}</span>
         </div>
+        <p className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tight tabular-nums">{value}</p>
+        {sub && (
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{sub}</p>
+        )}
       </div>
-      <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-3">{label}</p>
-      <p className="text-5xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{value}</p>
-      {sub && <p className="text-sm text-slate-400 dark:text-slate-500 mt-3 font-medium">{sub}</p>}
     </div>
   );
 }
@@ -469,9 +478,9 @@ export function DashboardHome() {
         <DateRangePicker preset={preset} from={dateFrom} to={dateTo} onChange={handleRangeChange} />
       </div>
 
-      {/* Stat Cards — centered hero row */}
-      <div className="flex justify-center">
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-6 w-full max-w-5xl">
+      {/* Stat Cards */}
+      <div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label={t('dashboard.total_reservations')}
             value={stats.totalReservations}
