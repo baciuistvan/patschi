@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, UserCircle, ChevronRight } from 'lucide-react';
+import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, CircleUser as UserCircle, ChevronRight } from 'lucide-react';
 import { DashboardHome } from './DashboardHome';
 import { ReservationManager } from './ReservationManager';
 import { Settings } from './Settings';

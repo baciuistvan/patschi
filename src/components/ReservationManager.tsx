@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Reservation, Table, Room } from '../lib/supabase';
-import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle, Info, List, LayoutGrid } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle, DollarSign, ChevronDown, ChevronUp, Trash2, Plus, CreditCard as Edit2, Printer, RefreshCw, Search, Copy, Send, AlertCircle, Info, List, LayoutGrid } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ReservationFloorPlanView } from './ReservationFloorPlanView';
 import { useAuth } from '../contexts/AuthContext';
