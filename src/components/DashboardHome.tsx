@@ -298,38 +298,42 @@ interface StatCardProps {
 function StatCard({ label, value, sub, icon: Icon, color }: StatCardProps) {
   const colorMap = {
     blue: {
-      bg: 'bg-blue-50 dark:bg-blue-900/20',
+      bg: 'bg-blue-50 dark:bg-blue-900/30',
       icon: 'text-blue-600 dark:text-blue-400',
       border: 'border-t-blue-500',
+      glow: 'shadow-blue-100 dark:shadow-blue-900/20',
     },
     green: {
-      bg: 'bg-green-50 dark:bg-green-900/20',
+      bg: 'bg-green-50 dark:bg-green-900/30',
       icon: 'text-green-600 dark:text-green-400',
       border: 'border-t-green-500',
+      glow: 'shadow-green-100 dark:shadow-green-900/20',
     },
     emerald: {
-      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/30',
       icon: 'text-emerald-600 dark:text-emerald-400',
       border: 'border-t-emerald-500',
+      glow: 'shadow-emerald-100 dark:shadow-emerald-900/20',
     },
     orange: {
-      bg: 'bg-orange-50 dark:bg-orange-900/20',
+      bg: 'bg-orange-50 dark:bg-orange-900/30',
       icon: 'text-orange-600 dark:text-orange-400',
       border: 'border-t-orange-500',
+      glow: 'shadow-orange-100 dark:shadow-orange-900/20',
     },
   };
   const c = colorMap[color];
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-t-4 ${c.border} p-7 shadow-sm`}>
-      <div className="flex items-start justify-between mb-5">
-        <div className={`w-13 h-13 ${c.bg} rounded-xl flex items-center justify-center`} style={{ width: 52, height: 52 }}>
-          <Icon className={`w-6 h-6 ${c.icon}`} />
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-t-4 ${c.border} p-8 shadow-lg ${c.glow} hover:shadow-xl transition-shadow duration-300`}>
+      <div className="mb-6">
+        <div className={`w-14 h-14 ${c.bg} rounded-2xl flex items-center justify-center`}>
+          <Icon className={`w-7 h-7 ${c.icon}`} />
         </div>
       </div>
-      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2">{label}</p>
-      <p className="text-4xl font-extrabold text-slate-900 dark:text-white leading-none tracking-tight">{value}</p>
-      {sub && <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">{sub}</p>}
+      <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-3">{label}</p>
+      <p className="text-5xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{value}</p>
+      {sub && <p className="text-sm text-slate-400 dark:text-slate-500 mt-3 font-medium">{sub}</p>}
     </div>
   );
 }
@@ -450,13 +454,13 @@ export function DashboardHome() {
   const statusTotal = stats.confirmedReservations + stats.pendingReservations + stats.cancelledReservations || 1;
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="w-full max-w-screen-2xl mx-auto space-y-8 px-2">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{greeting}</p>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('dashboard.overview')}</h1>
-          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mt-0.5">{t('dashboard.overview')}</h1>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
             {dateFrom.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
             {' – '}
             {dateTo.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -465,41 +469,43 @@ export function DashboardHome() {
         <DateRangePicker preset={preset} from={dateFrom} to={dateTo} onChange={handleRangeChange} />
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard
-          label={t('dashboard.total_reservations')}
-          value={stats.totalReservations}
-          icon={Calendar}
-          color="blue"
-        />
-        <StatCard
-          label={t('dashboard.total_guests')}
-          value={stats.totalGuests}
-          sub={`Ø ${stats.averagePartySize} ${t('dashboard.per_booking')}`}
-          icon={Users}
-          color="green"
-        />
-        <StatCard
-          label={t('dashboard.total_revenue')}
-          value={`€${stats.totalRevenue.toLocaleString('de-DE')}`}
-          icon={Euro}
-          color="emerald"
-        />
-        <StatCard
-          label={t('dashboard.avg_daily_revenue')}
-          value={`€${stats.dailyStats.length > 0 ? Math.round(stats.totalRevenue / stats.dailyStats.length).toLocaleString('de-DE') : 0}`}
-          icon={TrendingUp}
-          color="orange"
-        />
+      {/* Stat Cards — centered hero row */}
+      <div className="flex justify-center">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-6 w-full max-w-5xl">
+          <StatCard
+            label={t('dashboard.total_reservations')}
+            value={stats.totalReservations}
+            icon={Calendar}
+            color="blue"
+          />
+          <StatCard
+            label={t('dashboard.total_guests')}
+            value={stats.totalGuests}
+            sub={`Ø ${stats.averagePartySize} ${t('dashboard.per_booking')}`}
+            icon={Users}
+            color="green"
+          />
+          <StatCard
+            label={t('dashboard.total_revenue')}
+            value={`€${stats.totalRevenue.toLocaleString('de-DE')}`}
+            icon={Euro}
+            color="emerald"
+          />
+          <StatCard
+            label={t('dashboard.avg_daily_revenue')}
+            value={`€${stats.dailyStats.length > 0 ? Math.round(stats.totalRevenue / stats.dailyStats.length).toLocaleString('de-DE') : 0}`}
+            icon={TrendingUp}
+            color="orange"
+          />
+        </div>
       </div>
 
       {/* Status + Peak Hours */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Status breakdown */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-5">{t('dashboard.reservation_status')}</h3>
-          <div className="space-y-4">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">{t('dashboard.reservation_status')}</h3>
+          <div className="space-y-5">
             {[
               {
                 label: t('dashboard.confirmed'),
@@ -530,21 +536,21 @@ export function DashboardHome() {
               },
             ].map(({ label, sub, count, icon: Icon, color, bg, bar }) => (
               <div key={label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-4 h-4 ${color}`} />
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-5 h-5 ${color}`} />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">{label}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{sub}</p>
                     </div>
                   </div>
-                  <span className={`text-xl font-bold ${color}`}>{count}</span>
+                  <span className={`text-2xl font-black ${color}`}>{count}</span>
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 ml-10">
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 ml-13" style={{ marginLeft: 52 }}>
                   <div
-                    className={`${bar} h-1.5 rounded-full transition-all duration-500`}
+                    className={`${bar} h-2 rounded-full transition-all duration-500`}
                     style={{ width: `${(count / statusTotal) * 100}%` }}
                   />
                 </div>
@@ -554,27 +560,27 @@ export function DashboardHome() {
         </div>
 
         {/* Peak hours */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-500" />
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-500" />
             {t('dashboard.peak_booking_hours')}
           </h3>
           {stats.peakHours.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-sm text-slate-400">Keine Daten verfügbar</div>
+            <div className="flex items-center justify-center h-40 text-sm text-slate-400">Keine Daten verfügbar</div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {stats.peakHours.map((peak, idx) => (
-                <div key={peak.hour} className="flex items-center gap-3">
-                  <span className="text-xs font-mono font-semibold text-slate-500 dark:text-slate-400 w-10 text-right flex-shrink-0">{peak.hour}</span>
-                  <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                <div key={peak.hour} className="flex items-center gap-4">
+                  <span className="text-sm font-mono font-bold text-slate-600 dark:text-slate-300 w-12 text-right flex-shrink-0">{peak.hour}</span>
+                  <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
                     <div
-                      className={`h-2.5 rounded-full transition-all duration-700 ${
+                      className={`h-3 rounded-full transition-all duration-700 ${
                         idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-blue-500' : idx === 2 ? 'bg-blue-400' : 'bg-blue-300 dark:bg-blue-600/60'
                       }`}
                       style={{ width: `${(peak.count / maxPeak) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 w-12 text-right flex-shrink-0">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 w-16 text-right flex-shrink-0">
                     {peak.count} {t('dashboard.bookings')}
                   </span>
                 </div>
@@ -588,12 +594,12 @@ export function DashboardHome() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <button
           onClick={() => setDailyOpen(o => !o)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition"
+          className="w-full flex items-center justify-between px-8 py-5 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition"
         >
           <div className="flex items-center gap-3">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">{t('dashboard.daily_breakdown')}</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('dashboard.daily_breakdown')}</h3>
             {stats.dailyStats.length > 0 && (
-              <span className="text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full">
                 {stats.dailyStats.length} Tage
               </span>
             )}
@@ -606,32 +612,32 @@ export function DashboardHome() {
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-900/40">
-                  <th className="text-left py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('dashboard.date')}</th>
-                  <th className="text-right py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('dashboard.reservations')}</th>
-                  <th className="text-right py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('dashboard.revenue')}</th>
+                  <th className="text-left py-4 px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.date')}</th>
+                  <th className="text-right py-4 px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.reservations')}</th>
+                  <th className="text-right py-4 px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.revenue')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {stats.dailyStats.map((day, idx) => (
                   <tr key={day.date} className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition ${idx % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-900/20'}`}>
-                    <td className="py-3 px-6 text-sm font-medium text-slate-900 dark:text-white">
+                    <td className="py-4 px-8 text-sm font-semibold text-slate-900 dark:text-white">
                       {new Date(day.date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
                       })}
                     </td>
-                    <td className="py-3 px-6 text-sm text-right text-slate-600 dark:text-slate-300 font-medium">
+                    <td className="py-4 px-8 text-sm text-right text-slate-600 dark:text-slate-300 font-semibold">
                       {day.reservations}
                     </td>
-                    <td className="py-3 px-6 text-sm text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-4 px-8 text-sm text-right font-bold text-emerald-600 dark:text-emerald-400">
                       €{day.revenue.toLocaleString('de-DE')}
                     </td>
                   </tr>
                 ))}
                 {stats.dailyStats.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-10 text-center text-sm text-slate-400">
+                    <td colSpan={3} className="py-12 text-center text-sm text-slate-400">
                       Keine Reservierungen im ausgewählten Zeitraum
                     </td>
                   </tr>
