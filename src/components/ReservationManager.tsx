@@ -1047,16 +1047,20 @@ export function ReservationManager() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 no-print">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">{t('reservations.title')}</h2>
-        <div className="flex items-center space-x-2">
+    <div className="space-y-5">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 no-print">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('reservations.title')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Reservierungen verwalten und überblicken</p>
+        </div>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center space-x-2"
+            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-medium shadow-sm"
             title="Drucken"
           >
-            <Printer className="w-5 h-5" />
+            <Printer className="w-4 h-4" />
             <span className="hidden sm:inline">Drucken</span>
           </button>
           <button
@@ -1067,91 +1071,71 @@ export function ReservationManager() {
               }));
               setShowCreateForm(true);
             }}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center space-x-2"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
           >
-            <Plus className="w-5 h-5" />
-            <span className="hidden sm:inline">{t('reservations.create')}</span>
+            <Plus className="w-4 h-4" />
+            <span>{t('reservations.create')}</span>
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 no-print">
-        <div className="flex space-x-2 w-full sm:w-auto overflow-x-auto">
-          <button
-            onClick={() => setFilter('today')}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
-              filter === 'today'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {t('reservations.today')}
-          </button>
-          <button
-            onClick={() => setFilter('upcoming')}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
-              filter === 'upcoming'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {t('reservations.upcoming')}
-          </button>
-          <button
-            onClick={() => setFilter('monthly')}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
-              filter === 'monthly'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            Monatlich
-          </button>
-          <button
-            onClick={() => setFilter('all')}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {t('reservations.all')}
-          </button>
+      {/* Filter + View Toolbar */}
+      <div className="flex flex-col gap-3 no-print">
+        {/* Filter strip */}
+        <div className="flex items-center gap-1.5 overflow-x-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-1 shadow-sm w-full">
+          {([
+            { key: 'today', label: t('reservations.today') },
+            { key: 'upcoming', label: t('reservations.upcoming') },
+            { key: 'monthly', label: 'Monatlich' },
+            { key: 'all', label: t('reservations.all') },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                filter === key
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
           <button
             onClick={() => setFilter('payment_link')}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base whitespace-nowrap relative ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap relative ${
               filter === 'payment_link'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-orange-500 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
-            Wartet auf Zahlung
+            Offene Zahlung
             {unpaidPaymentLinkCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+              <span className={`inline-flex items-center justify-center text-xs font-bold rounded-full w-5 h-5 ${filter === 'payment_link' ? 'bg-white text-orange-600' : 'bg-orange-500 text-white'}`}>
                 {unpaidPaymentLinkCount}
               </span>
             )}
           </button>
-          <div className="relative flex-1 sm:flex-none">
+          <div className="relative flex-shrink-0 ml-auto">
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`w-full px-3 sm:px-4 py-2 rounded-lg transition text-sm sm:text-base flex items-center justify-center space-x-2 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
                 filter === 'date'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
-              <Calendar className="w-4 h-4" />
-              <span>{filter === 'date' && selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : t('reservations.date')}</span>
-              <ChevronDown className="w-4 h-4" />
+              <Calendar className="w-3.5 h-3.5" />
+              <span>{filter === 'date' && selectedDate ? new Date(selectedDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : 'Datum'}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
             </button>
             {showDatePicker && (
-              <div className="absolute right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl p-4 z-10 w-64">
+              <div className="absolute right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-4 z-20 w-64">
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => handleDateSelect(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
                 {selectedDate && (
                   <button
@@ -1160,7 +1144,7 @@ export function ReservationManager() {
                       setFilter('upcoming');
                       setShowDatePicker(false);
                     }}
-                    className="w-full mt-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition"
+                    className="w-full mt-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-lg text-sm transition font-medium"
                   >
                     {t('reservations.clear_date')}
                   </button>
@@ -1170,38 +1154,49 @@ export function ReservationManager() {
           </div>
         </div>
 
-        <div className="relative" ref={viewMenuRef}>
-          <button
-            onClick={() => setShowViewMenu(!showViewMenu)}
-            className="px-3 py-2 rounded-lg transition flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700"
-          >
-            {viewMode === 'list' ? (
-              <>
-                <List className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('reservations.view_list')}</span>
-              </>
-            ) : (
-              <>
-                <LayoutGrid className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('reservations.view_floor_plan')}</span>
-              </>
-            )}
-            <ChevronDown className={`w-4 h-4 transition-transform ${showViewMenu ? 'rotate-180' : ''}`} />
-          </button>
-          {showViewMenu && (
-            <div className="absolute right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-20 min-w-[200px]">
+        {/* Search + View Toggle row */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buchungscode oder Name suchen…"
+              className="w-full pl-9 pr-10 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            {searchQuery && (
               <button
-                onClick={() => {
-                  setViewMode('list');
-                  setShowViewMenu(false);
-                }}
-                className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
-                  viewMode === 'list'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-700'
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <div className="relative flex-shrink-0" ref={viewMenuRef}>
+            <button
+              onClick={() => setShowViewMenu(!showViewMenu)}
+              className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
+            >
+              {viewMode === 'list' ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+              <span className="hidden sm:inline">{viewMode === 'list' ? t('reservations.view_list') : t('reservations.view_floor_plan')}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showViewMenu ? 'rotate-180' : ''}`} />
+            </button>
+            {showViewMenu && (
+              <div className="absolute right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-20 min-w-[180px]">
+                <button
+                  onClick={() => {
+                    setViewMode('list');
+                    setShowViewMenu(false);
+                  }}
+                  className={`w-full px-4 py-3 flex items-center space-x-3 transition text-sm ${
+                    viewMode === 'list'
+                    ? 'bg-blue-50 dark:bg-blue-600 text-blue-700 dark:text-white font-semibold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
-                <List className="w-5 h-5" />
+                <List className="w-4 h-4" />
                 <span>{t('reservations.view_list')}</span>
               </button>
               <button
@@ -1209,119 +1204,61 @@ export function ReservationManager() {
                   setViewMode('floor-plan');
                   setShowViewMenu(false);
                 }}
-                className={`w-full px-4 py-3 flex items-center space-x-3 transition ${
+                className={`w-full px-4 py-3 flex items-center space-x-3 transition text-sm ${
                   viewMode === 'floor-plan'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-700'
+                    ? 'bg-blue-50 dark:bg-blue-600 text-blue-700 dark:text-white font-semibold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
-                <LayoutGrid className="w-5 h-5" />
+                <LayoutGrid className="w-4 h-4" />
                 <span>{t('reservations.view_floor_plan')}</span>
               </button>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="flex items-center space-x-2 w-full mb-4">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Suche nach Buchungscode oder Name..."
-            className="w-full px-4 py-2 pl-10 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
         </div>
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-          >
-            Löschen
-          </button>
-        )}
       </div>
 
-      {/* Payment Badge Guide */}
-      <div className="mb-4">
+      {/* Badge legend - compact collapsible */}
+      <div className="no-print">
         <button
           onClick={() => setShowBadgeGuide(!showBadgeGuide)}
-          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 hover:bg-slate-750 transition flex items-center justify-between text-left"
+          className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
         >
-          <div className="flex items-center space-x-2">
-            <Info className="w-5 h-5 text-blue-400" />
-            <span className="text-white font-medium">Zahlungs-Badge Legende</span>
-          </div>
-          {showBadgeGuide ? (
-            <ChevronUp className="w-5 h-5 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
-          )}
+          <Info className="w-3.5 h-3.5" />
+          <span>Zahlungs-Badge Legende</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showBadgeGuide ? 'rotate-180' : ''}`} />
         </button>
-
         {showBadgeGuide && (
-          <div className="mt-2 bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-purple-900/30 text-purple-400 border border-purple-500/50 whitespace-nowrap">
-                Online €350.00
-              </span>
-              <span className="text-sm text-slate-300">
-                Direkt über Widget bezahlt (booking_method: online)
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-green-900/30 text-green-400 border border-green-500/50 whitespace-nowrap">
-                Online bezahlt €50.00
-              </span>
-              <span className="text-sm text-slate-300">
-                Zahlungslink erfolgreich bezahlt (booking_method: payment_link, paid)
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-purple-900/30 text-purple-400 border border-purple-500/50 whitespace-nowrap">
-                Zahlungslink €50.00
-              </span>
-              <span className="text-sm text-slate-300">
-                Wartet auf Zahlung über Link (booking_method: payment_link, pending)
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-green-900/30 text-green-400 border border-green-500/50 whitespace-nowrap">
-                Anzahlung: €50.00
-              </span>
-              <span className="text-sm text-slate-300">
-                Manuelle Buchung mit Anzahlung (booking_method: manual, cash/transfer)
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <span className="px-4 py-1.5 rounded-lg text-sm font-bold bg-slate-700/50 text-slate-300 border border-slate-600/50 whitespace-nowrap">
-                Kostenlos
-              </span>
-              <span className="text-sm text-slate-300">
-                Keine Zahlung erforderlich (booking_method: free)
-              </span>
-            </div>
+          <div className="mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-wrap gap-3">
+            {[
+              { label: 'Online €350', cls: 'bg-[#635bff]/10 text-[#7c72ff] border-[#635bff]/30', desc: 'Widget-Zahlung' },
+              { label: 'Online bezahlt €50', cls: 'bg-[#635bff]/20 text-[#a29bfe] border-[#635bff]/50', desc: 'Zahlungslink bezahlt' },
+              { label: 'Zahlungslink €50', cls: 'bg-[#635bff]/10 text-[#a29bfe]/70 border-[#635bff]/30', desc: 'Wartet auf Zahlung' },
+              { label: 'Anzahlung: €50', cls: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/50', desc: 'Manuell bezahlt' },
+              { label: 'Kostenlos', cls: 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600/50', desc: 'Keine Zahlung' },
+            ].map(({ label, cls, desc }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${cls} whitespace-nowrap`}>{label}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{desc}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Unpaid Payment Link Header */}
+      {/* Unpaid Payment Link Banner */}
       {filter === 'payment_link' && (
-        <div className="bg-orange-900/20 border-2 border-orange-500/50 rounded-xl p-4 mb-4 flex items-start space-x-3">
-          <AlertCircle className="w-6 h-6 text-orange-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-orange-400 mb-1">
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/40 rounded-xl p-4 flex items-start gap-3">
+          <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">
               {unpaidPaymentLinkCount} {unpaidPaymentLinkCount === 1 ? 'Reservierung wartet' : 'Reservierungen warten'} auf Zahlung
-            </h3>
-            <p className="text-sm text-orange-300/80">
-              Diese Reservierungen wurden mit einem Zahlungslink erstellt, aber noch nicht bezahlt. Verwenden Sie die Aktionsschaltflächen, um den Zahlungslink zu kopieren oder die E-Mail erneut zu senden.
+            </p>
+            <p className="text-xs text-orange-700/80 dark:text-orange-400/80 mt-0.5">
+              Zahlungslink kopieren oder E-Mail erneut senden über die Aktionsschaltflächen.
             </p>
           </div>
         </div>
@@ -1346,53 +1283,61 @@ export function ReservationManager() {
           }}
         />
       ) : (
-        <div className="grid gap-4 printable-reservations">
+        <div className="grid gap-3 printable-reservations">
         {filter === 'monthly' ? (
           <>
             {groupReservationsByMonth().map((monthGroup) => {
               const isExpanded = expandedMonths.has(monthGroup.monthKey);
               return (
-                <div key={monthGroup.monthKey} className="space-y-4">
+                <div key={monthGroup.monthKey} className="space-y-2">
                   <button
                     onClick={() => toggleMonth(monthGroup.monthKey)}
-                    className="w-full sticky top-0 bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 z-10 hover:bg-slate-800 transition cursor-pointer flex items-center justify-between"
+                    className="w-full sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-300 dark:hover:bg-slate-700 transition"
                   >
-                    <div className="text-left">
-                      <h3 className="text-xl font-bold text-white capitalize">{monthGroup.monthName}</h3>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">{monthGroup.monthName}</h3>
+                      <span className="text-xs font-medium bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
+                        {monthGroup.reservations.length}
+                      </span>
                     </div>
-                    <div className="ml-4">
-                      {isExpanded ? (
-                        <ChevronUp className="w-6 h-6 text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-6 h-6 text-slate-400" />
-                      )}
-                    </div>
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-slate-500" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-500" />
+                    )}
                   </button>
                   {isExpanded && monthGroup.reservations.map((reservation) => (
                   <div
                     key={reservation.id}
-                    className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700 hover:border-slate-600 transition print:bg-white print:border-gray-300 print:rounded-none print:p-3 print:break-inside-avoid"
+                    className={`bg-white dark:bg-slate-800 rounded-xl border-l-4 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition shadow-sm print:bg-white print:border-gray-300 print:rounded-none print:break-inside-avoid ${
+                      reservation.status === 'confirmed' ? 'border-l-green-500' :
+                      reservation.status === 'cancelled' ? 'border-l-red-500' :
+                      reservation.status === 'completed' ? 'border-l-blue-500' :
+                      'border-l-amber-500'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-3 flex-1 cursor-pointer print:cursor-default" onClick={() => setSelectedReservation(reservation)}>
-                        <div className="flex flex-col gap-2">
-                          <h3 className="text-lg font-semibold text-white print:text-black print:text-base">{reservation.customer_name}</h3>
-                          <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-start gap-3 p-4">
+                      <div className="space-y-2.5 flex-1 cursor-pointer print:cursor-default min-w-0" onClick={() => setSelectedReservation(reservation)}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white print:text-black truncate">{reservation.customer_name}</h3>
                             {(reservation as any).booking_code && (
-                              <span className="text-sm font-mono font-semibold text-blue-400 bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-500/50 print:bg-transparent print:border-0 print:text-gray-900">
-                                Code: {(reservation as any).booking_code}
+                              <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-500/50 print:bg-transparent print:border-0 print:text-gray-900 flex-shrink-0">
+                                #{(reservation as any).booking_code}
                               </span>
                             )}
-                            <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
                               ((reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid') || ((reservation as any).payment_link_url && reservation.payment_status === 'paid')
-                                ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
+                                ? 'bg-[#635bff]/20 text-[#7c72ff] border-[#635bff]/50'
                                 : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
-                                ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
+                                ? 'bg-[#635bff]/20 text-[#7c72ff] border-[#635bff]/50'
                                 : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
-                                ? 'bg-[#635bff]/10 text-[#a29bfe]/70 border border-[#635bff]/30'
+                                ? 'bg-[#635bff]/10 text-[#a29bfe]/70 border-[#635bff]/30'
                                 : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
-                                ? 'bg-green-900/30 text-green-400 border border-green-500/50'
-                                : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
+                                ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/50'
+                                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600/50'
                             } print:bg-transparent print:border-0 print:text-gray-800`}>
                               {(reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid'
                                 ? `Online €${reservation.payment_amount.toFixed(2)}`
@@ -1407,7 +1352,7 @@ export function ReservationManager() {
                                 : 'Kostenlos'}
                             </span>
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                              className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
                                 reservation.status
                               )} print:hidden`}
                             >
@@ -1419,23 +1364,23 @@ export function ReservationManager() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm print:grid-cols-4 print:gap-2 print:text-xs">
-                          <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                            <Calendar className="w-4 h-4 print:hidden" />
-                            <span className="print:font-medium">{new Date(reservation.reservation_date).toLocaleDateString()}</span>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm print:grid-cols-4 print:gap-2 print:text-xs">
+                          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 print:text-gray-800">
+                            <Calendar className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                            <span className="font-medium">{new Date(reservation.reservation_date).toLocaleDateString('de-DE')}</span>
                           </div>
-                          <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                            <Clock className="w-4 h-4 print:hidden" />
-                            <span className="print:font-medium">{reservation.reservation_time}</span>
+                          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 print:text-gray-800">
+                            <Clock className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                            <span className="font-medium">{reservation.reservation_time}</span>
                           </div>
-                          <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                            <Users className="w-4 h-4 print:hidden" />
-                            <span className="print:font-medium">{reservation.party_size} Personen</span>
+                          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 print:text-gray-800">
+                            <Users className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                            <span>{reservation.party_size} Pers.</span>
                           </div>
-                          <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                            <Calendar className="w-4 h-4 print:hidden" />
-                            <span className="print:font-medium text-xs">
-                              Gebucht am: {new Date(reservation.created_at).toLocaleString('de-DE', {
+                          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-500 print:text-gray-800">
+                            <Calendar className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                            <span className="text-xs">
+                              {new Date(reservation.created_at).toLocaleString('de-DE', {
                                 day: '2-digit',
                                 month: '2-digit',
                                 year: 'numeric',
@@ -1446,154 +1391,102 @@ export function ReservationManager() {
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-4 text-sm text-slate-400 print:text-xs print:text-gray-700">
-                          <div className="flex items-center space-x-2">
-                            <Mail className="w-4 h-4 print:hidden" />
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs print:text-gray-700">
+                          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                            <Mail className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
                             <span>{reservation.customer_email}</span>
                           </div>
                           {reservation.customer_phone && (
-                            <div className="flex items-center space-x-2">
-                              <Phone className="w-4 h-4 print:hidden" />
+                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                              <Phone className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
                               <span>{reservation.customer_phone}</span>
+                            </div>
+                          )}
+                          {(reservation.table || (reservation.reservation_tables && reservation.reservation_tables.length > 0)) && (
+                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                              <span className="text-slate-400">·</span>
+                              <span>Tisch: <span className="font-semibold text-blue-600 dark:text-blue-400 print:text-gray-900">
+                                {reservation.reservation_tables && reservation.reservation_tables.length > 0
+                                  ? reservation.reservation_tables.map((rt: any) => rt.tables?.table_number).filter(Boolean).join(', ')
+                                  : reservation.table?.table_number || ''}
+                              </span></span>
                             </div>
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 text-xs print:hidden">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs print:hidden">
                           {(reservation as any).email_sent && (reservation as any).booking_method === 'payment_link' && (
-                            <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded border border-green-500/30 flex items-center gap-1">
+                            <span className="px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-500/30 flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />
                               E-Mail gesendet
                             </span>
                           )}
                           {(reservation as any).payment_link_url && reservation.payment_status === 'unpaid' && (
                             <>
-                              <span className="px-2 py-1 bg-amber-900/30 text-amber-400 rounded border border-amber-500/30 flex items-center gap-1">
+                              <span className="px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-200 dark:border-amber-500/30 flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3" />
                                 Wartet auf Zahlung
                               </span>
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyPaymentLink((reservation as any).payment_link_url, reservation.id);
-                                }}
-                                className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded border border-green-500 flex items-center gap-1 transition text-xs"
+                                onClick={(e) => { e.stopPropagation(); copyPaymentLink((reservation as any).payment_link_url, reservation.id); }}
+                                className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1 transition"
                                 title="Zahlungslink kopieren"
                               >
-                                {copyingLinkFor === reservation.id ? (
-                                  <>
-                                    <CheckCircle className="w-3 h-3" />
-                                    <span>Kopiert!</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3" />
-                                    <span>Link kopieren</span>
-                                  </>
-                                )}
+                                {copyingLinkFor === reservation.id ? <><CheckCircle className="w-3 h-3" /><span>Kopiert!</span></> : <><Copy className="w-3 h-3" /><span>Link</span></>}
                               </button>
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  resendPaymentLinkEmail(reservation.id);
-                                }}
+                                onClick={(e) => { e.stopPropagation(); resendPaymentLinkEmail(reservation.id); }}
                                 disabled={resendingEmailFor === reservation.id}
-                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded border border-blue-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                                title="Zahlungsemail erneut senden"
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1 transition disabled:opacity-50"
                               >
-                                {resendingEmailFor === reservation.id ? (
-                                  <>
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                    <span>Sendet...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Send className="w-3 h-3" />
-                                    <span>E-Mail senden</span>
-                                  </>
-                                )}
+                                {resendingEmailFor === reservation.id ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>Sendet…</span></> : <><Send className="w-3 h-3" /><span>E-Mail</span></>}
                               </button>
                               {(reservation as any).payment_link_url?.includes('/test_') && (
                                 <>
-                                  <span className="px-2 py-1 bg-red-900/30 text-red-400 rounded border border-red-500/30 flex items-center gap-1">
-                                    <AlertCircle className="w-3 h-3" />
-                                    TEST-LINK
+                                  <span className="px-2 py-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-500/30 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />TEST-LINK
                                   </span>
                                   <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      regeneratePaymentLink(reservation.id);
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); regeneratePaymentLink(reservation.id); }}
                                     disabled={regeneratingLinkFor === reservation.id}
-                                    className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded border border-orange-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                                    title="Neuen Link im Live-Modus erstellen"
+                                    className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-1 transition disabled:opacity-50"
                                   >
-                                    {regeneratingLinkFor === reservation.id ? (
-                                      <>
-                                        <RefreshCw className="w-3 h-3 animate-spin" />
-                                        <span>Erstellt...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <RefreshCw className="w-3 h-3" />
-                                        <span>Live-Link erstellen</span>
-                                      </>
-                                    )}
+                                    {regeneratingLinkFor === reservation.id ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>Erstellt…</span></> : <><RefreshCw className="w-3 h-3" /><span>Live-Link</span></>}
                                   </button>
                                 </>
                               )}
                             </>
                           )}
                           {(reservation as any).payment_link_url && reservation.payment_status === 'paid' && (
-                            <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded border border-green-500/30">
-                              Zahlungslink bezahlt
-                            </span>
+                            <span className="px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-500/30">Zahlungslink bezahlt</span>
                           )}
                           {(reservation as any).booking_method === 'manual_with_link' && (
-                            <span className="px-2 py-1 bg-blue-900/30 text-blue-400 rounded border border-blue-500/30">
-                              Mit Zahlungslink erstellt
-                            </span>
+                            <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-500/30">Mit Zahlungslink erstellt</span>
                           )}
                         </div>
 
-                        {(reservation.table || (reservation.reservation_tables && reservation.reservation_tables.length > 0)) && (
-                          <div className="text-sm text-slate-400 print:text-xs print:text-gray-700">
-                            Tisch: <span className="text-blue-400 print:text-gray-900 print:font-semibold">
-                              {reservation.reservation_tables && reservation.reservation_tables.length > 0
-                                ? reservation.reservation_tables.map((rt: any) => rt.tables?.table_number).filter(Boolean).join(', ')
-                                : reservation.table?.table_number || ''}
-                            </span>
-                          </div>
-                        )}
-
                         {reservation.special_requests && (
-                          <div className="text-sm text-slate-300 bg-slate-900 rounded-lg p-3 print:bg-gray-100 print:text-gray-800 print:text-xs print:p-2">
-                            <span className="font-medium">Hinweise: </span>
+                          <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2 print:bg-gray-100 print:text-gray-800 print:p-2 border border-slate-200 dark:border-slate-700">
+                            <span className="font-semibold">Hinweise: </span>
                             {reservation.special_requests}
                           </div>
                         )}
                       </div>
-                      <div className="flex flex-col gap-2 no-print">
+                      <div className="flex flex-col gap-1.5 no-print flex-shrink-0">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditReservation(reservation);
-                          }}
-                          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                          title="Edit"
+                          onClick={(e) => { e.stopPropagation(); handleEditReservation(reservation); }}
+                          className="p-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg transition border border-blue-200 dark:border-blue-800"
+                          title="Bearbeiten"
                         >
-                          <Edit2 className="w-5 h-5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteReservation(reservation.id);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteReservation(reservation.id); }}
                           disabled={isUpdating}
-                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Delete"
+                          className="p-1.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition border border-red-200 dark:border-red-800 disabled:opacity-50"
+                          title="Löschen"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -1608,28 +1501,35 @@ export function ReservationManager() {
             {getFilteredReservations().map((reservation) => (
               <div
                 key={reservation.id}
-                className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700 hover:border-slate-600 transition print:bg-white print:border-gray-300 print:rounded-none print:p-3 print:break-inside-avoid"
+                className={`bg-white dark:bg-slate-800 rounded-xl border-l-4 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition shadow-sm print:bg-white print:border-gray-300 print:rounded-none print:break-inside-avoid ${
+                  reservation.status === 'confirmed' ? 'border-l-green-500' :
+                  reservation.status === 'cancelled' ? 'border-l-red-500' :
+                  reservation.status === 'completed' ? 'border-l-blue-500' :
+                  'border-l-amber-500'
+                }`}
               >
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-3 flex-1 cursor-pointer print:cursor-default" onClick={() => setSelectedReservation(reservation)}>
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-lg font-semibold text-white print:text-black print:text-base">{reservation.customer_name}</h3>
-                  <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-start gap-3 p-4">
+              <div className="space-y-2.5 flex-1 cursor-pointer print:cursor-default min-w-0" onClick={() => setSelectedReservation(reservation)}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white print:text-black truncate">{reservation.customer_name}</h3>
                     {(reservation as any).booking_code && (
-                      <span className="text-sm font-mono font-semibold text-blue-400 bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-500/50 print:bg-transparent print:border-0 print:text-gray-900">
-                        Code: {(reservation as any).booking_code}
+                      <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-500/50 print:bg-transparent print:border-0 print:text-gray-900 flex-shrink-0">
+                        #{(reservation as any).booking_code}
                       </span>
                     )}
-                    <span className={`px-4 py-1.5 rounded-lg text-sm font-bold ${
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${
                       ((reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid') || ((reservation as any).payment_link_url && reservation.payment_status === 'paid')
-                        ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
+                        ? 'bg-[#635bff]/20 text-[#7c72ff] border-[#635bff]/50'
                         : ((reservation as any).payment_method === 'stripe' && reservation.payment_status === 'paid')
-                        ? 'bg-[#635bff]/20 text-[#a29bfe] border border-[#635bff]/50'
+                        ? 'bg-[#635bff]/20 text-[#7c72ff] border-[#635bff]/50'
                         : (reservation as any).booking_method === 'payment_link' || (reservation as any).booking_method === 'online' || ((reservation as any).payment_method === 'stripe')
-                        ? 'bg-[#635bff]/10 text-[#a29bfe]/70 border border-[#635bff]/30'
+                        ? 'bg-[#635bff]/10 text-[#a29bfe]/70 border-[#635bff]/30'
                         : (reservation as any).booking_method === 'manual' && reservation.payment_amount > 0
-                        ? 'bg-green-900/30 text-green-400 border border-green-500/50'
-                        : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
+                        ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/50'
+                        : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600/50'
                     } print:bg-transparent print:border-0 print:text-gray-800`}>
                       {(reservation as any).booking_method === 'payment_link' && reservation.payment_status === 'paid'
                         ? `Online €${reservation.payment_amount.toFixed(2)}`
@@ -1643,11 +1543,7 @@ export function ReservationManager() {
                         ? `Anzahlung: €${reservation.payment_amount.toFixed(2)}`
                         : 'Kostenlos'}
                     </span>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        reservation.status
-                      )} print:hidden`}
-                    >
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(reservation.status)} print:hidden`}>
                       {t(`reservations.status_${reservation.status}`)}
                     </span>
                     <span className="hidden print:inline text-xs text-gray-700">
@@ -1656,181 +1552,110 @@ export function ReservationManager() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm print:grid-cols-4 print:gap-2 print:text-xs">
-                  <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                    <Calendar className="w-4 h-4 print:hidden" />
-                    <span className="print:font-medium">{new Date(reservation.reservation_date).toLocaleDateString()}</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm print:grid-cols-4 print:gap-2 print:text-xs">
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 print:text-gray-800">
+                    <Calendar className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                    <span className="font-medium">{new Date(reservation.reservation_date).toLocaleDateString('de-DE')}</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                    <Clock className="w-4 h-4 print:hidden" />
-                    <span className="print:font-medium">{reservation.reservation_time}</span>
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 print:text-gray-800">
+                    <Clock className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                    <span className="font-medium">{reservation.reservation_time}</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                    <Users className="w-4 h-4 print:hidden" />
-                    <span className="print:font-medium">{reservation.party_size} Personen</span>
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 print:text-gray-800">
+                    <Users className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
+                    <span>{reservation.party_size} Pers.</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-slate-300 print:text-gray-800">
-                    <Calendar className="w-4 h-4 print:hidden" />
-                    <span className="print:font-medium text-xs">
-                      Gebucht am: {new Date(reservation.created_at).toLocaleString('de-DE', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }).replace(',', ' um')}
-                    </span>
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-500">
+                    <span className="text-xs">{new Date(reservation.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' um')}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-4 text-sm text-slate-400 print:text-xs print:text-gray-700">
-                  <div className="flex items-center space-x-2">
-                    <Mail className="w-4 h-4 print:hidden" />
+                <div className="flex flex-wrap items-center gap-1.5 text-xs print:text-gray-700">
+                  <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                    <Mail className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
                     <span>{reservation.customer_email}</span>
                   </div>
                   {reservation.customer_phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4 print:hidden" />
+                    <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                      <Phone className="w-3.5 h-3.5 print:hidden flex-shrink-0" />
                       <span>{reservation.customer_phone}</span>
+                    </div>
+                  )}
+                  {(reservation.table || (reservation.reservation_tables && reservation.reservation_tables.length > 0)) && (
+                    <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                      <span className="text-slate-400">·</span>
+                      <span>Tisch: <span className="font-semibold text-blue-600 dark:text-blue-400 print:text-gray-900">
+                        {reservation.reservation_tables && reservation.reservation_tables.length > 0
+                          ? reservation.reservation_tables.map((rt: any) => rt.tables?.table_number).filter(Boolean).join(', ')
+                          : reservation.table?.table_number || ''}
+                      </span></span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-xs print:hidden">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs print:hidden">
                   {(reservation as any).email_sent && (reservation as any).booking_method === 'payment_link' && (
-                    <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded border border-green-500/30 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" />
-                      E-Mail gesendet
+                    <span className="px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-500/30 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />E-Mail gesendet
                     </span>
                   )}
                   {(reservation as any).payment_link_url && reservation.payment_status === 'unpaid' && (
                     <>
-                      <span className="px-2 py-1 bg-amber-900/30 text-amber-400 rounded border border-amber-500/30 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        Wartet auf Zahlung
+                      <span className="px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-200 dark:border-amber-500/30 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />Wartet auf Zahlung
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyPaymentLink((reservation as any).payment_link_url, reservation.id);
-                        }}
-                        className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded border border-green-500 flex items-center gap-1 transition text-xs"
-                        title="Zahlungslink kopieren"
-                      >
-                        {copyingLinkFor === reservation.id ? (
-                          <>
-                            <CheckCircle className="w-3 h-3" />
-                            <span>Kopiert!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Link kopieren</span>
-                          </>
-                        )}
+                      <button onClick={(e) => { e.stopPropagation(); copyPaymentLink((reservation as any).payment_link_url, reservation.id); }}
+                        className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1 transition">
+                        {copyingLinkFor === reservation.id ? <><CheckCircle className="w-3 h-3" /><span>Kopiert!</span></> : <><Copy className="w-3 h-3" /><span>Link</span></>}
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          resendPaymentLinkEmail(reservation.id);
-                        }}
+                      <button onClick={(e) => { e.stopPropagation(); resendPaymentLinkEmail(reservation.id); }}
                         disabled={resendingEmailFor === reservation.id}
-                        className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded border border-blue-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                        title="Zahlungsemail erneut senden"
-                      >
-                        {resendingEmailFor === reservation.id ? (
-                          <>
-                            <RefreshCw className="w-3 h-3 animate-spin" />
-                            <span>Sendet...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-3 h-3" />
-                            <span>E-Mail senden</span>
-                          </>
-                        )}
+                        className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1 transition disabled:opacity-50">
+                        {resendingEmailFor === reservation.id ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>Sendet…</span></> : <><Send className="w-3 h-3" /><span>E-Mail</span></>}
                       </button>
                       {(reservation as any).payment_link_url?.includes('/test_') && (
                         <>
-                          <span className="px-2 py-1 bg-red-900/30 text-red-400 rounded border border-red-500/30 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" />
-                            TEST-LINK
+                          <span className="px-2 py-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-500/30 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />TEST-LINK
                           </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              regeneratePaymentLink(reservation.id);
-                            }}
+                          <button onClick={(e) => { e.stopPropagation(); regeneratePaymentLink(reservation.id); }}
                             disabled={regeneratingLinkFor === reservation.id}
-                            className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded border border-orange-500 flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                            title="Neuen Link im Live-Modus erstellen"
-                          >
-                            {regeneratingLinkFor === reservation.id ? (
-                              <>
-                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                <span>Erstellt...</span>
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="w-3 h-3" />
-                                <span>Live-Link erstellen</span>
-                              </>
-                            )}
+                            className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-1 transition disabled:opacity-50">
+                            {regeneratingLinkFor === reservation.id ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>Erstellt…</span></> : <><RefreshCw className="w-3 h-3" /><span>Live-Link</span></>}
                           </button>
                         </>
                       )}
                     </>
                   )}
                   {(reservation as any).payment_link_url && reservation.payment_status === 'paid' && (
-                    <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded border border-green-500/30">
-                      Zahlungslink bezahlt
-                    </span>
+                    <span className="px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-500/30">Zahlungslink bezahlt</span>
                   )}
                   {(reservation as any).booking_method === 'manual_with_link' && (
-                    <span className="px-2 py-1 bg-blue-900/30 text-blue-400 rounded border border-blue-500/30">
-                      Mit Zahlungslink erstellt
-                    </span>
+                    <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-500/30">Mit Zahlungslink erstellt</span>
                   )}
                 </div>
 
-                {(reservation.table || (reservation.reservation_tables && reservation.reservation_tables.length > 0)) && (
-                  <div className="text-sm text-slate-400 print:text-xs print:text-gray-700">
-                    Tisch: <span className="text-blue-400 print:text-gray-900 print:font-semibold">
-                      {reservation.reservation_tables && reservation.reservation_tables.length > 0
-                        ? reservation.reservation_tables.map((rt: any) => rt.tables?.table_number).filter(Boolean).join(', ')
-                        : reservation.table?.table_number || ''}
-                    </span>
-                  </div>
-                )}
-
                 {reservation.special_requests && (
-                  <div className="text-sm text-slate-300 bg-slate-900 rounded-lg p-3 print:bg-gray-100 print:text-gray-800 print:text-xs print:p-2">
-                    <span className="font-medium">Hinweise: </span>
-                    {reservation.special_requests}
+                  <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded-lg px-3 py-2 print:bg-gray-100 print:text-gray-800 print:p-2 border border-slate-200 dark:border-slate-700">
+                    <span className="font-semibold">Hinweise: </span>{reservation.special_requests}
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-2 no-print">
+              <div className="flex flex-col gap-1.5 no-print flex-shrink-0">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditReservation(reservation);
-                  }}
-                  className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                  title="Edit"
+                  onClick={(e) => { e.stopPropagation(); handleEditReservation(reservation); }}
+                  className="p-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg transition border border-blue-200 dark:border-blue-800"
+                  title="Bearbeiten"
                 >
-                  <Edit2 className="w-5 h-5" />
+                  <Edit2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteReservation(reservation.id);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); handleDeleteReservation(reservation.id); }}
                   disabled={isUpdating}
-                  className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Delete"
+                  className="p-1.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition border border-red-200 dark:border-red-800 disabled:opacity-50"
+                  title="Löschen"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -1840,9 +1665,12 @@ export function ReservationManager() {
         )}
 
         {reservations.length === 0 && viewMode === 'list' && (
-          <div className="text-center py-12 text-slate-400">
-            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>{t('reservations.no_reservations')}</p>
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-700">
+              <Calendar className="w-8 h-8 text-slate-400" />
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">{t('reservations.no_reservations')}</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Erstellen Sie eine neue Reservierung mit dem Button oben.</p>
           </div>
         )}
       </div>

@@ -23,12 +23,12 @@ interface Preset {
 }
 
 const PRESETS: Preset[] = [
-  { key: '7d', label: 'Letzte 7 Tage' },
-  { key: '30d', label: 'Letzte 30 Tage' },
-  { key: '90d', label: 'Letzte 90 Tage' },
+  { key: '7d', label: '7 Tage' },
+  { key: '30d', label: '30 Tage' },
+  { key: '90d', label: '90 Tage' },
   { key: 'thisMonth', label: 'Dieser Monat' },
   { key: 'lastMonth', label: 'Letzter Monat' },
-  { key: 'custom', label: 'Benutzerdefiniert' },
+  { key: 'custom', label: 'Eigener Zeitraum' },
 ];
 
 function formatDateLocal(date: Date): string {
@@ -230,22 +230,22 @@ function DateRangePicker({ preset, from, to, onChange }: DateRangePickerProps) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:border-blue-500 transition shadow-sm"
+        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-200 hover:border-blue-400 dark:hover:border-blue-500 transition shadow-sm font-medium"
       >
-        <Calendar className="w-4 h-4 text-blue-400 flex-shrink-0" />
-        <span className="font-medium">{currentLabel}</span>
+        <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
+        <span>{currentLabel}</span>
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 z-50 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl flex overflow-hidden">
+        <div className="absolute right-0 mt-2 z-50 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex overflow-hidden">
           <div className="flex flex-col py-2 border-r border-slate-700 min-w-[160px]">
             {PRESETS.map(p => (
               <button
                 key={p.key}
                 onClick={() => handlePreset(p.key)}
                 className={[
-                  'text-left px-4 py-2 text-sm transition',
+                  'text-left px-4 py-2.5 text-sm transition',
                   activePreset === p.key
                     ? 'bg-blue-600 text-white font-semibold'
                     : 'text-slate-300 hover:bg-slate-700',
@@ -283,6 +283,53 @@ function DateRangePicker({ preset, from, to, onChange }: DateRangePickerProps) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: React.ElementType;
+  color: 'blue' | 'green' | 'emerald' | 'orange';
+}
+
+function StatCard({ label, value, sub, icon: Icon, color }: StatCardProps) {
+  const colorMap = {
+    blue: {
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+      icon: 'text-blue-600 dark:text-blue-400',
+      border: 'border-t-blue-500',
+    },
+    green: {
+      bg: 'bg-green-50 dark:bg-green-900/20',
+      icon: 'text-green-600 dark:text-green-400',
+      border: 'border-t-green-500',
+    },
+    emerald: {
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+      icon: 'text-emerald-600 dark:text-emerald-400',
+      border: 'border-t-emerald-500',
+    },
+    orange: {
+      bg: 'bg-orange-50 dark:bg-orange-900/20',
+      icon: 'text-orange-600 dark:text-orange-400',
+      border: 'border-t-orange-500',
+    },
+  };
+  const c = colorMap[color];
+
+  return (
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-t-4 ${c.border} p-5 shadow-sm`}>
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-10 h-10 ${c.bg} rounded-xl flex items-center justify-center`}>
+          <Icon className={`w-5 h-5 ${c.icon}`} />
+        </div>
+      </div>
+      <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">{label}</p>
+      <p className="text-3xl font-bold text-slate-900 dark:text-white leading-none">{value}</p>
+      {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">{sub}</p>}
     </div>
   );
 }
@@ -374,208 +421,217 @@ export function DashboardHome() {
     setDateTo(to);
   }
 
+  const today = new Date();
+  const greeting = (() => {
+    const h = today.getHours();
+    if (h < 12) return 'Guten Morgen';
+    if (h < 18) return 'Guten Tag';
+    return 'Guten Abend';
+  })();
+
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="text-slate-600 dark:text-slate-400">Loading statistics...</div>
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Statistiken werden geladen…</p>
       </div>
     );
   }
 
   if (!stats) {
     return (
-      <div className="text-center py-12">
-        <div className="text-slate-600 dark:text-slate-400">No data available</div>
+      <div className="text-center py-24">
+        <p className="text-slate-500 dark:text-slate-400">Keine Daten verfügbar</p>
       </div>
     );
   }
 
+  const maxPeak = stats.peakHours[0]?.count ?? 1;
+  const statusTotal = stats.confirmedReservations + stats.pendingReservations + stats.cancelledReservations || 1;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-6 max-w-6xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{t('dashboard.overview')}</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{greeting}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('dashboard.overview')}</h1>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
             {dateFrom.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
             {' – '}
             {dateTo.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
           </p>
         </div>
-        <DateRangePicker
-          preset={preset}
-          from={dateFrom}
-          to={dateTo}
-          onChange={handleRangeChange}
+        <DateRangePicker preset={preset} from={dateFrom} to={dateTo} onChange={handleRangeChange} />
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t('dashboard.total_reservations')}
+          value={stats.totalReservations}
+          icon={Calendar}
+          color="blue"
+        />
+        <StatCard
+          label={t('dashboard.total_guests')}
+          value={stats.totalGuests}
+          sub={`Ø ${stats.averagePartySize} ${t('dashboard.per_booking')}`}
+          icon={Users}
+          color="green"
+        />
+        <StatCard
+          label={t('dashboard.total_revenue')}
+          value={`€${stats.totalRevenue.toLocaleString('de-DE')}`}
+          icon={Euro}
+          color="emerald"
+        />
+        <StatCard
+          label={t('dashboard.avg_daily_revenue')}
+          value={`€${stats.dailyStats.length > 0 ? Math.round(stats.totalRevenue / stats.dailyStats.length).toLocaleString('de-DE') : 0}`}
+          icon={TrendingUp}
+          color="orange"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-blue-400" />
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('dashboard.total_reservations')}</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalReservations}</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-600/20 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-green-400" />
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('dashboard.total_guests')}</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalGuests}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">{t('dashboard.avg_per_booking')}: {stats.averagePartySize} {t('dashboard.per_booking')}</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-emerald-600/20 rounded-lg flex items-center justify-center">
-              <Euro className="w-6 h-6 text-emerald-400" />
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('dashboard.total_revenue')}</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">€{stats.totalRevenue}</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-600/20 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-orange-400" />
-            </div>
-          </div>
-          <div>
-            <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('dashboard.avg_daily_revenue')}</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white">
-              €{stats.dailyStats.length > 0
-                ? Math.round(stats.totalRevenue / stats.dailyStats.length)
-                : 0}
-            </p>
-          </div>
-        </div>
-      </div>
-
+      {/* Status + Peak Hours */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">{t('dashboard.reservation_status')}</h3>
+        {/* Status breakdown */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-5">{t('dashboard.reservation_status')}</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
+            {[
+              {
+                label: t('dashboard.confirmed'),
+                sub: t('dashboard.active_bookings'),
+                count: stats.confirmedReservations,
+                icon: CheckCircle,
+                color: 'text-green-600 dark:text-green-400',
+                bg: 'bg-green-50 dark:bg-green-900/20',
+                bar: 'bg-green-500',
+              },
+              {
+                label: t('dashboard.pending'),
+                sub: t('dashboard.awaiting_confirmation'),
+                count: stats.pendingReservations,
+                icon: AlertCircle,
+                color: 'text-amber-600 dark:text-amber-400',
+                bg: 'bg-amber-50 dark:bg-amber-900/20',
+                bar: 'bg-amber-500',
+              },
+              {
+                label: t('dashboard.cancelled'),
+                sub: t('dashboard.cancelled_bookings'),
+                count: stats.cancelledReservations,
+                icon: XCircle,
+                color: 'text-red-600 dark:text-red-400',
+                bg: 'bg-red-50 dark:bg-red-900/20',
+                bar: 'bg-red-500',
+              },
+            ].map(({ label, sub, count, icon: Icon, color, bg, bar }) => (
+              <div key={label}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-4 h-4 ${color}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{label}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{sub}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xl font-bold ${color}`}>{count}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{t('dashboard.confirmed')}</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('dashboard.active_bookings')}</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.confirmedReservations}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-600/20 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{t('dashboard.pending')}</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('dashboard.awaiting_confirmation')}</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-white">{stats.pendingReservations}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{t('dashboard.cancelled')}</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('dashboard.cancelled_bookings')}</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-white">{stats.cancelledReservations}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center">
-            <Clock className="w-5 h-5 mr-2 text-blue-400" />
-            {t('dashboard.peak_booking_hours')}
-          </h3>
-          <div className="space-y-3">
-            {stats.peakHours.map((peak) => (
-              <div key={peak.hour}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-slate-700 dark:text-slate-300">{peak.hour}</span>
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{peak.count} {t('dashboard.bookings')}</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 ml-10">
                   <div
-                    className="bg-blue-500 h-2 rounded-full transition-all"
-                    style={{ width: `${(peak.count / stats.peakHours[0].count) * 100}%` }}
+                    className={`${bar} h-1.5 rounded-full transition-all duration-500`}
+                    style={{ width: `${(count / statusTotal) * 100}%` }}
                   />
                 </div>
               </div>
             ))}
-            {stats.peakHours.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-4">No data available</p>
-            )}
           </div>
+        </div>
+
+        {/* Peak hours */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-5 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-blue-500" />
+            {t('dashboard.peak_booking_hours')}
+          </h3>
+          {stats.peakHours.length === 0 ? (
+            <div className="flex items-center justify-center h-32 text-sm text-slate-400">Keine Daten verfügbar</div>
+          ) : (
+            <div className="space-y-3">
+              {stats.peakHours.map((peak, idx) => (
+                <div key={peak.hour} className="flex items-center gap-3">
+                  <span className="text-xs font-mono font-semibold text-slate-500 dark:text-slate-400 w-10 text-right flex-shrink-0">{peak.hour}</span>
+                  <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className={`h-2.5 rounded-full transition-all duration-700 ${
+                        idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-blue-500' : idx === 2 ? 'bg-blue-400' : 'bg-blue-300 dark:bg-blue-600/60'
+                      }`}
+                      style={{ width: `${(peak.count / maxPeak) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 w-12 text-right flex-shrink-0">
+                    {peak.count} {t('dashboard.bookings')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+      {/* Daily breakdown */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <button
           onClick={() => setDailyOpen(o => !o)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-700/40 transition"
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition"
         >
-          <h3 className="text-lg font-semibold text-white">{t('dashboard.daily_breakdown')}</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">{t('dashboard.daily_breakdown')}</h3>
+            {stats.dailyStats.length > 0 && (
+              <span className="text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
+                {stats.dailyStats.length} Tage
+              </span>
+            )}
+          </div>
           <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${dailyOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {dailyOpen && (
-          <div className="overflow-x-auto border-t border-slate-700">
+          <div className="overflow-x-auto border-t border-slate-200 dark:border-slate-700">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-300">{t('dashboard.date')}</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-300">{t('dashboard.reservations')}</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-300">{t('dashboard.revenue')}</th>
+                <tr className="bg-slate-50 dark:bg-slate-900/40">
+                  <th className="text-left py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('dashboard.date')}</th>
+                  <th className="text-right py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('dashboard.reservations')}</th>
+                  <th className="text-right py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('dashboard.revenue')}</th>
                 </tr>
               </thead>
-              <tbody>
-                {stats.dailyStats.map((day) => (
-                  <tr key={day.date} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
-                    <td className="py-3 px-4 text-sm text-white">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                {stats.dailyStats.map((day, idx) => (
+                  <tr key={day.date} className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition ${idx % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-900/20'}`}>
+                    <td className="py-3 px-6 text-sm font-medium text-slate-900 dark:text-white">
                       {new Date(day.date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
                         weekday: 'short',
                         month: 'short',
-                        day: 'numeric'
+                        day: 'numeric',
                       })}
                     </td>
-                    <td className="py-3 px-4 text-sm text-right text-slate-300">
+                    <td className="py-3 px-6 text-sm text-right text-slate-600 dark:text-slate-300 font-medium">
                       {day.reservations}
                     </td>
-                    <td className="py-3 px-4 text-sm text-right font-semibold text-emerald-400">
-                      €{day.revenue}
+                    <td className="py-3 px-6 text-sm text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                      €{day.revenue.toLocaleString('de-DE')}
                     </td>
                   </tr>
                 ))}
                 {stats.dailyStats.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400">
+                    <td colSpan={3} className="py-10 text-center text-sm text-slate-400">
                       Keine Reservierungen im ausgewählten Zeitraum
                     </td>
                   </tr>
