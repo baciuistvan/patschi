@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, CircleUser as UserCircle, ChevronRight } from 'lucide-react';
+import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, CircleUser as UserCircle, ChevronRight, Sparkles, Shield } from 'lucide-react';
 import { DashboardHome } from './DashboardHome';
 import { ReservationManager } from './ReservationManager';
 import { Settings } from './Settings';
@@ -52,120 +52,158 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex transition-colors duration-200">
       {/* Sidebar - Desktop */}
       <aside
-        className={`hidden lg:flex flex-col fixed top-0 left-0 h-full z-30 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col fixed top-0 left-0 h-full z-30 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 shadow-sm ${
           sidebarCollapsed ? 'w-16' : 'w-80'
         }`}
       >
         {/* Brand */}
-        <div className={`flex items-center h-20 px-5 border-b border-slate-200 dark:border-slate-800 ${sidebarCollapsed ? 'justify-center' : 'gap-4'}`}>
-          <div className="w-11 h-11 bg-slate-900 dark:bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white dark:text-slate-900 font-bold text-lg">P</span>
+        <div className={`relative flex items-center h-20 px-5 overflow-hidden ${sidebarCollapsed ? 'justify-center' : 'gap-4'}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-700 dark:from-slate-800 dark:to-slate-900" />
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #3b82f6 0%, transparent 60%)' }} />
+          <div className="relative w-11 h-11 bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-lg">P</span>
           </div>
           {!sidebarCollapsed && (
-            <div className="overflow-hidden">
-              <p className="text-base font-bold text-slate-900 dark:text-white leading-tight truncate">{t('app.title')}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{t('app.subtitle')}</p>
+            <div className="relative overflow-hidden">
+              <p className="text-base font-bold text-white leading-tight truncate">{t('app.title')}</p>
+              <p className="text-xs text-slate-300/80 truncate">{t('app.subtitle')}</p>
             </div>
           )}
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 py-5 space-y-1 px-3 overflow-y-auto">
+        <nav className="flex-1 py-6 space-y-0.5 px-3 overflow-y-auto">
+          {!sidebarCollapsed && (
+            <p className="px-3 mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-600">Navigation</p>
+          )}
           {NAV_ITEMS.map(({ view, icon: Icon, labelKey }) => {
             const active = currentView === view;
             return (
               <button
                 key={view}
                 onClick={() => setCurrentView(view)}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 group relative ${
+                className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-200 group relative ${
                   active
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-800 dark:hover:text-slate-100'
                 }`}
                 title={sidebarCollapsed ? navLabel(labelKey) : undefined}
               >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-blue-600 dark:bg-blue-400 rounded-r-full" />
-                )}
-                <Icon className={`flex-shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : ''}`} style={{ width: 20, height: 20 }} />
+                <div className={`flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 transition-all duration-200 ${
+                  active
+                    ? 'bg-white/20'
+                    : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'
+                }`}>
+                  <Icon style={{ width: 16, height: 16 }} className={active ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'} />
+                </div>
                 {!sidebarCollapsed && (
-                  <span className="text-sm font-semibold">{navLabel(labelKey)}</span>
+                  <span className={`text-sm font-semibold ${active ? 'text-white' : ''}`}>{navLabel(labelKey)}</span>
+                )}
+                {active && !sidebarCollapsed && (
+                  <Sparkles style={{ width: 13, height: 13 }} className="ml-auto text-white/50" />
                 )}
               </button>
             );
           })}
         </nav>
 
+        {/* Divider with label */}
+        {!sidebarCollapsed && (
+          <div className="px-6 mb-2">
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-600">Tools</span>
+              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+            </div>
+          </div>
+        )}
+
         {/* Bottom controls */}
-        <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-1.5">
-          {onSwitchSystem && !sidebarCollapsed && (
+        <div className="p-3 pt-1 space-y-0.5">
+          {onSwitchSystem && (
             <button
               onClick={onSwitchSystem}
-              className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
+              className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all duration-200 group ${sidebarCollapsed ? 'justify-center' : ''}`}
+              title={sidebarCollapsed ? 'Gift Cards' : undefined}
             >
-              <Gift style={{ width: 20, height: 20 }} className="flex-shrink-0" />
-              <span className="text-sm font-semibold">Gift Cards</span>
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 transition-all duration-200">
+                <Gift style={{ width: 16, height: 16 }} />
+              </div>
+              {!sidebarCollapsed && <span className="text-sm font-semibold">Gift Cards</span>}
             </button>
           )}
           <button
             onClick={() => window.open('https://patschi.services/crew-simple-install.html', '_blank')}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
+            className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 hover:text-sky-700 dark:hover:text-sky-400 transition-all duration-200 group ${sidebarCollapsed ? 'justify-center' : ''}`}
             title={sidebarCollapsed ? 'Crew' : undefined}
           >
-            <Users style={{ width: 20, height: 20 }} className="flex-shrink-0" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-all duration-200">
+              <Users style={{ width: 16, height: 16 }} />
+            </div>
             {!sidebarCollapsed && <span className="text-sm font-semibold">Crew</span>}
           </button>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
+            className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-700 dark:hover:text-amber-400 transition-all duration-200 group ${sidebarCollapsed ? 'justify-center' : ''}`}
             title={sidebarCollapsed ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
           >
-            {theme === 'dark' ? <Moon style={{ width: 20, height: 20 }} className="flex-shrink-0" /> : <Sun style={{ width: 20, height: 20 }} className="flex-shrink-0" />}
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-all duration-200">
+              {theme === 'dark' ? <Moon style={{ width: 16, height: 16 }} /> : <Sun style={{ width: 16, height: 16 }} />}
+            </div>
             {!sidebarCollapsed && <span className="text-sm font-semibold">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>}
           </button>
 
-          {/* User section */}
-          <div className={`flex items-center gap-3 px-4 py-3 mt-1 rounded-xl bg-slate-50 dark:bg-slate-800/60 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-sm font-bold">
-                {adminUser?.full_name?.charAt(0)?.toUpperCase() ?? 'A'}
-              </span>
+          {/* Divider */}
+          <div className="mx-3 my-2 h-px bg-slate-200 dark:bg-slate-800" />
+
+          {/* User card */}
+          <div className={`flex items-center gap-3 px-3 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/50 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="relative flex-shrink-0">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/30">
+                <span className="text-white text-sm font-bold">
+                  {adminUser?.full_name?.charAt(0)?.toUpperCase() ?? 'A'}
+                </span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800" />
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{adminUser?.full_name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{adminUser?.role}</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{adminUser?.full_name}</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Shield style={{ width: 10, height: 10 }} className="text-blue-500 flex-shrink-0" />
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate capitalize">{adminUser?.role}</p>
+                </div>
               </div>
             )}
           </div>
 
-          <div className={`flex gap-2 ${sidebarCollapsed ? 'flex-col' : 'flex-row'}`}>
+          <div className={`flex gap-1.5 mt-1 ${sidebarCollapsed ? 'flex-col' : 'flex-row'}`}>
             <button
               onClick={() => setCurrentView('user-management')}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-sm"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 text-xs font-semibold border border-slate-200/80 dark:border-slate-700/50"
               title="Admin Einstellungen"
             >
-              <SettingsIcon style={{ width: 15, height: 15 }} />
-              {!sidebarCollapsed && <span className="font-medium">Admin</span>}
+              <SettingsIcon style={{ width: 13, height: 13 }} />
+              {!sidebarCollapsed && <span>Admin</span>}
             </button>
             <button
               onClick={handleSignOut}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition text-sm"
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-300 transition-all duration-200 text-xs font-semibold border border-red-200/60 dark:border-red-800/40"
               title={t('nav.sign_out')}
             >
-              <LogOut style={{ width: 15, height: 15 }} />
-              {!sidebarCollapsed && <span className="font-medium">Abmelden</span>}
+              <LogOut style={{ width: 13, height: 13 }} />
+              {!sidebarCollapsed && <span>Abmelden</span>}
             </button>
           </div>
 
           {/* Collapse toggle */}
           <button
             onClick={() => setSidebarCollapsed(c => !c)}
-            className="w-full flex items-center justify-center py-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+            className="w-full flex items-center justify-center py-2 mt-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors duration-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             title={sidebarCollapsed ? 'Erweitern' : 'Minimieren'}
           >
             <ChevronRight
-              style={{ width: 17, height: 17 }}
+              style={{ width: 15, height: 15 }}
               className={`transition-transform duration-300 ${sidebarCollapsed ? '' : 'rotate-180'}`}
             />
           </button>
