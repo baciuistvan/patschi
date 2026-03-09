@@ -321,15 +321,15 @@ function StatCard({ label, value, sub, icon: Icon, color }: StatCardProps) {
   const c = colorMap[color];
 
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-t-4 ${c.border} p-5 shadow-sm`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 ${c.bg} rounded-xl flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${c.icon}`} />
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 border-t-4 ${c.border} p-7 shadow-sm`}>
+      <div className="flex items-start justify-between mb-5">
+        <div className={`w-13 h-13 ${c.bg} rounded-xl flex items-center justify-center`} style={{ width: 52, height: 52 }}>
+          <Icon className={`w-6 h-6 ${c.icon}`} />
         </div>
       </div>
-      <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">{label}</p>
-      <p className="text-3xl font-bold text-slate-900 dark:text-white leading-none">{value}</p>
-      {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">{sub}</p>}
+      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2">{label}</p>
+      <p className="text-4xl font-extrabold text-slate-900 dark:text-white leading-none tracking-tight">{value}</p>
+      {sub && <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">{sub}</p>}
     </div>
   );
 }
@@ -466,7 +466,7 @@ export function DashboardHome() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           label={t('dashboard.total_reservations')}
           value={stats.totalReservations}
