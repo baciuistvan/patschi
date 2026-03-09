@@ -548,7 +548,7 @@ export function DashboardHome() {
                   </div>
                   <span className={`text-2xl font-black ${color}`}>{count}</span>
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 ml-13" style={{ marginLeft: 52 }}>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
                   <div
                     className={`${bar} h-2 rounded-full transition-all duration-500`}
                     style={{ width: `${(count / statusTotal) * 100}%` }}
