@@ -53,7 +53,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
       {/* Sidebar - Desktop */}
       <aside
         className={`hidden lg:flex flex-col fixed top-0 left-0 h-full z-30 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 ${
-          sidebarCollapsed ? 'w-16' : 'w-56'
+          sidebarCollapsed ? 'w-16' : 'w-80'
         }`}
       >
         {/* Brand */}
@@ -264,7 +264,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
       )}
 
       {/* Main content */}
-      <div className={`flex-1 min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-56'}`}>
+      <div className={`flex-1 min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-80'}`}>
         <main className="min-h-screen pb-20 lg:pb-0 px-4 sm:px-6 lg:px-8 py-6">
           {currentView === 'home' && <DashboardHome />}
           {currentView === 'reservations' && <ReservationManager />}
