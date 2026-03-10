@@ -1170,10 +1170,10 @@ export function ReservationManager() {
           <div className="relative flex-shrink-0" ref={datePickerRef}>
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap ${
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap border ${
                 filter === 'date'
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/30 scale-[1.03]'
+                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-300 dark:hover:border-orange-700 hover:text-orange-600 dark:hover:text-orange-400'
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
