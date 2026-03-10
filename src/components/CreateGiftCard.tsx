@@ -195,7 +195,7 @@ export function CreateGiftCard() {
     return (
       <div className="max-w-md mx-auto py-8">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/20 mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-6">
             <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
           </div>
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-1">Gutschein ausgestellt</h2>
@@ -203,9 +203,9 @@ export function CreateGiftCard() {
         </div>
 
         <div className="mb-10">
-          <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 text-center mb-4">Code</p>
-          <div className="border-t border-b border-slate-200 dark:border-slate-700/60 py-5 text-center">
-            <p className="text-3xl font-mono font-bold text-slate-900 dark:text-white tracking-[0.2em]">{createdCode}</p>
+          <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-amber-500 dark:text-amber-400 text-center mb-4">Code</p>
+          <div className="border-t border-b border-amber-200 dark:border-amber-800/50 py-5 text-center bg-amber-50/50 dark:bg-amber-900/10 rounded-sm">
+            <p className="text-3xl font-mono font-bold text-amber-700 dark:text-amber-300 tracking-[0.2em]">{createdCode}</p>
           </div>
         </div>
 
@@ -213,7 +213,7 @@ export function CreateGiftCard() {
           <button
             onClick={downloadPdf}
             disabled={downloadingPdf}
-            className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-semibold rounded-lg hover:bg-slate-700 dark:hover:bg-slate-100 transition-colors duration-150 flex items-center justify-center gap-2 disabled:opacity-40"
+            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors duration-150 flex items-center justify-center gap-2 disabled:opacity-40"
           >
             {downloadingPdf ? (
               <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
@@ -253,8 +253,8 @@ export function CreateGiftCard() {
                   onClick={() => handleAmountSelect(amount)}
                   className={`flex-1 h-11 rounded-lg text-sm font-semibold transition-all duration-150 ${
                     !isCustomAmount && formData.amount === amount
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                      : 'bg-transparent border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
+                      : 'bg-transparent border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-600 dark:hover:text-amber-400'
                   }`}
                 >
                   €{amount}
@@ -271,8 +271,8 @@ export function CreateGiftCard() {
                 placeholder={`Individuell (mind. €${MIN_AMOUNT})`}
                 className={`w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b transition-colors duration-150 ${
                   isCustomAmount
-                    ? 'border-slate-900 dark:border-white'
-                    : 'border-slate-200 dark:border-slate-700 focus:border-slate-500 dark:focus:border-slate-400'
+                    ? 'border-amber-500 dark:border-amber-400'
+                    : 'border-slate-200 dark:border-slate-700 focus:border-amber-400 dark:focus:border-amber-500'
                 }`}
               />
             </div>
@@ -292,7 +292,7 @@ export function CreateGiftCard() {
                   value={formData.recipientName}
                   onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
                   placeholder="Name"
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-slate-500 dark:focus:border-slate-400 transition-colors duration-150"
+                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-sky-400 dark:focus:border-sky-500 transition-colors duration-150"
                 />
               </div>
               <div className="relative">
@@ -301,7 +301,7 @@ export function CreateGiftCard() {
                   value={formData.recipientEmail}
                   onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
                   placeholder="E-Mail"
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-slate-500 dark:focus:border-slate-400 transition-colors duration-150"
+                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-sky-400 dark:focus:border-sky-500 transition-colors duration-150"
                 />
               </div>
               <div className="relative">
@@ -311,7 +311,7 @@ export function CreateGiftCard() {
                   rows={3}
                   maxLength={500}
                   placeholder="Persönliche Nachricht…"
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-slate-500 dark:focus:border-slate-400 transition-colors duration-150 resize-none"
+                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-sky-400 dark:focus:border-sky-500 transition-colors duration-150 resize-none"
                 />
                 <span className="absolute bottom-3 right-0 text-[11px] text-slate-300 dark:text-slate-600">{formData.message.length}/500</span>
               </div>
@@ -326,7 +326,7 @@ export function CreateGiftCard() {
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Gesamtbetrag</p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Gültig für 1 Jahr</p>
             </div>
-            <p className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
+            <p className="text-4xl font-bold text-amber-500 dark:text-amber-400 tracking-tight tabular-nums">
               €{isNaN(finalAmount) ? '0' : finalAmount.toFixed(2)}
             </p>
           </div>
@@ -339,7 +339,7 @@ export function CreateGiftCard() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-semibold rounded-lg hover:bg-slate-700 dark:hover:bg-slate-100 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm shadow-emerald-600/20 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
