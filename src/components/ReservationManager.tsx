@@ -1284,32 +1284,37 @@ export function ReservationManager() {
       )}
 
       {showCreateForm && (
-        <div className="fixed inset-0 z-50 flex">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={resetCreateForm}
+        >
           <div
-            className={`flex-1 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
-            onClick={resetCreateForm}
-          />
-          <div ref={createFormRef} className={drawerPanelCls(drawerVisible)} style={{ overflowY: 'auto' }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 sticky top-0 bg-white dark:bg-slate-950 z-10">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Neue Reservierung</h2>
+            ref={createFormRef}
+            className={`bg-white dark:bg-slate-950 rounded-2xl w-full max-w-lg mx-4 shadow-2xl border border-slate-100 dark:border-slate-800/80 flex flex-col transition-all duration-300 ${drawerVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
+            style={{ maxHeight: '90vh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Neue Reservierung</h2>
               <button onClick={resetCreateForm} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 px-5 py-5">
+            <div className="flex-1 px-6 py-5 overflow-y-auto">
               <form id="create-form" onSubmit={handleCreateReservation}>
                 <FormBody isEdit={false} />
               </form>
             </div>
-            <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800/80 sticky bottom-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex flex-col gap-2">
-              <button form="create-form" type="submit" className="w-full py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-2xl transition-all duration-150 shadow-sm">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex flex-col gap-2 rounded-b-2xl">
+              <button form="create-form" type="submit" className="w-full py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl transition-all duration-150 shadow-sm">
                 Reservierung erstellen
               </button>
               <button
                 type="button"
                 onClick={handleCreateReservationWithPaymentLink}
                 disabled={isCreatingWithPaymentLink}
-                className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-sm font-semibold rounded-2xl transition-all duration-150 flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-sm"
               >
                 <CreditCard className="w-3.5 h-3.5" />
                 {isCreatingWithPaymentLink ? 'Wird erstellt...' : 'Mit Zahlungslink'}
@@ -1323,29 +1328,34 @@ export function ReservationManager() {
       )}
 
       {showEditForm && (
-        <div className="fixed inset-0 z-50 flex">
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${editDrawerVisible ? 'opacity-100' : 'opacity-0'}`}
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={resetEditForm}
+        >
           <div
-            className={`flex-1 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${editDrawerVisible ? 'opacity-100' : 'opacity-0'}`}
-            onClick={resetEditForm}
-          />
-          <div ref={editFormRef} className={drawerPanelCls(editDrawerVisible)} style={{ overflowY: 'auto' }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 sticky top-0 bg-white dark:bg-slate-950 z-10">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Reservierung bearbeiten</h2>
+            ref={editFormRef}
+            className={`bg-white dark:bg-slate-950 rounded-2xl w-full max-w-lg mx-4 shadow-2xl border border-slate-100 dark:border-slate-800/80 flex flex-col transition-all duration-300 ${editDrawerVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}
+            style={{ maxHeight: '90vh' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Reservierung bearbeiten</h2>
               <button onClick={resetEditForm} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 px-5 py-5">
+            <div className="flex-1 px-6 py-5 overflow-y-auto">
               <form id="edit-form" onSubmit={handleUpdateReservation}>
                 <FormBody isEdit={true} />
               </form>
             </div>
-            <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800/80 sticky bottom-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex flex-col gap-2">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md flex flex-col gap-2 rounded-b-2xl">
               <button
                 form="edit-form"
                 type="submit"
                 disabled={isUpdating}
-                className="w-full py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-100 disabled:opacity-50 text-white dark:text-slate-900 text-sm font-semibold rounded-2xl transition-all duration-150 shadow-sm"
+                className="w-full py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-100 disabled:opacity-50 text-white dark:text-slate-900 text-sm font-semibold rounded-xl transition-all duration-150 shadow-sm"
               >
                 {isUpdating ? 'Wird gespeichert...' : 'Änderungen speichern'}
               </button>
