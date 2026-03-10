@@ -1143,8 +1143,8 @@ export function ReservationManager() {
               onClick={() => setFilter(tab.key)}
               className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 whitespace-nowrap border ${
                 filter === tab.key
-                  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-md shadow-slate-900/20 dark:shadow-slate-100/10 scale-[1.03]'
-                  : 'text-slate-400 dark:text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/30 scale-[1.03]'
+                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-300 dark:hover:border-orange-700 hover:text-orange-600 dark:hover:text-orange-400'
               }`}
             >
               {tab.label}
