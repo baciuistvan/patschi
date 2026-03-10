@@ -839,7 +839,7 @@ export function ReservationManager() {
             key={room.id}
             type="button"
             onClick={() => { setTableRoomFilter(room.id); loadAllTables(); }}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${tableRoomFilter === room.id ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${tableRoomFilter === room.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-slate-200'}`}
           >
             {room.name}
           </button>
@@ -901,7 +901,7 @@ export function ReservationManager() {
           if (isOriginalDate) return;
           setSelectedDays(isSelected ? selectedDays.filter(d => d !== dateStr) : [...selectedDays, dateStr].sort());
         }}
-          className={`p-1.5 rounded-xl text-center transition-all duration-150 min-w-[44px] ${isOriginalDate ? 'bg-emerald-600 text-white cursor-default' : isSelected ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+          className={`p-1.5 rounded-xl text-center transition-all duration-150 min-w-[44px] ${isOriginalDate ? 'bg-emerald-600 text-white cursor-default' : isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
         >
           <div className="text-[10px] font-medium">{currentDate.toLocaleDateString('de-DE', { weekday: 'short' })}</div>
           <div className="text-xs font-bold">{currentDate.getDate()}</div>
@@ -921,11 +921,11 @@ export function ReservationManager() {
     <label className="flex items-center gap-3 cursor-pointer select-none">
       <div
         onClick={() => onChange(!checked)}
-        className={`relative flex-shrink-0 rounded-full transition-colors duration-200 ${checked ? 'bg-slate-900 dark:bg-white' : 'bg-slate-200 dark:bg-slate-700'}`}
+        className={`relative flex-shrink-0 rounded-full transition-colors duration-200 ${checked ? 'bg-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}
         style={{ width: 32, height: 18 }}
       >
         <div
-          className={`absolute top-0.5 rounded-full bg-white dark:bg-slate-900 shadow transition-transform duration-200 ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+          className={`absolute top-0.5 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
           style={{ width: 14, height: 14 }}
         />
       </div>
