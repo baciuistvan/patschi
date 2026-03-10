@@ -91,11 +91,27 @@ function ReservationCard({
         <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-base font-bold text-slate-900 dark:text-white truncate leading-tight">{reservation.customer_name}</span>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.badge}`}>
                   {cfg.label}
                 </span>
+                {paymentText && (
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                    isOnline && isPaid ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/40'
+                    : isOnline && !isPaid ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                    : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
+                  }`}>
+                    <CreditCard className="w-3 h-3" />
+                    {paymentText}
+                    {isOnline && !isPaid && <span className="opacity-70">· ausstehend</span>}
+                  </span>
+                )}
+                {(reservation as any).booking_code && (
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
+                    #{(reservation as any).booking_code}
+                  </span>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-3 mt-1.5">
                 {reservation.customer_email && (
@@ -124,22 +140,6 @@ function ReservationCard({
             {tableNumbers && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-900/20 text-sm font-semibold text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/40">
                 Tisch {tableNumbers}
-              </span>
-            )}
-            {paymentText && (
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${
-                isOnline && isPaid ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/40'
-                : isOnline && !isPaid ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
-                : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
-              }`}>
-                <CreditCard className="w-3.5 h-3.5" />
-                {paymentText}
-                {isOnline && !isPaid && <span className="opacity-70">· ausstehend</span>}
-              </span>
-            )}
-            {(reservation as any).booking_code && (
-              <span className="font-mono text-xs text-slate-400 dark:text-slate-500 px-2 py-1 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800">
-                #{(reservation as any).booking_code}
               </span>
             )}
           </div>
