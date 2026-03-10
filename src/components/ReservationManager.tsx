@@ -6,6 +6,7 @@ import {
   Copy, Send, AlertCircle, List, LayoutGrid, ArrowRight,
   CalendarDays, CreditCard, ChevronDown, ChevronUp, X, StickyNote,
 } from 'lucide-react';
+
 import { useLanguage } from '../contexts/LanguageContext';
 import { ReservationFloorPlanView } from './ReservationFloorPlanView';
 import { useAuth } from '../contexts/AuthContext';
@@ -75,85 +76,106 @@ function ReservationCard({
 
   return (
     <div className="group relative flex items-stretch gap-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden print:bg-white print:shadow-none print:break-inside-avoid border border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700">
-      <div className={`w-1 flex-shrink-0 ${cfg.bar}`} />
+      <div className={`w-1.5 flex-shrink-0 ${cfg.bar}`} />
 
       <div
-        className="flex items-stretch gap-4 flex-1 px-4 py-3.5 cursor-pointer"
+        className="flex items-stretch gap-5 flex-1 px-5 py-5 cursor-pointer"
         onClick={() => onSelect(reservation)}
       >
-        <div className="flex-shrink-0 flex flex-col items-center justify-center w-10 bg-slate-50 dark:bg-slate-800/60 rounded-xl py-2 px-1.5 text-center">
-          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none">{weekday}</span>
-          <span className="text-lg font-bold text-slate-800 dark:text-white leading-tight mt-0.5">{dayNum}</span>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 leading-none">{monthAbbr}</span>
+        <div className="flex-shrink-0 flex flex-col items-center justify-center w-14 bg-slate-50 dark:bg-slate-800/60 rounded-2xl py-3 px-2 text-center">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none">{weekday}</span>
+          <span className="text-2xl font-bold text-slate-800 dark:text-white leading-tight mt-1">{dayNum}</span>
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 leading-none mt-0.5 uppercase">{monthAbbr}</span>
         </div>
 
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[15px] font-semibold text-slate-900 dark:text-white truncate leading-tight">{reservation.customer_name}</span>
-            {(reservation as any).booking_code && (
-              <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500 flex-shrink-0">#{(reservation as any).booking_code}</span>
-            )}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-base font-bold text-slate-900 dark:text-white truncate leading-tight">{reservation.customer_name}</span>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg.badge}`}>
+                  {cfg.label}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                {reservation.customer_email && (
+                  <span className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                    <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate max-w-[180px]">{reservation.customer_email}</span>
+                  </span>
+                )}
+                {reservation.customer_phone && (
+                  <span className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                    <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{reservation.customer_phone}</span>
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[12px] text-slate-500 dark:text-slate-400">
-              <Clock className="w-3 h-3" />{reservation.reservation_time}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <Clock className="w-3.5 h-3.5" />{reservation.reservation_time}
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[12px] text-slate-500 dark:text-slate-400">
-              <Users className="w-3 h-3" />{reservation.party_size}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <Users className="w-3.5 h-3.5" />{reservation.party_size} {reservation.party_size === 1 ? 'Person' : 'Personen'}
             </span>
             {tableNumbers && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-900/20 text-[12px] text-sky-600 dark:text-sky-400 font-medium">
-                T {tableNumbers}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-900/20 text-sm font-semibold text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/40">
+                Tisch {tableNumbers}
               </span>
             )}
             {paymentText && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-medium border ${
-                isOnline && isPaid ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800'
-                : isOnline && !isPaid ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-                : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${
+                isOnline && isPaid ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/40'
+                : isOnline && !isPaid ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
               }`}>
+                <CreditCard className="w-3.5 h-3.5" />
                 {paymentText}
-                {isOnline && !isPaid && <span className="ml-0.5 opacity-70">· pend.</span>}
+                {isOnline && !isPaid && <span className="opacity-70">· ausstehend</span>}
               </span>
             )}
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-medium border ${cfg.badge}`}>
-              {cfg.label}
-            </span>
+            {(reservation as any).booking_code && (
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500 px-2 py-1 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800">
+                #{(reservation as any).booking_code}
+              </span>
+            )}
           </div>
 
           {reservation.special_requests && (
-            <p className="mt-1.5 text-[12px] text-slate-400 dark:text-slate-500 italic border-l-2 border-slate-200 dark:border-slate-700 pl-2 leading-relaxed print:text-gray-600">
+            <p className="text-sm text-slate-500 dark:text-slate-400 italic border-l-2 border-slate-200 dark:border-slate-700 pl-3 leading-relaxed print:text-gray-600">
               {reservation.special_requests}
             </p>
           )}
 
           {isUnpaidLink && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 print:hidden">
-              <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                <AlertCircle className="w-3 h-3" />Wartet auf Zahlung
+            <div className="flex flex-wrap items-center gap-2 pt-0.5 print:hidden">
+              <span className="inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 font-semibold">
+                <AlertCircle className="w-4 h-4" />Wartet auf Zahlung
               </span>
               <button
                 onClick={(e) => { e.stopPropagation(); onCopyLink((reservation as any).payment_link_url, reservation.id); }}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-150 font-medium"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-150 font-medium"
               >
-                {copyingLinkFor === reservation.id ? <><CheckCircle className="w-3 h-3 text-emerald-500" />Kopiert</> : <><Copy className="w-3 h-3" />Link</>}
+                {copyingLinkFor === reservation.id ? <><CheckCircle className="w-3.5 h-3.5 text-emerald-500" />Kopiert</> : <><Copy className="w-3.5 h-3.5" />Link kopieren</>}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onResendEmail(reservation.id); }}
                 disabled={resendingEmailFor === reservation.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-150 disabled:opacity-50 font-medium"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-150 disabled:opacity-50 font-medium"
               >
-                {resendingEmailFor === reservation.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                E-Mail
+                {resendingEmailFor === reservation.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                E-Mail senden
               </button>
               {(reservation as any).payment_link_url?.includes('/test_') && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onRegenerateLink(reservation.id); }}
                   disabled={regeneratingLinkFor === reservation.id}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all duration-150 disabled:opacity-50 font-medium"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all duration-150 disabled:opacity-50 font-medium"
                 >
-                  {regeneratingLinkFor === reservation.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  {regeneratingLinkFor === reservation.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   Live-Link
                 </button>
               )}
@@ -162,21 +184,21 @@ function ReservationCard({
         </div>
       </div>
 
-      <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1 pr-3 pl-1 opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden">
+      <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 pr-4 pl-2 print:hidden">
         <button
           onClick={(e) => { e.stopPropagation(); onEdit(reservation); }}
-          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150"
+          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150"
           title="Bearbeiten"
         >
-          <Edit2 className="w-3.5 h-3.5" />
+          <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(reservation.id); }}
           disabled={isUpdating}
-          className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-150 disabled:opacity-50"
+          className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-150 disabled:opacity-50"
           title="Löschen"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
