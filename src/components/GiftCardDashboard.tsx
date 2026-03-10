@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { LogOut, Gift, Plus, Menu, X, Home, Globe, Sun, Moon, ChevronDown, Users, CreditCard, Palette, Settings, BarChart, DollarSign, Calendar, Loader2 } from 'lucide-react';
+import { Gift, Plus, Home, CreditCard, Settings, BarChart, DollarSign, Loader2, Search, X, Mail, RefreshCw } from 'lucide-react';
 import { GiftCardTemplates } from './GiftCardTemplates';
 import { CreateGiftCard } from './CreateGiftCard';
 import { ManageGiftCards } from './ManageGiftCards';
 import { SettingsPage } from './SettingsPage';
+import { UserManagement } from './UserManagement';
 import { supabase } from '../lib/supabase';
 
 type View = 'home' | 'create-card' | 'manage-cards' | 'templates' | 'settings' | 'user-management';
+type StatusFilter = 'all' | 'active' | 'redeemed' | 'expired' | 'cancelled';
 
 interface GiftCardStats {
   totalValue: number;
@@ -34,15 +35,11 @@ interface GiftCardDashboardProps {
 }
 
 export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
-  const { adminUser, signOut } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const { adminUser } = useAuth();
+  const { t } = useLanguage();
   const [currentView, setCurrentView] = useState<View>('home');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
-  const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState<GiftCardStats>({
     totalValue: 0,
     totalCards: 0,
@@ -61,8 +58,6 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
   const loadDashboardData = async () => {
     try {
       setLoadingStats(true);
-
-      // Load all gift cards
       const { data: cards, error } = await supabase
         .from('gift_cards')
         .select('*')
@@ -71,7 +66,6 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
       if (error) throw error;
 
       if (cards) {
-        // Calculate statistics
         const activeCards = cards.filter(card => card.status === 'active' && card.current_balance > 0);
         const redeemedCards = cards.filter(card => card.status === 'redeemed' || card.current_balance === 0);
         const totalValue = activeCards.reduce((sum, card) => sum + Number(card.current_balance), 0);
@@ -83,8 +77,7 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
           redeemedCards: redeemedCards.length
         });
 
-        // Get recent cards (last 5)
-        setRecentCards(cards.slice(0, 5));
+        setRecentCards(cards);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -93,437 +86,273 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
+  const getStatusBorderColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'border-l-emerald-500';
+      case 'redeemed': return 'border-l-sky-500';
+      case 'expired': return 'border-l-red-400';
+      case 'cancelled': return 'border-l-red-500';
+      default: return 'border-l-slate-300 dark:border-l-slate-600';
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
-      case 'redeemed':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
-      case 'expired':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
-      default:
-        return 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-400';
+      case 'active': return 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40';
+      case 'redeemed': return 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-700/40';
+      case 'expired': return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700/40';
+      case 'cancelled': return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700/40';
+      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'Aktiv';
-      case 'redeemed':
-        return 'Eingelöst';
-      case 'expired':
-        return 'Abgelaufen';
-      case 'cancelled':
-        return 'Storniert';
-      default:
-        return status;
+      case 'active': return 'Aktiv';
+      case 'redeemed': return 'Eingelöst';
+      case 'expired': return 'Abgelaufen';
+      case 'cancelled': return 'Storniert';
+      default: return status;
     }
   };
 
+  const getFilteredCards = () => {
+    let filtered = recentCards;
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(card => card.status === statusFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(card =>
+        card.code.toLowerCase().includes(q) ||
+        card.recipient_name?.toLowerCase().includes(q) ||
+        card.recipient_email?.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  };
+
+  const navTabs: { key: View; label: string; icon: React.ReactNode }[] = [
+    { key: 'home', label: 'Startseite', icon: <Home className="w-3.5 h-3.5" /> },
+    { key: 'create-card', label: t('gift_card.create_card'), icon: <Plus className="w-3.5 h-3.5" /> },
+    { key: 'manage-cards', label: t('gift_card.manage_cards'), icon: <CreditCard className="w-3.5 h-3.5" /> },
+    { key: 'settings', label: t('gift_card.settings'), icon: <Settings className="w-3.5 h-3.5" /> },
+  ];
+
+  const statusTabs: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'Alle' },
+    { key: 'active', label: 'Aktiv' },
+    { key: 'redeemed', label: 'Eingelöst' },
+    { key: 'expired', label: 'Abgelaufen' },
+    { key: 'cancelled', label: 'Storniert' },
+  ];
+
+  const filteredCards = getFilteredCards();
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
-      <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4 sm:space-x-8">
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                    <Gift className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div className="hidden sm:block">
-                    <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{t('gift_card.title')}</h1>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">{t('gift_card.subtitle')}</p>
-                  </div>
-                </div>
-                {onSwitchSystem && (
-                  <button
-                    onClick={onSwitchSystem}
-                    className="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition text-slate-700 dark:text-slate-300 text-xs font-medium"
-                    title="Switch to Table Reservation System"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span className="hidden lg:inline">{t('nav.reservations')}</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="hidden md:flex space-x-1">
-                <button
-                  onClick={() => setCurrentView('home')}
-                  className={`px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition text-xs font-medium ${
-                    currentView === 'home'
-                      ? 'bg-green-600 text-white'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <Home className="w-3.5 h-3.5" />
-                  <span>{t('gift_card.home')}</span>
-                </button>
-                <button
-                  onClick={() => setCurrentView('create-card')}
-                  className={`px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition text-xs font-medium ${
-                    currentView === 'create-card'
-                      ? 'bg-green-600 text-white'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{t('gift_card.create_card')}</span>
-                </button>
-                <button
-                  onClick={() => setCurrentView('manage-cards')}
-                  className={`px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition text-xs font-medium ${
-                    currentView === 'manage-cards'
-                      ? 'bg-green-600 text-white'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>{t('gift_card.manage_cards')}</span>
-                </button>
-                <button
-                  onClick={() => setCurrentView('settings')}
-                  className={`px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 transition text-xs font-medium ${
-                    currentView === 'settings'
-                      ? 'bg-green-600 text-white'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>{t('gift_card.settings')}</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowAccountMenu(!showAccountMenu);
-                    setShowSettingsMenu(false);
-                    setShowLanguageMenu(false);
-                    setShowThemeMenu(false);
-                  }}
-                  className="hidden sm:flex items-center space-x-1.5 text-right hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg px-2.5 py-1.5 transition"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-slate-900 dark:text-white">{adminUser?.full_name}</p>
-                    <p className="text-[10px] text-slate-600 dark:text-slate-400">{adminUser?.role}</p>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                </button>
-                {showAccountMenu && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 min-w-48">
-                    <button
-                      onClick={() => {
-                        setCurrentView('user-management');
-                        setShowAccountMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-2 text-slate-700 dark:text-slate-300"
-                    >
-                      <Users className="w-4 h-4" />
-                      <span>Admin Settings</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowThemeMenu(!showThemeMenu);
-                    setShowLanguageMenu(false);
-                    setShowAccountMenu(false);
-                    setShowSettingsMenu(false);
-                  }}
-                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
-                  title="Theme"
-                >
-                  {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                </button>
-                {showThemeMenu && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 min-w-32">
-                    <button
-                      onClick={() => {
-                        setTheme('light');
-                        setShowThemeMenu(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-2 ${
-                        theme === 'light' ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-slate-700' : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      <Sun className="w-4 h-4" />
-                      <span>Light</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setTheme('dark');
-                        setShowThemeMenu(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-700 transition flex items-center space-x-2 ${
-                        theme === 'dark' ? 'text-blue-400 bg-slate-700' : 'text-slate-300'
-                      }`}
-                    >
-                      <Moon className="w-4 h-4" />
-                      <span>Dark</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowLanguageMenu(!showLanguageMenu);
-                    setShowThemeMenu(false);
-                    setShowAccountMenu(false);
-                    setShowSettingsMenu(false);
-                  }}
-                  className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition flex items-center space-x-1"
-                  title="Language"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span className="text-xs font-medium">{language.toUpperCase()}</span>
-                </button>
-                {showLanguageMenu && (
-                  <div className="absolute right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-50 min-w-32">
-                    <button
-                      onClick={() => {
-                        setLanguage('en');
-                        setShowLanguageMenu(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition ${
-                        language === 'en' ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-slate-700' : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      English
-                    </button>
-                    <button
-                      onClick={() => {
-                        setLanguage('de');
-                        setShowLanguageMenu(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition ${
-                        language === 'de' ? 'text-blue-600 dark:text-blue-400 bg-slate-100 dark:bg-slate-700' : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      Deutsch
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
-                title={t('nav.sign_out')}
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
-              >
-                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {mobileMenuOpen && (
-            <div className="md:hidden py-4 space-y-2">
-              <button
-                onClick={() => {
-                  setCurrentView('home');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full px-4 py-3 rounded-lg flex items-center space-x-2 transition ${
-                  currentView === 'home'
-                    ? 'bg-green-600 text-white'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <Home className="w-5 h-5" />
-                <span>{t('gift_card.home')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentView('create-card');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full px-4 py-3 rounded-lg flex items-center space-x-2 transition ${
-                  currentView === 'create-card'
-                    ? 'bg-green-600 text-white'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <Plus className="w-5 h-5" />
-                <span>{t('gift_card.create_card')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentView('manage-cards');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full px-4 py-3 rounded-lg flex items-center space-x-2 transition ${
-                  currentView === 'manage-cards'
-                    ? 'bg-green-600 text-white'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <CreditCard className="w-5 h-5" />
-                <span>{t('gift_card.manage_cards')}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setCurrentView('settings');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full px-4 py-3 rounded-lg flex items-center space-x-2 transition ${
-                  currentView === 'settings'
-                    ? 'bg-green-600 text-white'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-                <span>{t('gift_card.settings')}</span>
-              </button>
-              <div className="sm:hidden border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
-                <p className="text-sm font-medium text-slate-900 dark:text-white px-4">{adminUser?.full_name}</p>
-                <p className="text-xs text-slate-600 dark:text-slate-400 px-4">{adminUser?.role}</p>
-              </div>
-            </div>
-          )}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-600 dark:text-slate-300 tracking-tight">{t('gift_card.dashboard')}</h1>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
+            {stats.totalCards > 0 && <span className="text-slate-600 dark:text-slate-400 font-medium">{stats.totalCards} </span>}
+            Gutscheine
+          </p>
         </div>
-      </nav>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadDashboardData}
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150"
+            title="Aktualisieren"
+          >
+            <RefreshCw className={`w-4 h-4 ${loadingStats ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setCurrentView('create-card')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Neuer Gutschein
+          </button>
+        </div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {currentView === 'home' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Gift className="w-8 h-8 text-green-600" />
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('gift_card.dashboard')}</h2>
-                  <p className="text-slate-600 dark:text-slate-400">{t('gift_card.overview')}</p>
-                </div>
-              </div>
+      <div className="flex items-center gap-1.5 overflow-x-auto">
+        {navTabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setCurrentView(tab.key)}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 whitespace-nowrap border ${
+              currentView === tab.key
+                ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/30 scale-[1.03]'
+                : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {currentView === 'home' && (
+        <div className="space-y-4">
+          {loadingStats ? (
+            <div className="text-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400 mx-auto mb-3" />
+              <p className="text-sm text-slate-400">Lade Dashboard-Daten...</p>
             </div>
-
-            {loadingStats ? (
-              <div className="text-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-600 dark:text-slate-400">Lade Dashboard-Daten...</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <DollarSign className="w-8 h-8 text-green-600" />
-                      <span className="text-xs text-slate-600 dark:text-slate-400">{t('gift_card.total_value')}</span>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-5 overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-l-2xl" />
+                  <div className="flex items-center justify-between mb-3 pl-1">
+                    <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">€{stats.totalValue.toFixed(2)}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('gift_card.active_gift_cards')}</p>
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">{t('gift_card.total_value')}</span>
                   </div>
-
-                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <CreditCard className="w-8 h-8 text-blue-600" />
-                      <span className="text-xs text-slate-600 dark:text-slate-400">{t('gift_card.total_cards')}</span>
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalCards}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('gift_card.issued_cards')}</p>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <BarChart className="w-8 h-8 text-purple-600" />
-                      <span className="text-xs text-slate-600 dark:text-slate-400">{t('gift_card.redeemed')}</span>
-                    </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{stats.redeemedCards}</p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('gift_card.cards_used')}</p>
-                  </div>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white pl-1">€{stats.totalValue.toFixed(2)}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 pl-1">{t('gift_card.active_gift_cards')}</p>
                 </div>
 
-                {recentCards.length > 0 && (
-                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">Aktuelle Gutscheine</h3>
-                      <button
-                        onClick={() => setCurrentView('manage-cards')}
-                        className="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium"
-                      >
-                        Alle anzeigen →
-                      </button>
+                <div className="relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-5 overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-sky-500 rounded-l-2xl" />
+                  <div className="flex items-center justify-between mb-3 pl-1">
+                    <div className="w-9 h-9 bg-sky-50 dark:bg-sky-900/30 rounded-xl flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                     </div>
-                    <div className="space-y-4">
-                      {recentCards.map((card) => (
-                        <div
-                          key={card.id}
-                          className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-1">
-                              <p className="font-mono font-bold text-slate-900 dark:text-white">{card.code}</p>
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(card.status)}`}>
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">{t('gift_card.total_cards')}</span>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white pl-1">{stats.totalCards}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 pl-1">{t('gift_card.issued_cards')}</p>
+                </div>
+
+                <div className="relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-5 overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-l-2xl" />
+                  <div className="flex items-center justify-between mb-3 pl-1">
+                    <div className="w-9 h-9 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                      <BarChart className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">{t('gift_card.redeemed')}</span>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white pl-1">{stats.redeemedCards}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 pl-1">{t('gift_card.cards_used')}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Code, Name oder E-Mail..."
+                    className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-slate-900 dark:focus:ring-white/20 focus:border-transparent transition-all duration-150 shadow-sm"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all duration-150">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto">
+                  {statusTabs.map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setStatusFilter(tab.key)}
+                      className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 whitespace-nowrap border ${
+                        statusFilter === tab.key
+                          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-md scale-[1.03]'
+                          : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {recentCards.length === 0 ? (
+                <div className="py-16 text-center">
+                  <Gift className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <p className="text-sm text-slate-400 mb-3">Noch keine Gutscheine erstellt</p>
+                  <button
+                    onClick={() => setCurrentView('create-card')}
+                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium transition-all duration-150 underline underline-offset-2"
+                  >
+                    Ersten Gutschein erstellen
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {filteredCards.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <p className="text-sm text-slate-400">Keine Gutscheine gefunden</p>
+                    </div>
+                  ) : (
+                    filteredCards.map(card => (
+                      <div
+                        key={card.id}
+                        className={`group relative bg-gradient-to-r from-white to-slate-50/50 dark:from-slate-800/90 dark:to-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 border-l-4 ${getStatusBorderColor(card.status)} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default`}
+                      >
+                        <div className="flex items-center gap-4 px-4 py-3.5">
+                          <div className="flex-shrink-0 w-12 h-12 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-700/60 rounded-xl text-center">
+                            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none">
+                              {new Date(card.created_at).toLocaleDateString('de-DE', { month: 'short' })}
+                            </span>
+                            <span className="text-lg font-bold text-slate-700 dark:text-slate-200 leading-tight">
+                              {new Date(card.created_at).getDate()}
+                            </span>
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500 leading-none">
+                              {new Date(card.created_at).getFullYear()}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono font-bold text-sm text-slate-900 dark:text-white tracking-wider">{card.code}</span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(card.status)}`}>
                                 {getStatusText(card.status)}
                               </span>
                             </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{card.recipient_name}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-500">{card.recipient_email}</p>
+                            <div className="flex flex-wrap items-center gap-3">
+                              {card.recipient_name && (
+                                <span className="text-sm text-slate-600 dark:text-slate-300 font-medium truncate max-w-[160px]">{card.recipient_name}</span>
+                              )}
+                              {card.recipient_email && (
+                                <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 truncate max-w-[180px]">
+                                  <Mail className="w-3 h-3 flex-shrink-0" />
+                                  {card.recipient_email}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
+
+                          <div className="flex-shrink-0 text-right">
                             <p className="text-xl font-bold text-slate-900 dark:text-white">€{Number(card.current_balance).toFixed(2)}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              {new Date(card.created_at).toLocaleDateString('de-DE', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
-                              })}
-                            </p>
+                            {card.original_amount !== card.current_balance && (
+                              <p className="text-xs text-slate-400 dark:text-slate-500 line-through">€{Number(card.original_amount).toFixed(2)}</p>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-                {recentCards.length === 0 && (
-                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
-                    <Gift className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                      Noch keine Gutscheine erstellt
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400 mb-6">
-                      Erstellen Sie Ihren ersten Gutschein, um loszulegen
-                    </p>
-                    <button
-                      onClick={() => setCurrentView('create-card')}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium inline-flex items-center space-x-2"
-                    >
-                      <Plus className="w-5 h-5" />
-                      <span>Ersten Gutschein erstellen</span>
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {currentView === 'create-card' && <CreateGiftCard />}
-        {currentView === 'manage-cards' && <ManageGiftCards />}
-        {currentView === 'templates' && <GiftCardTemplates />}
-        {currentView === 'settings' && <SettingsPage />}
-        {currentView === 'user-management' && <UserManagement />}
-      </main>
+      {currentView === 'create-card' && <CreateGiftCard />}
+      {currentView === 'manage-cards' && <ManageGiftCards />}
+      {currentView === 'templates' && <GiftCardTemplates />}
+      {currentView === 'settings' && <SettingsPage />}
+      {currentView === 'user-management' && <UserManagement />}
     </div>
   );
 }
