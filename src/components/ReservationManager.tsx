@@ -1316,7 +1316,7 @@ export function ReservationManager() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center z-50" onClick={() => setSelectedReservation(null)}>
             <div
               className="bg-white dark:bg-slate-950 rounded-t-3xl w-full max-w-2xl shadow-2xl overflow-hidden border-t border-x border-slate-100 dark:border-slate-800/80"
-              style={{ maxHeight: '92vh' }}
+              style={{ maxHeight: '92vh', marginBottom: '5vh' }}
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-center pt-3 pb-1">
