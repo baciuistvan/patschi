@@ -75,7 +75,7 @@ function ReservationCard({
   const cfg = statusConfig[(reservation.status as keyof typeof statusConfig)] ?? statusConfig.pending;
 
   return (
-    <div className="group relative flex items-stretch gap-0 bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden print:bg-white print:shadow-none print:break-inside-avoid border border-slate-100 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700">
+    <div className="group relative flex items-stretch gap-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden print:bg-white print:shadow-none print:break-inside-avoid border border-white/80 dark:border-slate-700/60 hover:border-slate-200 dark:hover:border-slate-600 hover:-translate-y-0.5">
       <div className={`w-1.5 flex-shrink-0 ${cfg.bar}`} />
 
       <div
