@@ -1310,6 +1310,14 @@ export function ReservationManager() {
               <button form="create-form" type="submit" className="w-full py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-700 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl transition-all duration-150 shadow-sm">
                 Reservierung erstellen
               </button>
+              {selectedTables.length === 0 && (
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl">
+                  <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300 leading-snug">
+                    Kein Tisch ausgewählt. Die Reservierung wird ohne Tischzuweisung erstellt.
+                  </p>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={handleCreateReservationWithPaymentLink}
