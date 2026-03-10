@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gift, Loader2, Check, Download } from 'lucide-react';
+import { Gift, Loader2, Check, Download, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateGiftCardPDF } from '../lib/pdfGenerator';
@@ -93,12 +93,8 @@ export function CreateGiftCard() {
         .select()
         .single();
 
-      if (insertError) {
-        console.error('Gift card creation error:', insertError);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      // Generate PDF client-side
       try {
         const pdfBlob = await generateGiftCardPDF({
           code,
@@ -107,58 +103,28 @@ export function CreateGiftCard() {
           purchaser_name: adminUser?.full_name || 'Admin',
           message: formData.message,
           expiry_date: expiryDate.toISOString(),
-          showPurchaser: false, // Hide "FROM" field for admin-created gift cards
+          showPurchaser: false,
         });
 
-        // Upload PDF to Supabase storage
         const fileName = `gc-${giftCard.id}.pdf`;
         const { error: uploadError } = await supabase.storage
           .from('gift-card-pdfs')
-          .upload(fileName, pdfBlob, {
-            contentType: 'application/pdf',
-            upsert: true,
-          });
+          .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
 
-        if (uploadError) {
-          console.error('PDF upload error:', uploadError);
-          throw new Error('PDF konnte nicht hochgeladen werden');
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage.from('gift-card-pdfs').getPublicUrl(fileName);
+          await supabase.from('gift_cards').update({ pdf_url: publicUrl }).eq('id', giftCard.id);
         }
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('gift-card-pdfs')
-          .getPublicUrl(fileName);
-
-        // Update gift card with PDF URL
-        const { error: updateError } = await supabase
-          .from('gift_cards')
-          .update({ pdf_url: publicUrl })
-          .eq('id', giftCard.id);
-
-        if (updateError) {
-          console.error('PDF URL update error:', updateError);
-          throw new Error('PDF-URL konnte nicht gespeichert werden');
-        }
-
-        console.log('PDF generated and uploaded successfully:', publicUrl);
       } catch (pdfError) {
         console.error('PDF generation/upload failed:', pdfError);
-        // Continue anyway - the gift card is created, PDF is optional
       }
 
       setCreatedCode(code);
       setCreatedGiftCardId(giftCard.id);
       setSuccess(true);
-      setFormData({
-        amount: 50,
-        customAmount: '',
-        recipientName: '',
-        recipientEmail: '',
-        message: ''
-      });
+      setFormData({ amount: 50, customAmount: '', recipientName: '', recipientEmail: '', message: '' });
       setIsCustomAmount(false);
     } catch (err) {
-      console.error('Gift card creation failed:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -167,7 +133,6 @@ export function CreateGiftCard() {
 
   const downloadPdf = async () => {
     if (!createdGiftCardId) return;
-
     setDownloadingPdf(true);
     try {
       const { data: giftCard } = await supabase
@@ -177,12 +142,13 @@ export function CreateGiftCard() {
         .maybeSingle();
 
       let blob: Blob;
-
       if (giftCard?.pdf_url) {
         const response = await fetch(giftCard.pdf_url);
         if (response.ok) {
           blob = await response.blob();
         } else {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
           blob = await generateGiftCardPDF({
             code: createdCode,
             current_balance: giftCard.current_balance,
@@ -218,7 +184,7 @@ export function CreateGiftCard() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('Error downloading PDF:', err);
-      alert('PDF konnte nicht heruntergeladen werden. Bitte versuchen Sie es später erneut.');
+      alert('PDF konnte nicht heruntergeladen werden.');
     } finally {
       setDownloadingPdf(false);
     }
@@ -226,191 +192,145 @@ export function CreateGiftCard() {
 
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-green-600" />
+      <div className="max-w-lg mx-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm p-10 text-center">
+          <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6 ring-1 ring-emerald-100 dark:ring-emerald-800/50">
+            <Check className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Gutschein erstellt!</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-4">
-            Gutschein wurde erfolgreich erstellt
-          </p>
-          <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 mb-6">
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Gutschein-Code:</p>
-            <p className="text-lg font-mono font-bold text-slate-900 dark:text-white">{createdCode}</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gutschein erstellt</h2>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mb-8">Erfolgreich ausgestellt und gespeichert</p>
+
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl px-6 py-5 mb-8 border border-slate-100 dark:border-slate-800">
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Gutschein-Code</p>
+            <p className="text-2xl font-mono font-bold text-slate-900 dark:text-white tracking-wider">{createdCode}</p>
           </div>
 
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3">
             <button
               onClick={downloadPdf}
               disabled={downloadingPdf}
-              className="w-full py-4 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-semibold text-sm hover:bg-slate-700 dark:hover:bg-slate-100 transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {downloadingPdf ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>PDF wird erstellt...</span>
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" /><span>PDF wird erstellt...</span></>
               ) : (
-                <>
-                  <Download className="w-5 h-5" />
-                  <span>Gutschein als PDF herunterladen</span>
-                </>
+                <><Download className="w-4 h-4" /><span>PDF herunterladen</span></>
               )}
             </button>
-
-            <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
-              <p className="font-semibold mb-1">PDF mit Logo und rotem Design</p>
-              <p className="text-xs">Professioneller Gutschein mit Patschi-Logo und Hintergrundbild</p>
-            </div>
+            <button
+              onClick={() => { setSuccess(false); setCreatedCode(''); setCreatedGiftCardId(''); }}
+              className="w-full py-3.5 bg-transparent border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-150"
+            >
+              Weiteren erstellen
+            </button>
           </div>
-
-          <button
-            onClick={() => {
-              setSuccess(false);
-              setCreatedCode('');
-              setCreatedGiftCardId('');
-            }}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
-          >
-            Weiteren Gutschein erstellen
-          </button>
         </div>
       </div>
     );
   }
 
+  const finalAmount = isCustomAmount && formData.customAmount ? parseFloat(formData.customAmount) : formData.amount;
+
   return (
-    <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8">
-      <div className="flex items-center justify-center mb-8 gap-4">
-        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center">
-          <Gift className="w-8 h-8 text-green-600" />
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Gutschein erstellen</h2>
-          <p className="text-slate-600 dark:text-slate-400">Gutschein manuell ausstellen</p>
-        </div>
+    <div className="max-w-lg mx-auto">
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Gutschein erstellen</h1>
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">Manuell einen Gutschein ausstellen</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-slate-900 dark:text-white mb-3">
-            Betrag auswählen
-          </label>
-          <div className="grid grid-cols-3 gap-3 mb-3">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm p-5">
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Betrag</p>
+          <div className="grid grid-cols-3 gap-2 mb-4">
             {PRESET_AMOUNTS.map((amount) => (
               <button
                 key={amount}
                 type="button"
                 onClick={() => handleAmountSelect(amount)}
-                className={`py-4 px-6 rounded-xl border-2 font-semibold text-lg transition ${
+                className={`py-3 rounded-xl font-bold text-lg transition-all duration-150 border ${
                   !isCustomAmount && formData.amount === amount
-                    ? 'border-green-600 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                    : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-green-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm'
+                    : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500'
                 }`}
               >
                 €{amount}
               </button>
             ))}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Individueller Betrag (mind. €{MIN_AMOUNT})
-            </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium">€</span>
             <input
               type="number"
               min={MIN_AMOUNT}
               step="1"
               value={formData.customAmount}
               onChange={(e) => handleCustomAmountChange(e.target.value)}
-              placeholder={`€${MIN_AMOUNT}`}
-              className={`w-full px-4 py-3 rounded-lg border-2 transition bg-white dark:bg-slate-700 text-slate-900 dark:text-white ${
+              placeholder={`Individuell (mind. €${MIN_AMOUNT})`}
+              className={`w-full pl-8 pr-4 py-3 rounded-xl border text-sm transition-all duration-150 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none ${
                 isCustomAmount
-                  ? 'border-green-600 bg-green-50 dark:bg-green-900/30'
-                  : 'border-slate-200 dark:border-slate-600 focus:border-green-500 focus:outline-none'
+                  ? 'border-slate-900 dark:border-white'
+                  : 'border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500'
               }`}
             />
           </div>
         </div>
 
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Empfänger-Informationen (Optional)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Name des Empfängers
-              </label>
-              <input
-                type="text"
-                value={formData.recipientName}
-                onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-green-500 focus:outline-none transition"
-                placeholder="Max Mustermann"
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm p-5">
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Empfänger <span className="font-normal normal-case text-slate-300 dark:text-slate-600">— Optional</span></p>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={formData.recipientName}
+              onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
+              placeholder="Name"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:border-slate-400 dark:focus:border-slate-500 focus:outline-none transition-all duration-150"
+            />
+            <input
+              type="email"
+              value={formData.recipientEmail}
+              onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
+              placeholder="E-Mail"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:border-slate-400 dark:focus:border-slate-500 focus:outline-none transition-all duration-150"
+            />
+            <div className="relative">
+              <textarea
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                rows={3}
+                maxLength={500}
+                placeholder="Persönliche Nachricht..."
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:border-slate-400 dark:focus:border-slate-500 focus:outline-none transition-all duration-150 resize-none"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                E-Mail des Empfängers
-              </label>
-              <input
-                type="email"
-                value={formData.recipientEmail}
-                onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-green-500 focus:outline-none transition"
-                placeholder="max@beispiel.de"
-              />
+              <span className="absolute bottom-3 right-4 text-xs text-slate-300 dark:text-slate-600">{formData.message.length}/500</span>
             </div>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Nachricht (Optional)
-          </label>
-          <textarea
-            value={formData.message}
-            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-            rows={4}
-            maxLength={500}
-            className="w-full px-4 py-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-green-500 focus:outline-none transition resize-none"
-            placeholder="Fügen Sie eine persönliche Nachricht hinzu..."
-          />
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{formData.message.length}/500 Zeichen</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-red-800 dark:text-red-400 text-sm font-medium">{error}</p>
+          <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-xl">
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           </div>
         )}
 
-        <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-700 dark:text-slate-300 font-medium">Gesamtbetrag:</span>
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">
-              €{(isCustomAmount && formData.customAmount ? parseFloat(formData.customAmount) : formData.amount).toFixed(2)}
-            </span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm px-5 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500">Gesamtbetrag</p>
+            <p className="text-xs text-slate-300 dark:text-slate-600 mt-0.5">Gültig für 1 Jahr</p>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">
-            Gutschein wird sofort erstellt und ist 1 Jahr gültig
+          <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+            €{isNaN(finalAmount) ? '0.00' : finalAmount.toFixed(2)}
           </p>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm transition-all duration-150 shadow-sm shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Wird erstellt...</span>
-            </>
+            <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt...</span></>
           ) : (
-            <>
-              <Gift className="w-5 h-5" />
-              <span>Gutschein erstellen</span>
-            </>
+            <><Gift className="w-4 h-4" /><span>Gutschein erstellen</span><ArrowRight className="w-4 h-4 ml-auto" /></>
           )}
         </button>
       </form>
