@@ -3,6 +3,38 @@
 @tailwind utilities;
 
 @layer base {
+  /* Brighter dark mode: shift all dark slate backgrounds ~20% lighter */
+  .dark {
+    --color-bg-base: #1e2330;
+    --color-bg-raised: #252b3b;
+    --color-bg-elevated: #2c3347;
+    --color-border: rgba(255,255,255,0.09);
+  }
+
+  .dark body,
+  .dark .min-h-screen {
+    background-color: var(--color-bg-base) !important;
+  }
+
+  /* Page/app background */
+  .dark .bg-slate-950 { background-color: #191e2a !important; }
+  .dark .bg-slate-900 { background-color: #212736 !important; }
+  .dark .bg-slate-800 { background-color: #2a3244 !important; }
+  .dark .bg-slate-700 { background-color: #374155 !important; }
+  .dark .bg-slate-600 { background-color: #475265 !important; }
+
+  /* Borders */
+  .dark .border-slate-800 { border-color: rgba(255,255,255,0.09) !important; }
+  .dark .border-slate-700 { border-color: rgba(255,255,255,0.13) !important; }
+
+  /* Hover states */
+  .dark .hover\:bg-slate-800:hover { background-color: #313a50 !important; }
+  .dark .hover\:bg-slate-700:hover { background-color: #3e4a61 !important; }
+
+  /* Text - slightly lighter to maintain contrast on brighter bg */
+  .dark .text-slate-500 { color: #8b96b0 !important; }
+  .dark .text-slate-400 { color: #a0adc4 !important; }
+
   /* iOS Safe Area Support */
   :root {
     --safe-area-inset-top: env(safe-area-inset-top);
