@@ -264,6 +264,63 @@ export function ReservationManager() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [editDrawerVisible, setEditDrawerVisible] = useState(false);
 
+  const MODAL_POS_KEY = 'reservation_modal_pos';
+  const getSavedModalPos = () => {
+    try {
+      const saved = localStorage.getItem(MODAL_POS_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  };
+  const [modalPos, setModalPos] = useState<{ x: number; y: number } | null>(getSavedModalPos);
+  const modalDragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const handleModalDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const rect = modalRef.current?.getBoundingClientRect();
+    modalDragRef.current = {
+      startX: clientX,
+      startY: clientY,
+      origX: rect ? rect.left : (modalPos?.x ?? window.innerWidth / 2 - 340),
+      origY: rect ? rect.top : (modalPos?.y ?? window.innerHeight * 0.08),
+    };
+
+    const onMove = (me: MouseEvent | TouchEvent) => {
+      if (!modalDragRef.current) return;
+      const mx = 'touches' in me ? (me as TouchEvent).touches[0].clientX : (me as MouseEvent).clientX;
+      const my = 'touches' in me ? (me as TouchEvent).touches[0].clientY : (me as MouseEvent).clientY;
+      const dx = mx - modalDragRef.current.startX;
+      const dy = my - modalDragRef.current.startY;
+      const newX = modalDragRef.current.origX + dx;
+      const newY = modalDragRef.current.origY + dy;
+      setModalPos({ x: newX, y: newY });
+    };
+
+    const onUp = (me: MouseEvent | TouchEvent) => {
+      if (!modalDragRef.current) return;
+      const mx = 'touches' in me ? (me as TouchEvent).changedTouches[0].clientX : (me as MouseEvent).clientX;
+      const my = 'touches' in me ? (me as TouchEvent).changedTouches[0].clientY : (me as MouseEvent).clientY;
+      const dx = mx - modalDragRef.current.startX;
+      const dy = my - modalDragRef.current.startY;
+      const newX = modalDragRef.current.origX + dx;
+      const newY = modalDragRef.current.origY + dy;
+      const pos = { x: newX, y: newY };
+      setModalPos(pos);
+      localStorage.setItem(MODAL_POS_KEY, JSON.stringify(pos));
+      modalDragRef.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+  };
+
   const createFormRef = useRef<HTMLDivElement>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -1312,14 +1369,27 @@ export function ReservationManager() {
         const selDate = new Date(selectedReservation.reservation_date + 'T00:00:00');
         const bookingMethodLabel = selBm === 'payment_link' ? 'Zahlungslink' : selBm === 'online' || selPm === 'stripe' ? 'Online' : selBm === 'manual' ? 'Manuell / Bar' : 'Kostenlos';
 
+        const isDragged = modalPos !== null;
         return (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center z-50" onClick={() => setSelectedReservation(null)}>
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            style={isDragged ? {} : { display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+            onClick={() => setSelectedReservation(null)}
+          >
             <div
-              className="bg-white dark:bg-slate-950 rounded-t-3xl w-full max-w-2xl shadow-2xl overflow-hidden border-t border-x border-slate-100 dark:border-slate-800/80"
-              style={{ maxHeight: '92vh', marginBottom: '5vh' }}
+              ref={modalRef}
+              className="bg-white dark:bg-slate-950 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800/80"
+              style={isDragged
+                ? { position: 'absolute', left: modalPos.x, top: modalPos.y, maxHeight: '92vh', width: 'min(100vw - 32px, 672px)' }
+                : { maxHeight: '92vh', marginBottom: '5vh', borderRadius: '1.5rem 1.5rem 0 0' }
+              }
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex justify-center pt-3 pb-1">
+              <div
+                className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing select-none"
+                onMouseDown={handleModalDragStart}
+                onTouchStart={handleModalDragStart}
+              >
                 <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
               </div>
 
