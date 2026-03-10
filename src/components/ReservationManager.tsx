@@ -1114,7 +1114,7 @@ export function ReservationManager() {
           </button>
           <button
             onClick={() => { setNewReservation(prev => ({ ...prev, reservation_date: selectedDate || formatDateLocal(new Date()) })); setShowCreateForm(true); }}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-orange-500 dark:bg-orange-500 hover:bg-orange-600 dark:hover:bg-orange-600 text-white dark:text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 dark:bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-600 text-white dark:text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             Neue Reservierung
