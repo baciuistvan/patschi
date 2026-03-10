@@ -1177,8 +1177,8 @@ export function ReservationManager() {
               onClick={() => setShowDatePicker(!showDatePicker)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap border ${
                 filter === 'date'
-                  ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/30 scale-[1.03]'
-                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-orange-300 dark:hover:border-orange-700 hover:text-orange-600 dark:hover:text-orange-400'
+                  ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/30 scale-[1.03]'
+                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
