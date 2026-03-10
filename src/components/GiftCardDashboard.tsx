@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Gift, Plus, Home, CreditCard, Settings as SettingsIcon, BarChart, DollarSign, Loader2, Search, X, Mail, RefreshCw, LogOut, Sun, Moon, ChevronRight, Calendar, Users, Shield, Palette } from 'lucide-react';
+import { Gift, Plus, Home, CreditCard, Settings as SettingsIcon, BarChart, DollarSign, Loader2, RefreshCw, LogOut, Sun, Moon, ChevronRight, Calendar, Users, Shield, Palette } from 'lucide-react';
 import { GiftCardTemplates } from './GiftCardTemplates';
 import { CreateGiftCard } from './CreateGiftCard';
 import { ManageGiftCards } from './ManageGiftCards';
@@ -11,7 +11,6 @@ import { UserManagement } from './UserManagement';
 import { supabase } from '../lib/supabase';
 
 type View = 'home' | 'create-card' | 'manage-cards' | 'templates' | 'settings' | 'user-management';
-type StatusFilter = 'all' | 'active' | 'redeemed' | 'expired' | 'cancelled';
 
 interface GiftCardStats {
   totalValue: number;
@@ -22,13 +21,7 @@ interface GiftCardStats {
 
 interface RecentGiftCard {
   id: string;
-  code: string;
-  original_amount: number;
-  current_balance: number;
-  recipient_name: string;
-  recipient_email: string;
   status: string;
-  created_at: string;
 }
 
 interface GiftCardDashboardProps {
@@ -50,8 +43,6 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
   const [currentView, setCurrentView] = useState<View>('home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState<GiftCardStats>({
     totalValue: 0,
     totalCards: 0,
@@ -106,71 +97,16 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
     }
   };
 
-  const getStatusBorderColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'border-l-emerald-500';
-      case 'redeemed': return 'border-l-sky-500';
-      case 'expired': return 'border-l-red-400';
-      case 'cancelled': return 'border-l-red-500';
-      default: return 'border-l-slate-300 dark:border-l-slate-600';
-    }
-  };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40';
-      case 'redeemed': return 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-700/40';
-      case 'expired': return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700/40';
-      case 'cancelled': return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700/40';
-      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'Aktiv';
-      case 'redeemed': return 'Eingelöst';
-      case 'expired': return 'Abgelaufen';
-      case 'cancelled': return 'Storniert';
-      default: return status;
-    }
-  };
-
-  const getFilteredCards = () => {
-    let filtered = recentCards;
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(card => card.status === statusFilter);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(card =>
-        card.code.toLowerCase().includes(q) ||
-        card.recipient_name?.toLowerCase().includes(q) ||
-        card.recipient_email?.toLowerCase().includes(q)
-      );
-    }
-    return filtered;
-  };
-
-  const statusTabs: { key: StatusFilter; label: string }[] = [
-    { key: 'all', label: 'Alle' },
-    { key: 'active', label: 'Aktiv' },
-    { key: 'redeemed', label: 'Eingelöst' },
-    { key: 'expired', label: 'Abgelaufen' },
-    { key: 'cancelled', label: 'Storniert' },
-  ];
-
-  const filteredCards = getFilteredCards();
+  const activeRate = stats.totalCards > 0 ? Math.round((stats.activeCards / stats.totalCards) * 100) : 0;
+  const redeemedRate = stats.totalCards > 0 ? Math.round((stats.redeemedCards / stats.totalCards) * 100) : 0;
 
   const HomeView = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-600 dark:text-slate-300 tracking-tight">Gutschein-Dashboard</h1>
-          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
-            {stats.totalCards > 0 && <span className="text-slate-600 dark:text-slate-400 font-medium">{stats.totalCards} </span>}
-            Gutscheine
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Übersicht</h1>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">Gutschein-Performance auf einen Blick</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -182,7 +118,7 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
           </button>
           <button
             onClick={() => setCurrentView('create-card')}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm shadow-emerald-500/20"
           >
             <Plus className="w-3.5 h-3.5" />
             Neuer Gutschein
@@ -191,153 +127,120 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
       </div>
 
       {loadingStats ? (
-        <div className="text-center py-16">
+        <div className="text-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-slate-400 mx-auto mb-3" />
           <p className="text-sm text-slate-400">Lade Dashboard-Daten...</p>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-5 overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-l-2xl" />
-              <div className="flex items-center justify-between mb-3 pl-1">
-                <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1 - Total Value */}
+          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/5 dark:bg-emerald-400/10 rounded-full -translate-y-8 translate-x-8" />
+            <div className="relative">
+              <div className="flex items-start justify-between mb-5">
+                <div className="w-11 h-11 bg-emerald-50 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center ring-1 ring-emerald-100 dark:ring-emerald-800/50">
                   <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Gesamtwert</span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 px-2.5 py-1 rounded-full">
+                  {stats.activeCards} aktiv
+                </span>
               </div>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white pl-1">€{stats.totalValue.toFixed(2)}</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 pl-1">Aktive Gutscheine</p>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  €{stats.totalValue.toFixed(2)}
+                </p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500">Offenes Guthaben</p>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 mb-1.5">
+                  <span>Ausschöpfungsrate</span>
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">{activeRate}%</span>
+                </div>
+                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-700"
+                    style={{ width: `${activeRate}%` }}
+                  />
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-5 overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-sky-500 rounded-l-2xl" />
-              <div className="flex items-center justify-between mb-3 pl-1">
-                <div className="w-9 h-9 bg-sky-50 dark:bg-sky-900/30 rounded-xl flex items-center justify-center">
+          {/* Card 2 - Total Cards */}
+          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/5 dark:bg-sky-400/10 rounded-full -translate-y-8 translate-x-8" />
+            <div className="relative">
+              <div className="flex items-start justify-between mb-5">
+                <div className="w-11 h-11 bg-sky-50 dark:bg-sky-900/40 rounded-2xl flex items-center justify-center ring-1 ring-sky-100 dark:ring-sky-800/50">
                   <CreditCard className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                 </div>
-                <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Gutscheine Gesamt</span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/40 px-2.5 py-1 rounded-full">
+                  Gesamt
+                </span>
               </div>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white pl-1">{stats.totalCards}</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 pl-1">Ausgestellte Gutscheine</p>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  {stats.totalCards}
+                </p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500">Ausgestellte Gutscheine</p>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{stats.activeCards}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Aktiv</p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-100 dark:bg-slate-800" />
+                  <div>
+                    <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{stats.redeemedCards}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Eingelöst</p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-100 dark:bg-slate-800" />
+                  <div>
+                    <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{stats.totalCards - stats.activeCards - stats.redeemedCards}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Sonstige</p>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="relative bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200/80 dark:border-slate-700/60 p-5 overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-l-2xl" />
-              <div className="flex items-center justify-between mb-3 pl-1">
-                <div className="w-9 h-9 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+          {/* Card 3 - Redeemed */}
+          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 dark:bg-amber-400/10 rounded-full -translate-y-8 translate-x-8" />
+            <div className="relative">
+              <div className="flex items-start justify-between mb-5">
+                <div className="w-11 h-11 bg-amber-50 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center ring-1 ring-amber-100 dark:ring-amber-800/50">
                   <BarChart className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
-                <span className="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Eingelöst</span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 px-2.5 py-1 rounded-full">
+                  {redeemedRate}% Quote
+                </span>
               </div>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white pl-1">{stats.redeemedCards}</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 pl-1">Verwendete Gutscheine</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Code, Name oder E-Mail..."
-                className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-slate-900 dark:focus:ring-white/20 focus:border-transparent transition-all duration-150 shadow-sm"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all duration-150">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1.5 overflow-x-auto">
-              {statusTabs.map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 whitespace-nowrap border ${
-                    statusFilter === tab.key
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-md scale-[1.03]'
-                      : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {recentCards.length === 0 ? (
-            <div className="py-16 text-center">
-              <Gift className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-              <p className="text-sm text-slate-400 mb-3">Noch keine Gutscheine erstellt</p>
-              <button
-                onClick={() => setCurrentView('create-card')}
-                className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium transition-all duration-150 underline underline-offset-2"
-              >
-                Ersten Gutschein erstellen
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {filteredCards.length === 0 ? (
-                <div className="py-12 text-center">
-                  <p className="text-sm text-slate-400">Keine Gutscheine gefunden</p>
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  {stats.redeemedCards}
+                </p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500">Eingelöste Gutscheine</p>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 mb-1.5">
+                  <span>Einlösequote</span>
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">{redeemedRate}%</span>
                 </div>
-              ) : (
-                filteredCards.map(card => (
+                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                   <div
-                    key={card.id}
-                    className={`group relative bg-gradient-to-r from-white to-slate-50/50 dark:from-slate-800/90 dark:to-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 border-l-4 ${getStatusBorderColor(card.status)} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-default`}
-                  >
-                    <div className="flex items-center gap-4 px-4 py-3.5">
-                      <div className="flex-shrink-0 w-12 h-12 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-700/60 rounded-xl text-center">
-                        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none">
-                          {new Date(card.created_at).toLocaleDateString('de-DE', { month: 'short' })}
-                        </span>
-                        <span className="text-lg font-bold text-slate-700 dark:text-slate-200 leading-tight">
-                          {new Date(card.created_at).getDate()}
-                        </span>
-                        <span className="text-[9px] text-slate-400 dark:text-slate-500 leading-none">
-                          {new Date(card.created_at).getFullYear()}
-                        </span>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono font-bold text-sm text-slate-900 dark:text-white tracking-wider">{card.code}</span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusBadgeColor(card.status)}`}>
-                            {getStatusText(card.status)}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          {card.recipient_name && (
-                            <span className="text-sm text-slate-600 dark:text-slate-300 font-medium truncate max-w-[160px]">{card.recipient_name}</span>
-                          )}
-                          {card.recipient_email && (
-                            <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 truncate max-w-[180px]">
-                              <Mail className="w-3 h-3 flex-shrink-0" />
-                              {card.recipient_email}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex-shrink-0 text-right">
-                        <p className="text-xl font-bold text-slate-900 dark:text-white">€{Number(card.current_balance).toFixed(2)}</p>
-                        {card.original_amount !== card.current_balance && (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 line-through">€{Number(card.original_amount).toFixed(2)}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+                    className="h-full bg-amber-500 rounded-full transition-all duration-700"
+                    style={{ width: `${redeemedRate}%` }}
+                  />
+                </div>
+              </div>
             </div>
-          )}
-        </>
+          </div>
+        </div>
       )}
     </div>
   );
