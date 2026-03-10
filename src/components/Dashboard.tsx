@@ -119,10 +119,10 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
           <button
             onClick={() => window.open('https://patschi.services/crew-simple-install.html', '_blank')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 hover:text-sky-700 dark:hover:text-sky-400 transition-all duration-150 group ${sidebarCollapsed ? 'justify-center' : ''}`}
-            title={sidebarCollapsed ? 'Crew' : undefined}
+            title={sidebarCollapsed ? 'Crew Dashboard' : undefined}
           >
             <Users style={{ width: 17, height: 17 }} className="flex-shrink-0 text-slate-400 group-hover:text-sky-600 transition-colors" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Crew</span>}
+            {!sidebarCollapsed && <span className="text-sm font-medium">Crew Dashboard</span>}
           </button>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
