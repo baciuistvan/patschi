@@ -1,6 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Filter, Download, ChevronDown, ChevronUp, Users, Mail, Phone, Calendar, DollarSign, TrendingUp, Eye, Plus } from 'lucide-react';
+import {
+  Search, Download, Users, Mail, Phone, Calendar, Euro,
+  TrendingUp, Star, ChevronDown, ChevronUp, X, Clock,
+  Hash, ArrowUpDown, SlidersHorizontal,
+} from 'lucide-react';
 
 interface Guest {
   customer_name: string;
@@ -28,6 +32,287 @@ type FilterType = 'all' | 'new' | 'returning' | 'vip';
 type SortField = 'name' | 'visits' | 'spent' | 'last_visit';
 type SortOrder = 'asc' | 'desc';
 
+const tierConfig = {
+  vip: {
+    label: 'VIP',
+    ring: 'ring-2 ring-amber-400/60',
+    avatarBg: 'bg-amber-50 dark:bg-amber-900/30',
+    avatarText: 'text-amber-700 dark:text-amber-300',
+    bar: 'bg-amber-400',
+    badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40',
+  },
+  returning: {
+    label: 'Stammgast',
+    ring: 'ring-2 ring-sky-400/40',
+    avatarBg: 'bg-sky-50 dark:bg-sky-900/30',
+    avatarText: 'text-sky-700 dark:text-sky-300',
+    bar: 'bg-sky-500',
+    badge: 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-700/40',
+  },
+  new: {
+    label: 'Neu',
+    ring: 'ring-2 ring-slate-200 dark:ring-slate-700',
+    avatarBg: 'bg-slate-100 dark:bg-slate-800',
+    avatarText: 'text-slate-600 dark:text-slate-300',
+    bar: 'bg-slate-300 dark:bg-slate-600',
+    badge: 'bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600/40',
+  },
+};
+
+const statusConfig = {
+  confirmed: { bar: 'bg-emerald-500', badge: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40', label: 'Bestätigt' },
+  pending:   { bar: 'bg-amber-400',   badge: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40',   label: 'Ausstehend' },
+  cancelled: { bar: 'bg-red-500',     badge: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700/40',         label: 'Storniert' },
+  completed: { bar: 'bg-sky-500',     badge: 'bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-700/40',         label: 'Abgeschlossen' },
+};
+
+function getTier(guest: Guest): 'vip' | 'returning' | 'new' {
+  if (guest.reservation_count >= 5 || parseFloat(guest.total_spent) >= 1000) return 'vip';
+  if (guest.reservation_count >= 2) return 'returning';
+  return 'new';
+}
+
+function formatDate(dateString: string) {
+  if (!dateString) return '—';
+  return new Date(dateString).toLocaleDateString('de-AT', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function formatDateShort(dateString: string) {
+  if (!dateString) return '—';
+  const d = new Date(dateString + 'T00:00:00');
+  return {
+    day: d.getDate(),
+    month: d.toLocaleDateString('de-DE', { month: 'short' }),
+    weekday: d.toLocaleDateString('de-DE', { weekday: 'short' }),
+  };
+}
+
+function daysSince(dateString: string): number {
+  if (!dateString) return 0;
+  const diff = Date.now() - new Date(dateString).getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+function SkeletonCard() {
+  return (
+    <div className="flex items-center gap-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 animate-pulse">
+      <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-32" />
+        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-48" />
+      </div>
+      <div className="hidden sm:flex gap-6">
+        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-10" />
+        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-14" />
+        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-20" />
+      </div>
+    </div>
+  );
+}
+
+function GuestCard({ guest, selected, onClick }: { guest: Guest; selected: boolean; onClick: () => void }) {
+  const tier = getTier(guest);
+  const cfg = tierConfig[tier];
+  const initials = guest.customer_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  const days = daysSince(guest.last_visit_date);
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left flex items-center gap-4 rounded-2xl border transition-all duration-150 p-4 group
+        ${selected
+          ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white shadow-md'
+          : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-sm'
+        }`}
+    >
+      <div className={`relative flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center ${cfg.ring} ${selected ? 'ring-offset-2 ring-offset-slate-900 dark:ring-offset-white' : ''}`}>
+        <div className={`w-full h-full rounded-full flex items-center justify-center text-sm font-semibold ${selected ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900' : `${cfg.avatarBg} ${cfg.avatarText}`}`}>
+          {initials}
+        </div>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-semibold truncate ${selected ? 'text-white dark:text-slate-900' : 'text-slate-900 dark:text-white'}`}>
+            {guest.customer_name}
+          </span>
+          {tier === 'vip' && <Star className={`w-3 h-3 flex-shrink-0 fill-current ${selected ? 'text-amber-400' : 'text-amber-400'}`} />}
+        </div>
+        <p className={`text-xs mt-0.5 truncate ${selected ? 'text-slate-400 dark:text-slate-500' : 'text-slate-500 dark:text-slate-400'}`}>
+          {guest.customer_email}
+        </p>
+      </div>
+
+      <div className="hidden sm:flex items-center gap-5 flex-shrink-0">
+        <div className="text-right">
+          <p className={`text-sm font-semibold tabular-nums ${selected ? 'text-white dark:text-slate-900' : 'text-slate-900 dark:text-white'}`}>
+            {guest.reservation_count}
+          </p>
+          <p className={`text-xs ${selected ? 'text-slate-400 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500'}`}>Besuche</p>
+        </div>
+        <div className="text-right">
+          <p className={`text-sm font-semibold tabular-nums ${selected ? 'text-white dark:text-slate-900' : 'text-slate-900 dark:text-white'}`}>
+            €{parseFloat(guest.total_spent).toFixed(0)}
+          </p>
+          <p className={`text-xs ${selected ? 'text-slate-400 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500'}`}>Ausgaben</p>
+        </div>
+        <div className="text-right min-w-[56px]">
+          <p className={`text-sm font-medium tabular-nums ${selected ? 'text-white dark:text-slate-900' : days > 90 ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>
+            {days === 0 ? 'Heute' : `${days}T`}
+          </p>
+          <p className={`text-xs ${selected ? 'text-slate-400 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500'}`}>zuletzt</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+      <p className="text-xl font-bold text-slate-900 dark:text-white leading-none">{value}</p>
+      {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+function ReservationEntry({ res }: { res: Reservation }) {
+  const dt = formatDateShort(res.reservation_date);
+  const cfg = statusConfig[(res.status as keyof typeof statusConfig)] ?? statusConfig.pending;
+
+  return (
+    <div className="flex items-stretch gap-0 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <div className={`w-1 flex-shrink-0 ${cfg.bar}`} />
+      <div className="flex items-center gap-3 px-3 py-3 flex-1 min-w-0">
+        <div className="flex-shrink-0 w-10 text-center">
+          <p className="text-base font-bold text-slate-900 dark:text-white leading-none">{dt.day}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 uppercase">{dt.month}</p>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">{res.reservation_time}</span>
+            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+              <Users className="w-3 h-3" />
+              <span>{res.party_size}</span>
+            </div>
+            {res.booking_code && (
+              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">{res.booking_code}</span>
+            )}
+          </div>
+          {res.special_requests && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate">{res.special_requests}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {parseFloat(res.payment_amount || '0') > 0 && (
+            <span className="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">
+              €{parseFloat(res.payment_amount).toFixed(2)}
+            </span>
+          )}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>{cfg.label}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GuestDetailPanel({ guest, reservations, loading, onClose }: {
+  guest: Guest;
+  reservations: Reservation[] | undefined;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  const tier = getTier(guest);
+  const cfg = tierConfig[tier];
+  const initials = guest.customer_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  const avg = guest.reservation_count > 0 ? parseFloat(guest.total_spent) / guest.reservation_count : 0;
+  const days = daysSince(guest.last_visit_date);
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold ${cfg.ring} ${cfg.avatarBg} ${cfg.avatarText}`}>
+              {initials}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">{guest.customer_name}</h3>
+                {tier === 'vip' && <Star className="w-4 h-4 fill-amber-400 text-amber-400" />}
+              </div>
+              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>
+                {cfg.label}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <a href={`mailto:${guest.customer_email}`} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors group">
+            <Mail className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 flex-shrink-0" />
+            <span className="truncate">{guest.customer_email}</span>
+          </a>
+          {guest.customer_phone && (
+            <a href={`tel:${guest.customer_phone}`} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors group">
+              <Phone className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 flex-shrink-0" />
+              <span>{guest.customer_phone}</span>
+            </a>
+          )}
+          <div className="flex items-center gap-2.5 text-sm text-slate-500 dark:text-slate-400">
+            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <span>Gast seit {formatDate(guest.first_visit_date)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-2 gap-3">
+          <StatTile label="Besuche gesamt" value={String(guest.reservation_count)} />
+          <StatTile label="Ausgaben gesamt" value={`€${parseFloat(guest.total_spent).toFixed(2)}`} />
+          <StatTile label="Ø pro Besuch" value={`€${avg.toFixed(2)}`} />
+          <StatTile
+            label="Letzter Besuch"
+            value={days === 0 ? 'Heute' : `vor ${days}T`}
+            sub={formatDate(guest.last_visit_date)}
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+          Reservierungsverlauf
+        </h4>
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-14 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+            ))}
+          </div>
+        ) : reservations && reservations.length > 0 ? (
+          <div className="space-y-2">
+            {reservations.map(res => (
+              <ReservationEntry key={res.id} res={res} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Clock className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p className="text-sm text-slate-400 dark:text-slate-500">Keine Reservierungen</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function GuestManager() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,9 +320,10 @@ export function GuestManager() {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortField, setSortField] = useState<SortField>('last_visit');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [expandedGuest, setExpandedGuest] = useState<string | null>(null);
+  const [selectedGuest, setSelectedGuest] = useState<string | null>(null);
   const [guestReservations, setGuestReservations] = useState<Record<string, Reservation[]>>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [loadingReservations, setLoadingReservations] = useState<string | null>(null);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   useEffect(() => {
     fetchGuests();
@@ -58,19 +344,14 @@ export function GuestManager() {
         if (reservationError) throw reservationError;
 
         const guestMap = new Map<string, Guest>();
-
         reservations?.forEach((res) => {
           const key = res.customer_email;
           if (guestMap.has(key)) {
-            const guest = guestMap.get(key)!;
-            guest.reservation_count += 1;
-            guest.total_spent = (parseFloat(guest.total_spent) + parseFloat(res.payment_amount || '0')).toFixed(2);
-            if (res.reservation_date > guest.last_visit_date) {
-              guest.last_visit_date = res.reservation_date;
-            }
-            if (res.reservation_date < guest.first_visit_date) {
-              guest.first_visit_date = res.reservation_date;
-            }
+            const g = guestMap.get(key)!;
+            g.reservation_count += 1;
+            g.total_spent = (parseFloat(g.total_spent) + parseFloat(res.payment_amount || '0')).toFixed(2);
+            if (res.reservation_date > g.last_visit_date) g.last_visit_date = res.reservation_date;
+            if (res.reservation_date < g.first_visit_date) g.first_visit_date = res.reservation_date;
           } else {
             guestMap.set(key, {
               customer_name: res.customer_name,
@@ -79,27 +360,24 @@ export function GuestManager() {
               reservation_count: 1,
               total_spent: (parseFloat(res.payment_amount || '0')).toFixed(2),
               last_visit_date: res.reservation_date,
-              first_visit_date: res.reservation_date
+              first_visit_date: res.reservation_date,
             });
           }
         });
-
         setGuests(Array.from(guestMap.values()));
       } else {
         setGuests(data || []);
       }
-    } catch (error) {
-      console.error('Error fetching guests:', error);
+    } catch (err) {
+      console.error('Error fetching guests:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchGuestReservations = async (email: string) => {
-    if (guestReservations[email]) {
-      return;
-    }
-
+  const fetchGuestReservations = useCallback(async (email: string) => {
+    if (guestReservations[email]) return;
+    setLoadingReservations(email);
     try {
       const { data, error } = await supabase
         .from('reservations')
@@ -108,491 +386,241 @@ export function GuestManager() {
         .order('reservation_date', { ascending: false });
 
       if (error) throw error;
-
-      setGuestReservations(prev => ({
-        ...prev,
-        [email]: data || []
-      }));
-    } catch (error) {
-      console.error('Error fetching guest reservations:', error);
+      setGuestReservations(prev => ({ ...prev, [email]: data || [] }));
+    } catch (err) {
+      console.error('Error fetching guest reservations:', err);
+    } finally {
+      setLoadingReservations(null);
     }
-  };
+  }, [guestReservations]);
 
-  const toggleGuestDetails = (email: string) => {
-    if (expandedGuest === email) {
-      setExpandedGuest(null);
+  const selectGuest = useCallback((email: string) => {
+    if (selectedGuest === email) {
+      setSelectedGuest(null);
     } else {
-      setExpandedGuest(email);
+      setSelectedGuest(email);
       fetchGuestReservations(email);
     }
-  };
+  }, [selectedGuest, fetchGuestReservations]);
 
   const filteredAndSortedGuests = useMemo(() => {
-    let filtered = guests.filter(guest => {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        guest.customer_name.toLowerCase().includes(searchLower) ||
-        guest.customer_email.toLowerCase().includes(searchLower) ||
-        guest.customer_phone.toLowerCase().includes(searchLower);
+    let filtered = guests.filter(g => {
+      const s = searchTerm.toLowerCase();
+      const matchesSearch = !s ||
+        g.customer_name.toLowerCase().includes(s) ||
+        g.customer_email.toLowerCase().includes(s) ||
+        g.customer_phone.toLowerCase().includes(s);
 
       if (!matchesSearch) return false;
 
       switch (filterType) {
-        case 'new':
-          return guest.reservation_count === 1;
-        case 'returning':
-          return guest.reservation_count >= 2 && guest.reservation_count < 5;
-        case 'vip':
-          return guest.reservation_count >= 5 || parseFloat(guest.total_spent) >= 1000;
-        default:
-          return true;
+        case 'new': return g.reservation_count === 1;
+        case 'returning': return g.reservation_count >= 2 && g.reservation_count < 5;
+        case 'vip': return g.reservation_count >= 5 || parseFloat(g.total_spent) >= 1000;
+        default: return true;
       }
     });
 
     filtered.sort((a, b) => {
-      let comparison = 0;
-
+      let cmp = 0;
       switch (sortField) {
-        case 'name':
-          comparison = a.customer_name.localeCompare(b.customer_name);
-          break;
-        case 'visits':
-          comparison = a.reservation_count - b.reservation_count;
-          break;
-        case 'spent':
-          comparison = parseFloat(a.total_spent) - parseFloat(b.total_spent);
-          break;
-        case 'last_visit':
-          comparison = new Date(a.last_visit_date).getTime() - new Date(b.last_visit_date).getTime();
-          break;
+        case 'name': cmp = a.customer_name.localeCompare(b.customer_name); break;
+        case 'visits': cmp = a.reservation_count - b.reservation_count; break;
+        case 'spent': cmp = parseFloat(a.total_spent) - parseFloat(b.total_spent); break;
+        case 'last_visit': cmp = new Date(a.last_visit_date).getTime() - new Date(b.last_visit_date).getTime(); break;
       }
-
-      return sortOrder === 'asc' ? comparison : -comparison;
+      return sortOrder === 'asc' ? cmp : -cmp;
     });
 
     return filtered;
   }, [guests, searchTerm, filterType, sortField, sortOrder]);
 
   const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
+    if (sortField === field) setSortOrder(s => s === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortOrder('desc'); }
+    setShowSortMenu(false);
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'E-Mail', 'Telefon', 'Gesamte Besuche', 'Gesamt Ausgegeben', 'Erster Besuch', 'Letzter Besuch'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredAndSortedGuests.map(guest => [
-        `"${guest.customer_name}"`,
-        `"${guest.customer_email}"`,
-        `"${guest.customer_phone}"`,
-        guest.reservation_count,
-        guest.total_spent,
-        guest.first_visit_date,
-        guest.last_visit_date
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const headers = ['Name', 'E-Mail', 'Telefon', 'Besuche', 'Ausgaben', 'Erster Besuch', 'Letzter Besuch'];
+    const rows = filteredAndSortedGuests.map(g => [
+      `"${g.customer_name}"`, `"${g.customer_email}"`, `"${g.customer_phone}"`,
+      g.reservation_count, g.total_spent, g.first_visit_date, g.last_visit_date,
+    ].join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `gaeste-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    a.href = url; a.download = `gaeste-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const getGuestBadge = (guest: Guest) => {
-    const visits = guest.reservation_count;
-    const spent = parseFloat(guest.total_spent);
+  const totalSpend = guests.reduce((s, g) => s + parseFloat(g.total_spent), 0);
+  const vipCount = guests.filter(g => getTier(g) === 'vip').length;
+  const avgSpend = guests.length > 0 ? totalSpend / guests.length : 0;
 
-    if (visits >= 5 || spent >= 1000) {
-      return <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-full">VIP</span>;
-    } else if (visits >= 2) {
-      return <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">Stammgast</span>;
-    } else {
-      return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full">Neu</span>;
-    }
+  const sortLabels: Record<SortField, string> = {
+    last_visit: 'Letzter Besuch',
+    name: 'Name',
+    visits: 'Besuche',
+    spent: 'Ausgaben',
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-AT', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
-    }
-  };
-
-  const translateStatus = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'Bestätigt';
-      case 'pending':
-        return 'Ausstehend';
-      case 'cancelled':
-        return 'Storniert';
-      case 'completed':
-        return 'Abgeschlossen';
-      default:
-        return status;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600 dark:text-slate-400">Gäste werden geladen...</p>
-        </div>
-      </div>
-    );
-  }
+  const selectedGuestData = guests.find(g => g.customer_email === selectedGuest);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="flex flex-col h-full min-h-0 space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Gästeverwaltung</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            {filteredAndSortedGuests.length} {filteredAndSortedGuests.length === 1 ? 'Gast' : 'Gäste'} gefunden
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Gästeverwaltung</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            {guests.length} {guests.length === 1 ? 'Gast' : 'Gäste'} insgesamt
           </p>
         </div>
         <button
           onClick={exportToCSV}
           disabled={filteredAndSortedGuests.length === 0}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium hover:bg-slate-700 dark:hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Download className="w-4 h-4" />
-          <span>CSV Exportieren</span>
+          <span>CSV Export</span>
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Suche nach Name, E-Mail oder Telefon..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-            />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-slate-400" />
+            <span className="text-xs text-slate-500 dark:text-slate-400">Gäste</span>
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-slate-700 dark:text-slate-300"
-          >
-            <Filter className="w-4 h-4" />
-            <span>Filter</span>
-          </button>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{guests.length}</p>
         </div>
-
-        {showFilters && (
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => setFilterType('all')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                filterType === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-              }`}
-            >
-              Alle Gäste
-            </button>
-            <button
-              onClick={() => setFilterType('new')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                filterType === 'new'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-              }`}
-            >
-              Neu (1 Besuch)
-            </button>
-            <button
-              onClick={() => setFilterType('returning')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                filterType === 'returning'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-              }`}
-            >
-              Stammgast (2-4 Besuche)
-            </button>
-            <button
-              onClick={() => setFilterType('vip')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                filterType === 'vip'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-              }`}
-            >
-              VIP (5+ Besuche oder €1000+)
-            </button>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="w-4 h-4 text-amber-400" />
+            <span className="text-xs text-slate-500 dark:text-slate-400">VIPs</span>
           </div>
-        )}
+          <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{vipCount}</p>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Euro className="w-4 h-4 text-slate-400" />
+            <span className="text-xs text-slate-500 dark:text-slate-400">Ø Ausgaben</span>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">€{avgSpend.toFixed(0)}</p>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('name')}
-                    className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
-                  >
-                    <span>Gast</span>
-                    {sortField === 'name' && (
-                      sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                    )}
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Kontakt
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('visits')}
-                    className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
-                  >
-                    <span>Besuche</span>
-                    {sortField === 'visits' && (
-                      sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                    )}
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('spent')}
-                    className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
-                  >
-                    <span>Gesamt Ausgegeben</span>
-                    {sortField === 'spent' && (
-                      sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                    )}
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <button
-                    onClick={() => handleSort('last_visit')}
-                    className="flex items-center space-x-1 hover:text-slate-700 dark:hover:text-slate-200"
-                  >
-                    <span>Letzter Besuch</span>
-                    {sortField === 'last_visit' && (
-                      sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-                    )}
-                  </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Aktionen
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {filteredAndSortedGuests.map((guest) => (
-                <>
-                  <tr
-                    key={guest.customer_email}
-                    className="hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                    onClick={() => toggleGuestDetails(guest.customer_email)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 dark:text-blue-200 font-semibold text-sm">
-                            {guest.customer_name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-slate-900 dark:text-white">
-                            {guest.customer_name}
-                          </div>
-                          <div className="flex items-center space-x-2 mt-1">
-                            {getGuestBadge(guest)}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                          <Mail className="w-4 h-4" />
-                          <span>{guest.customer_email}</span>
-                        </div>
-                        {guest.customer_phone && (
-                          <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                            <Phone className="w-4 h-4" />
-                            <span>{guest.customer_phone}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <TrendingUp className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">
-                          {guest.reservation_count}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">
-                          €{parseFloat(guest.total_spent).toFixed(2)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(guest.last_visit_date)}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleGuestDetails(guest.customer_email);
-                        }}
-                        className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
-                      >
-                        <Eye className="w-4 h-4" />
-                        <span>Ansehen</span>
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedGuest === guest.customer_email && (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-4 bg-slate-100 dark:bg-slate-900">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                              Reservierungsverlauf
-                            </h3>
-                            <div className="text-sm text-slate-600 dark:text-slate-300">
-                              Mitglied seit {formatDate(guest.first_visit_date)}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Gesamte Besuche</div>
-                              <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                                {guest.reservation_count}
-                              </div>
-                            </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Gesamt Ausgegeben</div>
-                              <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                                €{parseFloat(guest.total_spent).toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Durchschn. Ausgaben</div>
-                              <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                                €{(parseFloat(guest.total_spent) / guest.reservation_count).toFixed(2)}
-                              </div>
-                            </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                              <div className="text-sm text-slate-600 dark:text-slate-300">Letzter Besuch</div>
-                              <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                                {formatDate(guest.last_visit_date)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {guestReservations[guest.customer_email] ? (
-                            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden shadow-sm">
-                              <table className="w-full">
-                                <thead className="bg-slate-100 dark:bg-slate-700">
-                                  <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Datum</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Uhrzeit</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Personenzahl</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Betrag</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">Buchungscode</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                  {guestReservations[guest.customer_email].map((reservation) => (
-                                    <tr key={reservation.id} className="hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                                        {formatDate(reservation.reservation_date)}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                                        {reservation.reservation_time}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                                        <div className="flex items-center space-x-1">
-                                          <Users className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                                          <span>{reservation.party_size}</span>
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-3">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
-                                          {translateStatus(reservation.status)}
-                                        </span>
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                                        €{parseFloat(reservation.payment_amount || '0').toFixed(2)}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 font-mono">
-                                        {reservation.booking_code || '-'}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </>
-              ))}
-            </tbody>
-          </table>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Name, E-Mail oder Telefon..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-white/10 focus:border-slate-300 dark:focus:border-slate-600 transition-all"
+          />
         </div>
 
-        {filteredAndSortedGuests.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Keine Gäste gefunden</h3>
-            <p className="text-slate-600 dark:text-slate-400">
-              {searchTerm || filterType !== 'all'
-                ? 'Versuchen Sie, Ihre Suche oder Filter anzupassen'
-                : 'Gästedaten erscheinen hier, sobald Reservierungen vorgenommen wurden'}
+        <div className="flex gap-2">
+          {(['all', 'new', 'returning', 'vip'] as FilterType[]).map(f => {
+            const labels = { all: 'Alle', new: 'Neu', returning: 'Stammgast', vip: 'VIP' };
+            return (
+              <button
+                key={f}
+                onClick={() => setFilterType(f)}
+                className={`px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  filterType === f
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                {labels[f]}
+              </button>
+            );
+          })}
+
+          <div className="relative">
+            <button
+              onClick={() => setShowSortMenu(s => !s)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">{sortLabels[sortField]}</span>
+              <SlidersHorizontal className="w-3.5 h-3.5 md:hidden" />
+            </button>
+            {showSortMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-44 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg z-20 py-1 overflow-hidden">
+                {(Object.entries(sortLabels) as [SortField, string][]).map(([f, label]) => (
+                  <button
+                    key={f}
+                    onClick={() => handleSort(f)}
+                    className={`w-full flex items-center justify-between px-4 py-2 text-sm transition-colors ${
+                      sortField === f
+                        ? 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{label}</span>
+                    {sortField === f && (
+                      sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showSortMenu && (
+        <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
+      )}
+
+      <div className="flex gap-4 flex-1 min-h-0">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="flex items-center justify-between mb-2 px-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {filteredAndSortedGuests.length} {filteredAndSortedGuests.length === 1 ? 'Gast' : 'Gäste'}
+              {searchTerm || filterType !== 'all' ? ' gefunden' : ''}
             </p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+            ) : filteredAndSortedGuests.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <Users className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Keine Gäste gefunden</h3>
+                <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs mx-auto">
+                  {searchTerm || filterType !== 'all'
+                    ? 'Suche oder Filter anpassen'
+                    : 'Gästeliste erscheint, sobald Reservierungen vorliegen'}
+                </p>
+              </div>
+            ) : (
+              filteredAndSortedGuests.map(guest => (
+                <GuestCard
+                  key={guest.customer_email}
+                  guest={guest}
+                  selected={selectedGuest === guest.customer_email}
+                  onClick={() => selectGuest(guest.customer_email)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {selectedGuestData && (
+          <div className="w-80 xl:w-96 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+            <GuestDetailPanel
+              guest={selectedGuestData}
+              reservations={guestReservations[selectedGuestData.customer_email]}
+              loading={loadingReservations === selectedGuestData.customer_email}
+              onClose={() => setSelectedGuest(null)}
+            />
           </div>
         )}
       </div>
