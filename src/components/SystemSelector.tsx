@@ -139,7 +139,10 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
       </nav>
 
       <main className="max-w-6xl mx-auto px-5 sm:px-8 py-24">
-        <div className={`mb-20 transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
+        <div
+          style={{ transition: 'opacity 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s, transform 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s' }}
+          className={`mb-20 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}
+        >
           <p className="text-xs font-semibold tracking-widest text-slate-400 dark:text-slate-500 uppercase mb-4">
             {t('app.title')}
           </p>
@@ -155,8 +158,8 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
           <button
             onClick={() => onSelectSystem('reservations')}
             style={{
-              transitionDelay: mounted ? '0ms' : '120ms',
-              transition: 'opacity 0.6s ease, transform 0.6s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+              transitionDelay: mounted ? '0ms' : '0ms',
+              transition: 'opacity 0.65s cubic-bezier(0.22,1,0.36,1) 0.35s, transform 0.65s cubic-bezier(0.22,1,0.36,1) 0.35s, box-shadow 0.3s ease, border-color 0.3s ease',
             }}
             className={`card-shimmer group relative overflow-hidden rounded-3xl text-left
               bg-white dark:bg-[#111113]
@@ -165,7 +168,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
               hover:shadow-2xl hover:shadow-blue-500/8 dark:hover:shadow-blue-500/15
               hover:-translate-y-1.5
               p-8
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
           >
             <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-blue-500/5 dark:bg-blue-500/8 blur-3xl -translate-y-12 translate-x-12 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/15 transition-all duration-700" />
             <div className="relative">
@@ -188,8 +191,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
           <button
             onClick={() => onSelectSystem('gift-cards')}
             style={{
-              transitionDelay: mounted ? '0ms' : '220ms',
-              transition: 'opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s, box-shadow 0.3s ease, border-color 0.3s ease',
+              transition: 'opacity 0.65s cubic-bezier(0.22,1,0.36,1) 0.5s, transform 0.65s cubic-bezier(0.22,1,0.36,1) 0.5s, box-shadow 0.3s ease, border-color 0.3s ease',
             }}
             className={`card-shimmer group relative overflow-hidden rounded-3xl text-left
               bg-white dark:bg-[#111113]
@@ -198,7 +200,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
               hover:shadow-2xl hover:shadow-emerald-500/8 dark:hover:shadow-emerald-500/15
               hover:-translate-y-1.5
               p-8
-              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
           >
             <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-emerald-500/5 dark:bg-emerald-500/8 blur-3xl -translate-y-12 translate-x-12 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/15 transition-all duration-700" />
             <div className="relative">
