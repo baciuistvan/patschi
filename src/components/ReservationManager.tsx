@@ -82,10 +82,10 @@ function ReservationCard({
         className="flex items-stretch gap-5 flex-1 px-5 py-5 cursor-pointer"
         onClick={() => onSelect(reservation)}
       >
-        <div className="flex-shrink-0 flex flex-col items-center justify-center w-14 bg-slate-50 dark:bg-slate-800/60 rounded-2xl py-3 px-2 text-center">
-          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide leading-none">{weekday}</span>
-          <span className="text-2xl font-bold text-slate-800 dark:text-white leading-tight mt-1">{dayNum}</span>
-          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 leading-none mt-0.5 uppercase">{monthAbbr}</span>
+        <div className="flex-shrink-0 flex flex-col items-center justify-center w-14 bg-orange-50 dark:bg-orange-900/30 rounded-2xl py-3 px-2 text-center">
+          <span className="text-[11px] font-semibold text-orange-400 dark:text-orange-400 uppercase tracking-wide leading-none">{weekday}</span>
+          <span className="text-2xl font-bold text-orange-600 dark:text-orange-300 leading-tight mt-1">{dayNum}</span>
+          <span className="text-[11px] font-medium text-orange-400 dark:text-orange-400 leading-none mt-0.5 uppercase">{monthAbbr}</span>
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
