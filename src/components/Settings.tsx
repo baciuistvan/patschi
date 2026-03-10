@@ -52,19 +52,16 @@ export function Settings() {
                   onClick={() => setActiveTab(option.id)}
                   className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 whitespace-nowrap group ${
                     isActive
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm shadow-slate-200/80 dark:shadow-slate-900/50'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60'
                   }`}
                 >
                   <OptionIcon className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${
-                    isActive ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-500 dark:group-hover:text-slate-300'
+                    isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'
                   }`} />
                   <span>{option.label}</span>
                   {option.showBadge && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  )}
-                  {isActive && (
-                    <span className="absolute inset-x-3.5 -bottom-0.5 h-0.5 rounded-full bg-blue-500/50" />
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? 'bg-white/80' : 'bg-emerald-500'}`} />
                   )}
                 </button>
               );
