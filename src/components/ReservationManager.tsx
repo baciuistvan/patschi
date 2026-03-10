@@ -1034,7 +1034,7 @@ export function ReservationManager() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4 no-print">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white tracking-tight">{t('reservations.title')}</h1>
+          <h1 className="text-xl font-semibold text-slate-600 dark:text-slate-300 tracking-tight">{t('reservations.title')}</h1>
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
             {getFilteredReservations().length > 0 && <span className="text-slate-600 dark:text-slate-400 font-medium">{getFilteredReservations().length} </span>}
             Reservierungen
