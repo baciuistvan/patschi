@@ -1178,7 +1178,7 @@ export function ReservationManager() {
               className={`px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap border ${
                 filter === 'date'
                   ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/30 scale-[1.03]'
-                  : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400'
+                  : 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50'
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
