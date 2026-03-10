@@ -10,8 +10,8 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
-    'app.title': 'Patschi Backend',
-    'app.subtitle': 'Reservation Backend',
+    'app.title': 'Reservation Manager',
+    'app.subtitle': 'Admin Dashboard',
     'app.reservation_system': 'Reservation Management System',
     'nav.home': 'Home',
     'nav.floor_plan': 'Floor Plan',
@@ -240,8 +240,8 @@ const translations: Record<Language, Record<string, string>> = {
     'crew.cash_amount': 'Cash Amount (€)',
   },
   de: {
-    'app.title': 'Patschi Backend',
-    'app.subtitle': 'Reservation Backend',
+    'app.title': 'Reservation Manager',
+    'app.subtitle': 'Admin Dashboard',
     'app.reservation_system': 'Reservierungsverwaltungssystem',
     'nav.home': 'Startseite',
     'nav.floor_plan': 'Raumplan',
