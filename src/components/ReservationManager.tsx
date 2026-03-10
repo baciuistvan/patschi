@@ -1139,7 +1139,8 @@ export function ReservationManager() {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0">
           {filterTabs.map(tab => (
             <button
               key={tab.key}
@@ -1169,6 +1170,7 @@ export function ReservationManager() {
               </span>
             )}
           </button>
+          </div>
 
           <div className="relative flex-shrink-0" ref={datePickerRef}>
             <button
