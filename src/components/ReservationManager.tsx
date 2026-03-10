@@ -225,6 +225,7 @@ export function ReservationManager() {
   const [selectedReservation, setSelectedReservation] = useState<ReservationWithTable | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -1179,16 +1180,55 @@ export function ReservationManager() {
               <Calendar className="w-3.5 h-3.5" />
               {filter === 'date' && selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : 'Datum'}
             </button>
-            {showDatePicker && (
-              <div className="absolute right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3.5 z-30 w-56">
-                <input type="date" value={selectedDate} onChange={e => handleDateSelect(e.target.value)} className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-slate-900 dark:focus:ring-white/20 focus:border-transparent transition-all duration-150" />
-                {selectedDate && (
-                  <button onClick={() => { setSelectedDate(''); setFilter('upcoming'); setShowDatePicker(false); }} className="w-full mt-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs transition-all duration-150 font-medium">
-                    Datum zurücksetzen
-                  </button>
-                )}
-              </div>
-            )}
+            {showDatePicker && (() => {
+              const { year, month } = calendarMonth;
+              const firstDay = new Date(year, month, 1).getDay();
+              const startOffset = (firstDay + 6) % 7;
+              const daysInMonth = new Date(year, month + 1, 0).getDate();
+              const today = new Date();
+              const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+              const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+              const cells: (number|null)[] = [...Array(startOffset).fill(null), ...Array.from({length: daysInMonth}, (_,i) => i+1)];
+              while (cells.length % 7 !== 0) cells.push(null);
+              return (
+                <div className="absolute right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3 z-30 w-64" onMouseDown={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <button onMouseDown={e => { e.preventDefault(); setCalendarMonth(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; }); }} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">‹</button>
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{monthNames[month]} {year}</span>
+                    <button onMouseDown={e => { e.preventDefault(); setCalendarMonth(p => { const d = new Date(p.year, p.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; }); }} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">›</button>
+                  </div>
+                  <div className="grid grid-cols-7 mb-1">
+                    {['Mo','Di','Mi','Do','Fr','Sa','So'].map(d => <div key={d} className="text-center text-xs font-medium text-slate-400 dark:text-slate-500 py-1">{d}</div>)}
+                  </div>
+                  <div className="grid grid-cols-7 gap-y-0.5">
+                    {cells.map((day, i) => {
+                      if (!day) return <div key={i} />;
+                      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                      const isSelected = dateStr === selectedDate;
+                      const isToday = dateStr === todayStr;
+                      return (
+                        <button
+                          key={i}
+                          onMouseDown={e => { e.preventDefault(); handleDateSelect(dateStr); }}
+                          className={`w-8 h-8 mx-auto flex items-center justify-center rounded-full text-xs font-medium transition-all duration-150 ${
+                            isSelected
+                              ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/40'
+                              : isToday
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 dark:hover:text-orange-400'
+                          }`}
+                        >{day}</button>
+                      );
+                    })}
+                  </div>
+                  {selectedDate && (
+                    <button onMouseDown={e => { e.preventDefault(); setSelectedDate(''); setFilter('upcoming'); setShowDatePicker(false); }} className="w-full mt-2.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs transition-all duration-150 font-medium">
+                      Datum zurücksetzen
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
