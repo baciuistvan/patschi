@@ -1979,14 +1979,28 @@
       `;
     }
 
+    let _isBackgroundRender = false;
+
     // Main render function
     async function render() {
       const app = document.getElementById('app');
       if (state.view === 'login') {
         app.innerHTML = renderLogin();
       } else {
+        const resList = document.querySelector('.reservation-list');
+        const savedScrollTop = resList ? resList.scrollTop : 0;
+
         app.innerHTML = await renderDashboard();
-        scrollTimelineToCenter();
+
+        if (_isBackgroundRender) {
+          const newResList = document.querySelector('.reservation-list');
+          if (newResList && savedScrollTop > 0) {
+            newResList.scrollTop = savedScrollTop;
+          }
+        } else {
+          scrollTimelineToCenter();
+        }
+
         if (window.initFloorPlanZoom) window.initFloorPlanZoom();
         if (window.fitFloorPlanDesktop) {
           window.fitFloorPlanDesktop();
@@ -3446,6 +3460,12 @@
     let realtimeChannel = null;
     let pollingInterval = null;
     let isRefreshing = false;
+    let _refreshDebounceTimer = null;
+    let _lastReservationHash = '';
+
+    function _hashReservations(reservations) {
+      return reservations.map(r => r.id + ':' + r.status + ':' + (r.updated_at || '')).join('|');
+    }
 
     async function silentRefresh() {
       if (isRefreshing || state.view !== 'dashboard') return;
@@ -3455,17 +3475,27 @@
       if (gcModal && !gcModal.classList.contains('hidden')) return;
       isRefreshing = true;
       try {
-        const prevCount = state.reservations.length;
         await fetchReservations();
-        if (state.reservations.length !== prevCount) {
+        const newHash = _hashReservations(state.reservations);
+        if (newHash !== _lastReservationHash) {
+          const isFirst = _lastReservationHash === '';
+          _lastReservationHash = newHash;
+          _isBackgroundRender = true;
           await render();
-          showRefreshToast();
-        } else {
-          await render();
+          _isBackgroundRender = false;
+          if (!isFirst) showRefreshToast();
         }
       } finally {
         isRefreshing = false;
       }
+    }
+
+    function debouncedSilentRefresh() {
+      if (_refreshDebounceTimer) return;
+      _refreshDebounceTimer = setTimeout(() => {
+        _refreshDebounceTimer = null;
+        silentRefresh();
+      }, 2000);
     }
 
     function showRefreshToast() {
@@ -3508,7 +3538,7 @@
             const msg = JSON.parse(e.data);
             if (msg.event === 'phx_reply' && msg.payload?.status === 'ok') joined = true;
             if (joined && (msg.event === 'INSERT' || msg.event === 'UPDATE' || msg.event === 'DELETE')) {
-              silentRefresh();
+              debouncedSilentRefresh();
             }
           } catch {}
         };
@@ -3551,12 +3581,12 @@
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && state.view === 'dashboard') {
-        silentRefresh();
+        debouncedSilentRefresh();
       }
     });
 
     window.addEventListener('focus', () => {
-      if (state.view === 'dashboard') silentRefresh();
+      if (state.view === 'dashboard') debouncedSilentRefresh();
     });
 
     if (state.view === 'dashboard') {
