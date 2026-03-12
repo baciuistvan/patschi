@@ -1,4 +1,4 @@
-import { Calendar, Gift, Menu, Settings } from 'lucide-react';
+import { Calendar, Gift } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,7 +15,6 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
   const { theme, setTheme } = useTheme();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -55,26 +54,6 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <button
-                  onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowLanguageMenu(false); setShowThemeMenu(false); }}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all duration-200"
-                >
-                  <Menu className="w-4 h-4" />
-                </button>
-                {showSettingsMenu && (
-                  <div className="absolute left-0 mt-2 bg-white dark:bg-[#1c1c1e] border border-black/5 dark:border-white/10 rounded-xl shadow-2xl shadow-black/10 py-1 z-50 min-w-44">
-                    <button
-                      onClick={() => setShowSettingsMenu(false)}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-black/4 dark:hover:bg-white/5 transition flex items-center gap-2.5 text-slate-600 dark:text-slate-300"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>{t('nav.settings')}</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                   <span className="text-white font-bold text-xs tracking-tight">PB</span>
@@ -93,7 +72,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
 
               <div className="relative">
                 <button
-                  onClick={() => { setShowThemeMenu(!showThemeMenu); setShowLanguageMenu(false); setShowSettingsMenu(false); }}
+                  onClick={() => { setShowThemeMenu(!showThemeMenu); setShowLanguageMenu(false); }}
                   className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all duration-200"
                 >
                   {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -112,7 +91,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
 
               <div className="relative">
                 <button
-                  onClick={() => { setShowLanguageMenu(!showLanguageMenu); setShowThemeMenu(false); setShowSettingsMenu(false); }}
+                  onClick={() => { setShowLanguageMenu(!showLanguageMenu); setShowThemeMenu(false); }}
                   className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-all duration-200 flex items-center gap-1"
                 >
                   <Globe className="w-4 h-4" />
