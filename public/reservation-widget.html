@@ -9,35 +9,80 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://js.stripe.com/v3/"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --charcoal: #1e1e1e;
+            --charcoal-light: #2e2e2e;
+            --charcoal-mid: #3a3a3a;
+            --warm-white: #f7f3ee;
+            --warm-cream: #ede8e0;
+            --warm-border: #d4cec4;
+            --amber: #b8924a;
+            --amber-light: #d4aa6a;
+            --amber-pale: #f5eddc;
+            --text-primary: #1e1e1e;
+            --text-secondary: #5a5550;
+            --text-muted: #9a948e;
+            --success: #4a7c59;
+            --success-pale: #eaf2ed;
+            --error: #8b2e2e;
+            --error-pale: #fdf0f0;
+            --info-pale: #eef2f8;
+            --info: #3a5a8a;
+            --shadow: 6px 6px 9px rgba(0,0,0,0.12);
+            --shadow-soft: 0 2px 8px rgba(0,0,0,0.08);
+            --radius: 4px;
+            --radius-lg: 8px;
+        }
+
         body {
             margin: 0;
-            padding: 8px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f8fafc;
+            padding: 12px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 15px;
+            background: transparent;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
         }
+
         #root {
             max-width: 100%;
             margin: 0 auto;
         }
-        #card-element {
-            padding: 16px;
-            border: 2px solid #cbd5e1;
-            border-radius: 12px;
-            background: white;
-            min-height: 44px;
-        }
-        .StripeElement {
-            padding: 8px 0;
-        }
-        #card-element:empty:before {
-            content: 'Zahlungsoption wird geladen...';
-            color: #94a3b8;
-            font-size: 14px;
+
+        @media (min-width: 640px) {
+            body { padding: 24px; }
+            #root { max-width: 620px; }
         }
 
-        /* Normalize input styling across all devices */
+        @media (min-width: 768px) {
+            #root { max-width: 680px; }
+        }
+
+        #card-element {
+            padding: 14px 16px;
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            background: white;
+            min-height: 48px;
+            transition: border-color 0.2s;
+        }
+        #card-element:focus-within {
+            border-color: var(--amber);
+            outline: none;
+        }
+        #card-element:empty::before {
+            content: 'Zahlungsoption wird geladen...';
+            color: var(--text-muted);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+        }
+
         input[type="date"],
         input[type="text"],
         input[type="email"],
@@ -48,22 +93,651 @@
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
-            font-size: 16px !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px !important;
         }
 
-        @media (min-width: 640px) {
-            body {
-                padding: 20px;
-            }
-            #root {
-                max-width: 640px;
-            }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0.5;
+            cursor: pointer;
         }
 
-        @media (min-width: 768px) {
-            #root {
-                max-width: 768px;
-            }
+        .pw-widget {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .pw-header {
+            background: var(--charcoal);
+            padding: 28px 32px 24px;
+            position: relative;
+        }
+
+        .pw-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .pw-title {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--warm-white);
+            letter-spacing: 0.01em;
+            line-height: 1.2;
+        }
+
+        .pw-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 400;
+            color: #9a948e;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .pw-lang-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            padding: 5px 14px;
+            border-radius: 9999px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+        .pw-lang-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .pw-steps {
+            display: flex;
+            align-items: center;
+            margin-top: 24px;
+            gap: 0;
+        }
+
+        .pw-step-item {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .pw-step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            flex-shrink: 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .pw-step-dot.done {
+            background: var(--amber);
+            color: white;
+            box-shadow: 0 0 0 3px rgba(184,146,74,0.2);
+        }
+
+        .pw-step-dot.active {
+            background: var(--amber);
+            color: white;
+            box-shadow: 0 0 0 4px rgba(184,146,74,0.25);
+        }
+
+        .pw-step-dot.pending {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .pw-step-label {
+            font-size: 10px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-top: 5px;
+            white-space: nowrap;
+        }
+
+        .pw-step-label.active { color: var(--amber-light); }
+        .pw-step-label.done { color: rgba(255,255,255,0.5); }
+        .pw-step-label.pending { color: rgba(255,255,255,0.2); }
+
+        .pw-step-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pw-step-line {
+            flex: 1;
+            height: 1px;
+            margin: 0 8px;
+            transition: all 0.3s;
+            margin-bottom: 18px;
+        }
+
+        .pw-step-line.done { background: var(--amber); }
+        .pw-step-line.pending { background: rgba(255,255,255,0.12); }
+
+        .pw-body {
+            padding: 28px 32px 32px;
+            background: var(--warm-white);
+        }
+
+        .pw-section-title {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--charcoal);
+            margin-bottom: 20px;
+            letter-spacing: 0.01em;
+        }
+
+        .pw-field {
+            margin-bottom: 18px;
+        }
+
+        .pw-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .pw-label svg {
+            opacity: 0.6;
+            flex-shrink: 0;
+        }
+
+        .pw-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            height: 48px;
+        }
+        .pw-input:focus {
+            outline: none;
+            border-color: var(--amber);
+            box-shadow: 0 0 0 3px rgba(184,146,74,0.1);
+        }
+        .pw-input::placeholder { color: var(--text-muted); }
+
+        .pw-textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            resize: vertical;
+            min-height: 90px;
+        }
+        .pw-textarea:focus {
+            outline: none;
+            border-color: var(--amber);
+            box-shadow: 0 0 0 3px rgba(184,146,74,0.1);
+        }
+        .pw-textarea::placeholder { color: var(--text-muted); }
+
+        .pw-select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5550' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            color: var(--text-primary);
+            cursor: pointer;
+            height: 48px;
+            padding-right: 38px;
+        }
+        .pw-select:focus {
+            outline: none;
+            border-color: var(--amber);
+            box-shadow: 0 0 0 3px rgba(184,146,74,0.1);
+        }
+
+        .pw-stepper {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            height: 48px;
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            background: white;
+            overflow: hidden;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .pw-stepper-btn {
+            width: 48px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--warm-cream);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            font-family: 'Inter', sans-serif;
+            line-height: 1;
+        }
+        .pw-stepper-btn:hover:not(:disabled) {
+            background: var(--amber);
+            color: white;
+        }
+        .pw-stepper-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .pw-stepper-val {
+            flex: 1;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .pw-time-block {
+            background: var(--charcoal);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pw-time-label-text {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 3px;
+        }
+
+        .pw-time-value {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--amber-light);
+            line-height: 1;
+        }
+
+        .pw-time-note {
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 4px;
+        }
+
+        .pw-notice {
+            padding: 14px 16px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .pw-notice-info {
+            background: var(--info-pale);
+            border-left: 3px solid var(--info);
+            color: var(--info);
+        }
+
+        .pw-notice-success {
+            background: var(--success-pale);
+            border-left: 3px solid var(--success);
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pw-notice-error {
+            background: var(--error-pale);
+            border-left: 3px solid var(--error);
+            color: var(--error);
+        }
+
+        .pw-notice-amber {
+            background: var(--amber-pale);
+            border-left: 3px solid var(--amber);
+            color: #7a5a20;
+        }
+
+        .pw-summary-card {
+            background: var(--charcoal);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            margin-bottom: 18px;
+        }
+
+        .pw-summary-title {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .pw-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .pw-summary-row:last-child { border-bottom: none; }
+
+        .pw-summary-key {
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .pw-summary-val {
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .pw-summary-total-key {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 15px;
+            color: rgba(255,255,255,0.55);
+            font-style: italic;
+        }
+
+        .pw-summary-total-val {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--amber-light);
+        }
+
+        .pw-payment-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .pw-card-container {
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            background: white;
+            padding: 14px 16px;
+            margin-top: 8px;
+        }
+
+        .pw-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+            color: var(--text-muted);
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .pw-divider::before, .pw-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--warm-border);
+        }
+
+        .pw-btn-primary {
+            width: 100%;
+            padding: 14px 28px;
+            background: var(--charcoal);
+            color: var(--warm-white);
+            border: none;
+            border-radius: 9999px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 3px 3px 6px rgba(0,0,0,0.15);
+        }
+        .pw-btn-primary:hover:not(:disabled) {
+            background: var(--charcoal-light);
+            transform: translateY(-1px);
+            box-shadow: 4px 5px 10px rgba(0,0,0,0.18);
+        }
+        .pw-btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .pw-btn-amber {
+            width: 100%;
+            padding: 14px 28px;
+            background: var(--amber);
+            color: white;
+            border: none;
+            border-radius: 9999px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 3px 3px 6px rgba(184,146,74,0.25);
+        }
+        .pw-btn-amber:hover:not(:disabled) {
+            background: var(--amber-light);
+            transform: translateY(-1px);
+            box-shadow: 4px 5px 10px rgba(184,146,74,0.3);
+        }
+        .pw-btn-amber:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .pw-btn-secondary {
+            width: 100%;
+            padding: 14px 28px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--warm-border);
+            border-radius: 9999px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pw-btn-secondary:hover {
+            border-color: var(--charcoal);
+            color: var(--charcoal);
+            background: var(--warm-cream);
+        }
+
+        .pw-btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 26px;
+        }
+
+        .pw-security-note {
+            margin-top: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .pw-security-note svg { flex-shrink: 0; margin-top: 1px; opacity: 0.5; }
+
+        .pw-success-header {
+            background: var(--charcoal);
+            padding: 36px 32px 30px;
+            text-align: center;
+        }
+
+        .pw-success-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--amber);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 0 0 8px rgba(184,146,74,0.15);
+        }
+
+        .pw-success-title {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--warm-white);
+            margin-bottom: 6px;
+        }
+
+        .pw-success-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 0.04em;
+        }
+
+        .pw-booking-code-wrap {
+            background: var(--warm-cream);
+            border: 1px solid var(--warm-border);
+            border-radius: var(--radius);
+            padding: 22px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .pw-booking-code-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .pw-booking-code {
+            font-family: 'Cardo', Georgia, serif;
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--amber);
+            letter-spacing: 0.08em;
+            line-height: 1;
+        }
+
+        .pw-booking-code-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .pw-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--warm-border);
+            font-size: 14px;
+        }
+        .pw-detail-row:last-child { border-bottom: none; }
+        .pw-detail-key { color: var(--text-muted); }
+        .pw-detail-val { font-weight: 600; color: var(--text-primary); }
+
+        .pw-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: pw-spin 0.7s linear infinite;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        @keyframes pw-spin { to { transform: rotate(360deg); } }
+
+        .pw-test-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--amber-pale);
+            border: 1px solid var(--amber);
+            color: #7a5a20;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            margin-bottom: 14px;
+        }
+
+        .pw-mono {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.06);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -74,11 +748,10 @@
         const { useState, useEffect, useRef } = React;
         const { createClient } = supabase;
 
-        // Language translations
         const translations = {
             de: {
                 title: 'Tisch Reservierung',
-                subtitle: 'Reservieren Sie Ihren Tisch für 15:45 Uhr',
+                subtitle: 'Reservieren Sie Ihren Tisch',
                 maintenance: {
                     title: 'Online-Reservierung nicht verfügbar',
                     message: 'Unsere Online-Reservierung ist derzeit nicht verfügbar.',
@@ -86,64 +759,75 @@
                     contact: 'Für Reservierungen kontaktieren Sie uns bitte:'
                 },
                 success: {
-                    title: 'Reservierung bestätigt!',
+                    title: 'Reservierung bestätigt',
                     thanks: 'Vielen Dank für Ihre Buchung',
-                    bookingNumber: 'Ihre Buchungsnummer',
+                    bookingNumber: 'Buchungsnummer',
                     keepNumber: 'Bitte bewahren Sie diese Nummer auf',
                     date: 'Datum',
                     time: 'Uhrzeit',
                     guests: 'Personen',
                     paid: 'Bezahlt',
                     emailSent: 'Eine Bestätigungs-E-Mail wurde an',
-                    important: 'Wichtig:',
+                    emailSent2: 'gesendet.',
+                    important: 'Hinweis:',
                     newReservation: 'Neue Reservierung'
                 },
                 step1: {
-                    heading: 'Datum und Anzahl der Gäste',
+                    heading: 'Datum & Gäste',
                     selectDate: 'Datum wählen',
-                    timeFixed: 'Uhrzeit (fest)',
+                    timeFixed: 'Uhrzeit',
                     timeNote: 'Alle Reservierungen sind für 15:45 Uhr',
-                    partySize: 'Anzahl der Personen (max. 10)',
+                    partySize: 'Anzahl der Personen',
+                    partySizeHint: 'max. 10 Personen',
                     area: 'Bereich',
-                    available: 'Tisch verfügbar! Sie können mit Ihrer Buchung fortfahren.'
+                    available: 'Tisch verfügbar — Sie können mit Ihrer Buchung fortfahren.'
                 },
                 step2: {
-                    heading: 'Ihre Kontaktdaten',
-                    noDeposit: 'Keine Anzahlung erforderlich. Ihre Reservierung wird nach dem Absenden direkt bestätigt.',
-                    name: 'Name *',
-                    email: 'E-Mail *',
-                    phone: 'Telefon (optional)',
-                    specialRequests: 'Besondere Wünsche (optional)',
+                    heading: 'Kontaktdaten',
+                    noDeposit: 'Keine Anzahlung erforderlich. Ihre Reservierung wird nach dem Absenden sofort bestätigt.',
+                    name: 'Name',
+                    nameReq: 'Name *',
+                    email: 'E-Mail',
+                    emailReq: 'E-Mail *',
+                    phone: 'Telefon',
+                    phoneOpt: 'Telefon (optional)',
+                    specialRequests: 'Besondere Wünsche',
+                    specialReqOpt: 'Besondere Wünsche (optional)',
                     placeholder: {
                         name: 'Max Mustermann',
                         email: 'max@beispiel.de',
                         phone: '+43 123 456789',
-                        requests: 'z.B. Allergien, besondere Anlässe...'
+                        requests: 'z.B. Allergien, besondere Anlässe…'
                     }
                 },
                 step3: {
                     heading: 'Zahlung & Bestätigung',
-                    summary: 'Reservierungsübersicht',
-                    date: 'Datum:',
-                    time: 'Uhrzeit:',
-                    guests: 'Personen:',
-                    deposit: 'Anzahlung:',
-                    depositRequired: 'Eine Anzahlung von',
-                    depositRequired2: 'ist erforderlich, um Ihre Reservierung zu bestätigen.',
+                    summary: 'Übersicht',
+                    date: 'Datum',
+                    time: 'Uhrzeit',
+                    guests: 'Personen',
+                    deposit: 'Anzahlung',
+                    depositRequired: 'Zur Bestätigung Ihrer Reservierung ist eine Anzahlung von',
+                    depositRequired2: 'erforderlich.',
                     paymentMethod: 'Zahlungsmethode',
                     appleGooglePay: 'Apple Pay / Google Pay',
-                    orPayWithCard: 'oder mit Karte bezahlen',
-                    securePayment: 'Ihre Zahlung wird sicher über Stripe verarbeitet. Ihre Kartendaten werden verschlüsselt übertragen und niemals auf unserem Server gespeichert.',
-                    payNow: 'Jetzt bezahlen & buchen'
+                    orPayWithCard: 'oder mit Karte',
+                    securePayment: 'Zahlung sicher verarbeitet über Stripe — Ihre Kartendaten werden verschlüsselt übertragen.',
+                    payNow: 'Jetzt bezahlen & buchen',
+                    testMode: 'Test-Modus',
+                    testCardInfo: 'Verwenden Sie die Test-Kartennummer:',
+                    testCardHint: 'CVC: beliebige 3 Ziffern · Ablaufdatum: beliebiges zukünftiges Datum'
                 },
                 buttons: {
                     back: 'Zurück',
                     next: 'Weiter',
-                    checkingAvailability: 'Verfügbarkeit prüfen...',
-                    creatingReservation: 'Reservierung wird erstellt...',
+                    checkingAvailability: 'Verfügbarkeit prüfen…',
+                    creatingReservation: 'Reservierung erstellen…',
                     completeReservation: 'Reservierung abschließen',
-                    processing: 'Wird verarbeitet...'
+                    processing: 'Wird verarbeitet…'
                 },
+                steps: ['Datum & Gäste', 'Kontakt', 'Zahlung'],
+                stepsNoPayment: ['Datum & Gäste', 'Kontakt'],
                 errors: {
                     selectDate: 'Bitte wählen Sie ein Datum',
                     futureDate: 'Bitte wählen Sie ein zukünftiges Datum',
@@ -169,7 +853,7 @@
             },
             en: {
                 title: 'Table Reservation',
-                subtitle: 'Reserve your table for 15:45',
+                subtitle: 'Reserve your table',
                 maintenance: {
                     title: 'Online Reservations Unavailable',
                     message: 'Our online reservation system is currently unavailable.',
@@ -177,64 +861,75 @@
                     contact: 'For reservations, please contact us:'
                 },
                 success: {
-                    title: 'Reservation Confirmed!',
+                    title: 'Reservation Confirmed',
                     thanks: 'Thank you for your booking',
-                    bookingNumber: 'Your Booking Number',
+                    bookingNumber: 'Booking Number',
                     keepNumber: 'Please keep this number safe',
                     date: 'Date',
                     time: 'Time',
                     guests: 'Guests',
                     paid: 'Paid',
                     emailSent: 'A confirmation email has been sent to',
-                    important: 'Important:',
+                    emailSent2: '.',
+                    important: 'Note:',
                     newReservation: 'New Reservation'
                 },
                 step1: {
-                    heading: 'Date and Number of Guests',
+                    heading: 'Date & Guests',
                     selectDate: 'Select Date',
-                    timeFixed: 'Time (fixed)',
+                    timeFixed: 'Time',
                     timeNote: 'All reservations are for 15:45',
-                    partySize: 'Number of Guests (max. 10)',
+                    partySize: 'Number of Guests',
+                    partySizeHint: 'max. 10 guests',
                     area: 'Area',
-                    available: 'Table available! You can proceed with your booking.'
+                    available: 'Table available — you may proceed with your booking.'
                 },
                 step2: {
-                    heading: 'Your Contact Details',
+                    heading: 'Contact Details',
                     noDeposit: 'No deposit required. Your reservation will be confirmed immediately after submission.',
-                    name: 'Name *',
-                    email: 'Email *',
-                    phone: 'Phone (optional)',
-                    specialRequests: 'Special Requests (optional)',
+                    name: 'Name',
+                    nameReq: 'Name *',
+                    email: 'Email',
+                    emailReq: 'Email *',
+                    phone: 'Phone',
+                    phoneOpt: 'Phone (optional)',
+                    specialRequests: 'Special Requests',
+                    specialReqOpt: 'Special Requests (optional)',
                     placeholder: {
                         name: 'John Doe',
                         email: 'john@example.com',
                         phone: '+43 123 456789',
-                        requests: 'e.g. allergies, special occasions...'
+                        requests: 'e.g. allergies, special occasions…'
                     }
                 },
                 step3: {
                     heading: 'Payment & Confirmation',
-                    summary: 'Reservation Summary',
-                    date: 'Date:',
-                    time: 'Time:',
-                    guests: 'Guests:',
-                    deposit: 'Deposit:',
+                    summary: 'Summary',
+                    date: 'Date',
+                    time: 'Time',
+                    guests: 'Guests',
+                    deposit: 'Deposit',
                     depositRequired: 'A deposit of',
                     depositRequired2: 'is required to confirm your reservation.',
                     paymentMethod: 'Payment Method',
                     appleGooglePay: 'Apple Pay / Google Pay',
                     orPayWithCard: 'or pay by card',
-                    securePayment: 'Your payment is securely processed via Stripe. Your card details are encrypted and never stored on our servers.',
-                    payNow: 'Pay Now & Book'
+                    securePayment: 'Payment securely processed via Stripe — your card details are encrypted.',
+                    payNow: 'Pay Now & Book',
+                    testMode: 'Test Mode',
+                    testCardInfo: 'Use the test card number:',
+                    testCardHint: 'CVC: any 3 digits · Expiry: any future date'
                 },
                 buttons: {
                     back: 'Back',
                     next: 'Next',
-                    checkingAvailability: 'Checking availability...',
-                    creatingReservation: 'Creating reservation...',
+                    checkingAvailability: 'Checking availability…',
+                    creatingReservation: 'Creating reservation…',
                     completeReservation: 'Complete Reservation',
-                    processing: 'Processing...'
+                    processing: 'Processing…'
                 },
+                steps: ['Date & Guests', 'Contact', 'Payment'],
+                stepsNoPayment: ['Date & Guests', 'Contact'],
                 errors: {
                     selectDate: 'Please select a date',
                     futureDate: 'Please select a future date',
@@ -260,78 +955,83 @@
             }
         };
 
-        // Detect browser language (German or default to English)
         const detectLanguage = () => {
             const browserLang = navigator.language || navigator.userLanguage;
             return browserLang.toLowerCase().startsWith('de') ? 'de' : 'en';
         };
 
-        // Initialize Supabase client
         const supabaseClient = createClient(
             'https://qwwerwkekvmaswusvgxy.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE'
         );
 
-        // Stripe will be initialized after loading settings
         let stripe = null;
-        // Stripe keys will be loaded from database settings
 
-        // Icons as SVG components
-        const Calendar = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
+        const IconCalendar = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
         );
-
-        const Users = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        const IconUsers = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
         );
-
-        const Mail = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
+        const IconMail = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
             </svg>
         );
-
-        const Phone = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        const IconPhone = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
             </svg>
         );
-
-        const MessageSquare = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        const IconMsg = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
         );
-
-        const CreditCard = () => (
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                <line x1="1" y1="10" x2="23" y2="10"></line>
+        const IconCard = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
         );
-
-        const Check = () => (
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
+        const IconCheck = () => (
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        );
+        const IconCheckSm = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+        );
+        const IconLock = () => (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+        );
+        const IconWarn = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        );
+        const IconMap = () => (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+            </svg>
+        );
+        const IconClock = () => (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
         );
 
         function ReservationWidget() {
-            // Maintenance mode flag
             const MAINTENANCE_MODE = false;
 
-            // Language state with auto-detection
             const [language, setLanguage] = useState(detectLanguage());
             const t = translations[language];
 
@@ -351,38 +1051,19 @@
             const [sessionStarted, setSessionStarted] = useState(false);
             const [paymentIntentCreated, setPaymentIntentCreated] = useState(false);
 
-            const toggleLanguage = () => {
-                setLanguage(prev => prev === 'de' ? 'en' : 'de');
-            };
+            const toggleLanguage = () => setLanguage(prev => prev === 'de' ? 'en' : 'de');
 
-            // Update document title when language changes
             useEffect(() => {
                 document.title = language === 'de' ? 'Tisch Reservierung' : 'Table Reservation';
                 document.documentElement.lang = language;
             }, [language]);
 
-            // Process Stripe error messages into user-friendly text
             const processStripeError = (errorMessage) => {
                 if (!errorMessage) return t.errors.paymentFailed;
-
                 const lowerMsg = errorMessage.toLowerCase();
-
-                // Check for test mode / test card errors
-                if (lowerMsg.includes('test') && (lowerMsg.includes('card') || lowerMsg.includes('kártya'))) {
-                    return t.errors.testCardRequired;
-                }
-
-                // Check for card declined errors
-                if (lowerMsg.includes('declined') || lowerMsg.includes('elutasított') || lowerMsg.includes('abgelehnt')) {
-                    return t.errors.cardDeclined;
-                }
-
-                // Return original message if it's short and clear
-                if (errorMessage.length < 100) {
-                    return errorMessage;
-                }
-
-                // Default to generic payment error
+                if (lowerMsg.includes('test') && (lowerMsg.includes('card') || lowerMsg.includes('kártya'))) return t.errors.testCardRequired;
+                if (lowerMsg.includes('declined') || lowerMsg.includes('elutasított') || lowerMsg.includes('abgelehnt')) return t.errors.cardDeclined;
+                if (errorMessage.length < 100) return errorMessage;
                 return t.errors.paymentFailed;
             };
 
@@ -407,7 +1088,6 @@
             };
 
             useEffect(() => {
-                console.log('Component mounted, Stripe available:', typeof Stripe !== 'undefined');
                 const initialize = async () => {
                     loadRooms();
                     loadDepositAmount();
@@ -421,7 +1101,6 @@
                         logAbandonment();
                     }
                 };
-
                 window.addEventListener('beforeunload', handleBeforeUnload);
                 return () => window.removeEventListener('beforeunload', handleBeforeUnload);
             }, []);
@@ -434,41 +1113,29 @@
 
             const initializeStripeElements = () => {
                 try {
-                    if (!stripe) {
-                        console.warn('Stripe not available, skipping card element initialization');
-                        setStripeEnabled(false);
-                        return;
-                    }
-                    console.log('Creating Stripe Elements instance');
+                    if (!stripe) { setStripeEnabled(false); return; }
                     const elements = stripe.elements();
-                    console.log('Creating card element');
                     const card = elements.create('card', {
                         style: {
                             base: {
-                                fontSize: '16px',
-                                color: '#1e293b',
-                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                '::placeholder': {
-                                    color: '#94a3b8',
-                                },
+                                fontSize: '15px',
+                                color: '#1e1e1e',
+                                fontFamily: 'Inter, -apple-system, sans-serif',
+                                fontWeight: '400',
+                                '::placeholder': { color: '#9a948e' },
                             },
-                            invalid: {
-                                color: '#ef4444',
-                            },
+                            invalid: { color: '#8b2e2e' },
                         },
                     });
-                    console.log('Card element created successfully:', card);
                     cardElementRef.current = card;
                     setCardElement(card);
                 } catch (err) {
-                    console.error('Error initializing Stripe elements:', err);
                     setStripeEnabled(false);
                 }
             };
 
             const initializePaymentRequest = () => {
                 if (!formData.payment_amount || !stripe) return;
-
                 try {
                     const pr = stripe.paymentRequest({
                         country: 'AT',
@@ -480,66 +1147,41 @@
                         requestPayerName: true,
                         requestPayerEmail: true,
                     });
-
                     pr.canMakePayment().then((result) => {
-                        if (result) {
-                            setPaymentRequest(pr);
-                        }
+                        if (result) setPaymentRequest(pr);
                     });
-                } catch (err) {
-                    console.error('Error initializing payment request:', err);
-                }
+                } catch (err) {}
             };
 
             useEffect(() => {
                 if (step === 3) {
                     const card = cardElementRef.current || cardElement;
-                    console.log('Step 3 reached, cardElement from ref:', cardElementRef.current, 'from state:', cardElement);
                     initializePaymentRequest();
                     if (card) {
                         setTimeout(() => {
                             try {
                                 const cardContainer = document.getElementById('card-element');
-                                console.log('Attempting to mount card element, container:', cardContainer, 'hasChildren:', cardContainer?.hasChildNodes());
                                 if (cardContainer && !cardContainer.hasChildNodes()) {
-                                    console.log('Mounting card element to #card-element');
                                     card.mount('#card-element');
-                                    console.log('Card element mounted successfully');
                                 }
                             } catch (err) {
-                                console.error('Error mounting card element:', err);
                                 setError(t.errors.paymentError);
                             }
                         }, 100);
-                    } else {
-                        console.warn('No card element available at step 3');
                     }
                 }
             }, [step, cardElement, formData.payment_amount]);
 
             const loadRooms = async () => {
-                const { data } = await supabaseClient
-                    .from('rooms')
-                    .select('*')
-                    .eq('is_active', true)
-                    .order('name');
-
+                const { data } = await supabaseClient.from('rooms').select('*').eq('is_active', true).order('name');
                 if (data && data.length > 0) {
                     setRooms(data);
-                    setFormDataAndRef(prev => ({
-                        ...prev,
-                        room_id: prev.room_id || data[0].id
-                    }));
+                    setFormDataAndRef(prev => ({ ...prev, room_id: prev.room_id || data[0].id }));
                 }
             };
 
             const loadDepositAmount = async () => {
-                const { data: depositData } = await supabaseClient
-                    .from('settings')
-                    .select('value')
-                    .eq('key', 'deposit_amount')
-                    .maybeSingle();
-
+                const { data: depositData } = await supabaseClient.from('settings').select('value').eq('key', 'deposit_amount').maybeSingle();
                 if (depositData) {
                     setFormDataAndRef(prev => ({ ...prev, payment_amount: parseFloat(depositData.value) * 100 }));
                 }
@@ -547,74 +1189,36 @@
 
             const loadStripeSettings = async () => {
                 try {
-                    // Load all Stripe settings
-                    const { data: settings } = await supabaseClient
-                        .from('settings')
-                        .select('key, value')
-                        .in('key', ['stripe_enabled', 'stripe_mode', 'stripe_live_publishable_key', 'stripe_test_publishable_key']);
-
+                    const { data: settings } = await supabaseClient.from('settings').select('key, value').in('key', ['stripe_enabled', 'stripe_mode', 'stripe_live_publishable_key', 'stripe_test_publishable_key']);
                     const settingsMap = {};
                     settings?.forEach(s => settingsMap[s.key] = s.value);
-
                     const enabled = settingsMap['stripe_enabled'] === 'true';
                     const mode = settingsMap['stripe_mode'] || 'test';
                     const testKey = settingsMap['stripe_test_publishable_key'];
                     const liveKey = settingsMap['stripe_live_publishable_key'];
-
-                    console.log('Stripe settings loaded - enabled:', enabled, 'mode:', mode, 'hasTestKey:', !!testKey, 'hasLiveKey:', !!liveKey);
-
                     setStripeEnabled(enabled);
-
-                    // Initialize Stripe with the correct key
                     if (enabled && typeof Stripe !== 'undefined') {
                         const stripeKey = mode === 'live' ? liveKey : testKey;
-
-                        if (!stripeKey) {
-                            console.error('Stripe key not found in settings for mode:', mode);
-                            setError('Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.');
-                            setStripeEnabled(false);
-                            return;
-                        }
-
-                        console.log('Initializing Stripe with', mode, 'key');
-
-                        // Detect if we're in test mode
+                        if (!stripeKey) { setStripeEnabled(false); return; }
                         const testMode = stripeKey.startsWith('pk_test_');
                         setIsTestMode(testMode);
-                        console.log('Stripe mode detected:', testMode ? 'test' : 'live');
-
                         stripe = Stripe(stripeKey);
-
-                        // Initialize card element immediately after Stripe is ready
-                        setTimeout(() => {
-                            console.log('Creating Stripe card element');
-                            initializeStripeElements();
-                        }, 100);
-                    } else {
-                        console.warn('Stripe not enabled or not available');
+                        setTimeout(() => initializeStripeElements(), 100);
                     }
                 } catch (err) {
-                    console.error('Error loading Stripe settings:', err);
                     setStripeEnabled(false);
                 }
             };
 
             const logAbandonment = async (stage = null, reason = null, errorMsg = null, paymentIntentId = null) => {
                 try {
-                    // Determine stage automatically if not provided
                     let abandonmentStage = stage;
                     if (!abandonmentStage) {
-                        if (step === 1) {
-                            abandonmentStage = 'form_incomplete';
-                        } else if (step === 2) {
-                            abandonmentStage = 'cancelled_before_payment';
-                        } else if (step === 3) {
-                            abandonmentStage = paymentIntentCreated ? 'payment_initiated' : 'cancelled_before_payment';
-                        }
+                        if (step === 1) abandonmentStage = 'form_incomplete';
+                        else if (step === 2) abandonmentStage = 'cancelled_before_payment';
+                        else if (step === 3) abandonmentStage = paymentIntentCreated ? 'payment_initiated' : 'cancelled_before_payment';
                     }
-
                     const room = rooms.find(r => r.id === formData.room_id);
-
                     await supabaseClient.from('abandoned_reservations').insert({
                         customer_name: formData.customer_name || 'Unbekannt',
                         customer_email: formData.customer_email || 'nicht angegeben',
@@ -630,16 +1234,11 @@
                         payment_intent_id: paymentIntentId,
                         amount: stripeEnabled ? formData.payment_amount : null,
                     });
-
-                    console.log('Abandonment logged:', abandonmentStage);
-                } catch (err) {
-                    console.error('Error logging abandonment:', err);
-                }
+                } catch (err) {}
             };
 
             const checkAvailability = async (overrideData) => {
                 const data = overrideData || formData;
-                console.log('[widget] checkAvailability called with room_id:', data.room_id, 'date:', data.reservation_date);
                 const apiUrl = `https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/check-availability`;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -654,106 +1253,49 @@
                         room_id: data.room_id,
                     }),
                 });
-
-                if (!response.ok) {
-                    throw new Error(t.errors.checkingError);
-                }
-
+                if (!response.ok) throw new Error(t.errors.checkingError);
                 return await response.json();
             };
 
             const handleNextStep = async () => {
-                console.log('handleNextStep called, current step:', step, 'room_id at call time:', formData.room_id);
                 setError('');
                 setLoading(true);
-
-                // Read from ref — always has the latest values regardless of closure age
                 const snapshot = formDataRef.current;
-                console.log('[widget] snapshot.room_id:', snapshot.room_id);
-
                 try {
-
-                if (step === 1) {
-                    if (!snapshot.reservation_date) {
-                        setError(t.errors.selectDate);
-                        return;
-                    }
-                    const selectedDate = new Date(snapshot.reservation_date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (selectedDate < today) {
-                        setError(t.errors.futureDate);
-                        return;
-                    }
-
-                    const now = new Date();
-                    const currentHour = now.getHours();
-                    const currentMinutes = now.getMinutes();
-                    const currentTimeInMinutes = currentHour * 60 + currentMinutes;
-                    const cutoffTimeInMinutes = 12 * 60;
-
-                    const isToday = selectedDate.getTime() === today.getTime();
-
-                    if (isToday && currentTimeInMinutes >= cutoffTimeInMinutes) {
-                        setError(t.errors.todayCutoff);
-                        return;
-                    }
-
-                    if (!snapshot.party_size || snapshot.party_size < 1) {
-                        setError(t.errors.partySize);
-                        return;
-                    }
-
-                    if (snapshot.party_size > 10) {
-                        setError(t.errors.maxGuests);
-                        return;
-                    }
-
-                    // Check availability — pass the snapshot so we use the room_id the user sees right now
-                    const availability = await checkAvailability(snapshot);
-                    if (!availability.available) {
-                        setAvailabilityChecked(false);
-                        setSelectedTables([]);
-                        let errorMessage = availability.message || t.errors.noAvailability;
-                        if (availability.reason === 'closed') {
-                            errorMessage = t.errors.allClosed;
-                        } else if (availability.reason === 'fully_booked') {
-                            errorMessage = t.errors.fullyBooked;
-                        } else if (availability.reason === 'capacity_exceeded') {
-                            errorMessage = `${t.errors.capacityExceeded} ${snapshot.party_size} ${t.errors.capacityExceeded2}`;
-                        } else if (availability.reason === 'closed_today') {
-                            errorMessage = t.errors.todayCutoff;
+                    if (step === 1) {
+                        if (!snapshot.reservation_date) { setError(t.errors.selectDate); return; }
+                        const selectedDate = new Date(snapshot.reservation_date);
+                        const today = new Date(); today.setHours(0, 0, 0, 0);
+                        if (selectedDate < today) { setError(t.errors.futureDate); return; }
+                        const now = new Date();
+                        const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+                        const isToday = selectedDate.getTime() === today.getTime();
+                        if (isToday && currentTimeInMinutes >= 12 * 60) { setError(t.errors.todayCutoff); return; }
+                        if (!snapshot.party_size || snapshot.party_size < 1) { setError(t.errors.partySize); return; }
+                        if (snapshot.party_size > 10) { setError(t.errors.maxGuests); return; }
+                        const availability = await checkAvailability(snapshot);
+                        if (!availability.available) {
+                            setAvailabilityChecked(false);
+                            setSelectedTables([]);
+                            let errorMessage = availability.message || t.errors.noAvailability;
+                            if (availability.reason === 'closed') errorMessage = t.errors.allClosed;
+                            else if (availability.reason === 'fully_booked') errorMessage = t.errors.fullyBooked;
+                            else if (availability.reason === 'capacity_exceeded') errorMessage = `${t.errors.capacityExceeded} ${snapshot.party_size} ${t.errors.capacityExceeded2}`;
+                            else if (availability.reason === 'closed_today') errorMessage = t.errors.todayCutoff;
+                            setError(errorMessage);
+                            return;
                         }
-                        setError(errorMessage);
-                        return;
+                        setSelectedTables(availability.selected_tables || []);
+                        setAvailabilityChecked(true);
                     }
-                    // Store selected table info
-                    setSelectedTables(availability.selected_tables || []);
-                    setAvailabilityChecked(true);
-                }
-
-                if (step === 2) {
-                    if (!snapshot.customer_name || !snapshot.customer_email) {
-                        setError(t.errors.fillRequired);
-                        return;
+                    if (step === 2) {
+                        if (!snapshot.customer_name || !snapshot.customer_email) { setError(t.errors.fillRequired); return; }
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(snapshot.customer_email)) { setError(t.errors.invalidEmail); return; }
+                        if (!stripeEnabled) { await createFreeReservation(snapshot); return; }
                     }
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailRegex.test(snapshot.customer_email)) {
-                        setError(t.errors.invalidEmail);
-                        return;
-                    }
-
-                    // If Stripe is disabled, create a free reservation directly
-                    if (!stripeEnabled) {
-                        await createFreeReservation(snapshot);
-                        return;
-                    }
-                }
-
-                    console.log('Moving to step:', step + 1);
                     setStep(step + 1);
                 } catch (err) {
-                    console.error('Error in handleNextStep:', err);
                     setError(err.message || t.errors.generic);
                 } finally {
                     setLoading(false);
@@ -762,12 +1304,9 @@
 
             const createFreeReservation = async (fd) => {
                 try {
-                    // Re-verify availability at submission to get fresh table IDs
                     const freshAvailability = await checkAvailability(fd);
                     if (!freshAvailability.available) {
-                        setStep(1);
-                        setAvailabilityChecked(false);
-                        setSelectedTables([]);
+                        setStep(1); setAvailabilityChecked(false); setSelectedTables([]);
                         let errMsg = t.errors.noAvailability;
                         if (freshAvailability.reason === 'closed') errMsg = t.errors.allClosed;
                         else if (freshAvailability.reason === 'fully_booked') errMsg = t.errors.fullyBooked;
@@ -776,25 +1315,13 @@
                         throw new Error(errMsg);
                     }
                     const freshTables = freshAvailability.selected_tables || [];
-
                     const reservationData = {
-                        customer_name: fd.customer_name,
-                        customer_email: fd.customer_email,
-                        customer_phone: fd.customer_phone || '',
-                        party_size: fd.party_size,
-                        reservation_date: fd.reservation_date,
-                        reservation_time: fd.reservation_time,
-                        duration_minutes: 120,
-                        status: 'confirmed',
-                        special_requests: fd.special_requests || '',
-                        payment_status: 'unpaid',
-                        payment_amount: 0,
-                        payment_method: 'none',
-                        booking_method: 'free',
-                        room_id: fd.room_id,
-                        selected_tables: freshTables,
+                        customer_name: fd.customer_name, customer_email: fd.customer_email, customer_phone: fd.customer_phone || '',
+                        party_size: fd.party_size, reservation_date: fd.reservation_date, reservation_time: fd.reservation_time,
+                        duration_minutes: 120, status: 'confirmed', special_requests: fd.special_requests || '',
+                        payment_status: 'unpaid', payment_amount: 0, payment_method: 'none', booking_method: 'free',
+                        room_id: fd.room_id, selected_tables: freshTables,
                     };
-
                     const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
                     const response = await fetch(apiUrl, {
                         method: 'POST',
@@ -804,26 +1331,16 @@
                         },
                         body: JSON.stringify(reservationData),
                     });
-
                     const responseData = await response.json();
-
                     if (!response.ok) {
-                        if (responseData.reason === 'closed_today') {
-                            setStep(1);
-                            setAvailabilityChecked(false);
-                            setSelectedTables([]);
-                        } else if (responseData.reason === 'no_tables') {
-                            setStep(1);
-                            setAvailabilityChecked(false);
-                            setSelectedTables([]);
+                        if (responseData.reason === 'closed_today' || responseData.reason === 'no_tables') {
+                            setStep(1); setAvailabilityChecked(false); setSelectedTables([]);
                         }
                         throw new Error(responseData.error || t.errors.creationError);
                     }
-
                     setBookingCode(responseData.booking_code);
                     setSuccess(true);
                 } catch (err) {
-                    console.error('Error creating free reservation:', err);
                     setError(err.message || t.errors.generic);
                 }
             };
@@ -838,58 +1355,34 @@
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            amount: formData.payment_amount,
-                            currency: 'eur',
+                            amount: formData.payment_amount, currency: 'eur',
                             metadata: {
-                                customer_name: formData.customer_name,
-                                customer_email: formData.customer_email,
-                                reservation_date: formData.reservation_date,
-                                reservation_time: formData.reservation_time,
+                                customer_name: formData.customer_name, customer_email: formData.customer_email,
+                                reservation_date: formData.reservation_date, reservation_time: formData.reservation_time,
                                 party_size: formData.party_size.toString(),
                             },
                         }),
                     });
-
                     const data = await response.json();
-
-                    if (!response.ok) {
-                        console.error('Payment intent error:', data);
-                        throw new Error(data.error || t.errors.paymentError);
-                    }
-
-                    if (!data.clientSecret) {
-                        console.error('No client secret in response:', data);
-                        throw new Error(t.errors.paymentError);
-                    }
-
+                    if (!response.ok) throw new Error(data.error || t.errors.paymentError);
+                    if (!data.clientSecret) throw new Error(t.errors.paymentError);
                     setPaymentIntentCreated(true);
                     return data.clientSecret;
                 } catch (error) {
-                    console.error('createPaymentIntent error:', error);
                     throw error;
                 }
             };
 
             const handleSubmit = async () => {
                 const card = cardElementRef.current || cardElement;
-                if (!stripe || !card) {
-                    setError(t.errors.stripeNotLoaded);
-                    return;
-                }
-
+                if (!stripe || !card) { setError(t.errors.stripeNotLoaded); return; }
                 setLoading(true);
                 setError('');
-
-                // Read from ref — always has the latest values regardless of closure age
                 const fd = formDataRef.current;
-
                 try {
-                    // Re-verify availability right before payment to get fresh table IDs
                     const freshAvailability = await checkAvailability(fd);
                     if (!freshAvailability.available) {
-                        setStep(1);
-                        setAvailabilityChecked(false);
-                        setSelectedTables([]);
+                        setStep(1); setAvailabilityChecked(false); setSelectedTables([]);
                         let errMsg = t.errors.noAvailability;
                         if (freshAvailability.reason === 'closed') errMsg = t.errors.allClosed;
                         else if (freshAvailability.reason === 'fully_booked') errMsg = t.errors.fullyBooked;
@@ -898,49 +1391,29 @@
                         throw new Error(errMsg);
                     }
                     const freshTables = freshAvailability.selected_tables || [];
-
                     const secret = await createPaymentIntent();
-
                     const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(secret, {
                         payment_method: {
                             card: card,
-                            billing_details: {
-                                name: fd.customer_name,
-                                email: fd.customer_email,
-                                phone: fd.customer_phone,
-                            },
+                            billing_details: { name: fd.customer_name, email: fd.customer_email, phone: fd.customer_phone },
                         },
                     });
-
                     if (stripeError) {
                         await logAbandonment('payment_failed', 'Stripe error', stripeError.message, null);
                         throw new Error(processStripeError(stripeError.message));
                     }
-
                     if (paymentIntent.status !== 'succeeded') {
                         await logAbandonment('payment_failed', 'Payment not succeeded', `Status: ${paymentIntent.status}`, paymentIntent.id);
                         throw new Error(t.errors.paymentFailed);
                     }
-
                     const reservationData = {
-                        customer_name: fd.customer_name,
-                        customer_email: fd.customer_email,
-                        customer_phone: fd.customer_phone || '',
-                        party_size: fd.party_size,
-                        reservation_date: fd.reservation_date,
-                        reservation_time: fd.reservation_time,
-                        duration_minutes: 120,
-                        status: 'confirmed',
-                        special_requests: fd.special_requests || '',
-                        payment_status: 'paid',
-                        payment_amount: fd.payment_amount / 100,
-                        payment_method: 'stripe',
-                        stripe_payment_intent_id: paymentIntent.id,
-                        booking_method: 'online',
-                        room_id: fd.room_id,
-                        selected_tables: freshTables,
+                        customer_name: fd.customer_name, customer_email: fd.customer_email, customer_phone: fd.customer_phone || '',
+                        party_size: fd.party_size, reservation_date: fd.reservation_date, reservation_time: fd.reservation_time,
+                        duration_minutes: 120, status: 'confirmed', special_requests: fd.special_requests || '',
+                        payment_status: 'paid', payment_amount: fd.payment_amount / 100, payment_method: 'stripe',
+                        stripe_payment_intent_id: paymentIntent.id, booking_method: 'online',
+                        room_id: fd.room_id, selected_tables: freshTables,
                     };
-
                     const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
                     const response = await fetch(apiUrl, {
                         method: 'POST',
@@ -950,61 +1423,51 @@
                         },
                         body: JSON.stringify(reservationData),
                     });
-
                     const responseData = await response.json();
-
                     if (!response.ok) {
-                        if (responseData.reason === 'closed_today') {
-                            setStep(1);
-                            setAvailabilityChecked(false);
-                            setSelectedTables([]);
-                        } else if (responseData.reason === 'no_tables') {
-                            setStep(1);
-                            setAvailabilityChecked(false);
-                            setSelectedTables([]);
+                        if (responseData.reason === 'closed_today' || responseData.reason === 'no_tables') {
+                            setStep(1); setAvailabilityChecked(false); setSelectedTables([]);
                         }
                         throw new Error(responseData.error || t.errors.creationError);
                     }
-
                     setBookingCode(responseData.booking_code);
                     setSuccess(true);
                 } catch (err) {
-                    console.error('Error:', err);
                     setError(err.message || t.errors.generic);
                 } finally {
                     setLoading(false);
                 }
             };
 
-            // Show maintenance notice if enabled
+            const stepLabels = stripeEnabled ? t.steps : t.stepsNoPayment;
+            const totalSteps = stripeEnabled ? 3 : 2;
+
             if (MAINTENANCE_MODE) {
                 return (
-                    <div style={{maxWidth: '672px', margin: '0 auto', padding: '32px', background: 'white', borderRadius: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'}}>
-                        <div style={{textAlign: 'center', padding: '48px 24px'}}>
-                            <div style={{width: '80px', height: '80px', background: '#fef3c7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px'}}>
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
+                    <div className="pw-widget">
+                        <div className="pw-header">
+                            <div className="pw-header-top">
+                                <div>
+                                    <div className="pw-title">{t.title}</div>
+                                </div>
+                                <button className="pw-lang-btn" onClick={toggleLanguage}>{language === 'de' ? 'EN' : 'DE'}</button>
                             </div>
-                            <h2 style={{fontSize: '28px', fontWeight: 'bold', color: '#0f172a', marginBottom: '16px'}}>{t.maintenance.title}</h2>
-                            <p style={{fontSize: '18px', color: '#475569', lineHeight: '1.6', marginBottom: '12px'}}>
-                                {t.maintenance.message}
-                            </p>
-                            <p style={{fontSize: '16px', color: '#64748b', lineHeight: '1.6'}}>
-                                {t.maintenance.apology}
-                            </p>
-                            <div style={{background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: '16px', padding: '24px', marginTop: '32px', textAlign: 'left'}}>
-                                <p style={{fontSize: '16px', color: '#334155', fontWeight: '600', marginBottom: '16px'}}>{t.maintenance.contact}</p>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
-                                    <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                                        <Phone />
-                                        <span style={{fontSize: '16px', color: '#475569'}}>+43 5476 6334</span>
+                        </div>
+                        <div className="pw-body" style={{textAlign: 'center', padding: '40px 32px'}}>
+                            <div style={{width: '60px', height: '60px', borderRadius: '50%', background: '#f5eddc', border: '2px solid #b8924a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'}}>
+                                <IconWarn />
+                            </div>
+                            <div style={{fontFamily: 'Cardo, Georgia, serif', fontSize: '22px', fontWeight: '700', color: '#1e1e1e', marginBottom: '12px'}}>{t.maintenance.title}</div>
+                            <p style={{fontSize: '14px', color: '#5a5550', lineHeight: '1.7', marginBottom: '8px'}}>{t.maintenance.message}</p>
+                            <p style={{fontSize: '13px', color: '#9a948e', lineHeight: '1.6', marginBottom: '28px'}}>{t.maintenance.apology}</p>
+                            <div style={{background: '#f7f3ee', border: '1px solid #d4cec4', borderRadius: '4px', padding: '20px', textAlign: 'left'}}>
+                                <p style={{fontSize: '11px', fontWeight: '600', letterSpacing: '0.07em', textTransform: 'uppercase', color: '#9a948e', marginBottom: '14px'}}>{t.maintenance.contact}</p>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#1e1e1e'}}>
+                                        <IconPhone /><span>+43 5476 6334</span>
                                     </div>
-                                    <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                                        <Mail />
-                                        <span style={{fontSize: '16px', color: '#475569'}}>info@patschi.at</span>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#1e1e1e'}}>
+                                        <IconMail /><span>info@patschi.at</span>
                                     </div>
                                 </div>
                             </div>
@@ -1015,83 +1478,59 @@
 
             if (success) {
                 return (
-                    <div style={{maxWidth: '672px', margin: '0 auto', padding: '32px', background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%)', borderRadius: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'}}>
-                        <div style={{textAlign: 'center', padding: '32px 0'}}>
-                            <div style={{width: '80px', height: '80px', background: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)'}}>
-                                <Check />
-                            </div>
-                            <h2 style={{fontSize: '30px', fontWeight: 'bold', color: '#0f172a', marginBottom: '12px'}}>{t.success.title}</h2>
-                            <p style={{fontSize: '18px', color: '#475569', marginBottom: '32px'}}>{t.success.thanks}</p>
-
-                            <div style={{background: 'white', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '32px', marginBottom: '32px'}}>
-                                <div style={{marginBottom: '24px'}}>
-                                    <p style={{fontSize: '14px', color: '#475569', marginBottom: '8px'}}>{t.success.bookingNumber}</p>
-                                    <div style={{fontSize: '36px', fontWeight: 'bold', color: '#10b981', letterSpacing: '0.1em', marginBottom: '4px'}}>
-                                        {bookingCode}
-                                    </div>
-                                    <p style={{fontSize: '14px', color: '#64748b'}}>{t.success.keepNumber}</p>
-                                </div>
-
-                                <div style={{borderTop: '1px solid #e2e8f0', paddingTop: '24px', textAlign: 'left'}}>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                                        <span style={{color: '#475569'}}>{t.success.date}</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>
-                                            {new Date(formData.reservation_date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
-                                                weekday: 'long',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            })}
-                                        </span>
-                                    </div>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                                        <span style={{color: '#475569'}}>{t.success.time}</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>15:45{language === 'de' ? ' Uhr' : ''}</span>
-                                    </div>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                                        <span style={{color: '#475569'}}>{t.success.guests}</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>{formData.party_size}</span>
-                                    </div>
-                                    {stripeEnabled && formData.payment_amount > 0 && (
-                                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #e2e8f0'}}>
-                                            <span style={{color: '#475569'}}>{t.success.paid}</span>
-                                            <span style={{fontWeight: 'bold', color: '#10b981', fontSize: '18px'}}>
-                                                €{(formData.payment_amount / 100).toFixed(2)}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
+                    <div className="pw-widget">
+                        <div className="pw-success-header">
+                            <div className="pw-success-icon"><IconCheck /></div>
+                            <div className="pw-success-title">{t.success.title}</div>
+                            <div className="pw-success-subtitle">{t.success.thanks}</div>
+                        </div>
+                        <div className="pw-body">
+                            <div className="pw-booking-code-wrap">
+                                <div className="pw-booking-code-label">{t.success.bookingNumber}</div>
+                                <div className="pw-booking-code">{bookingCode}</div>
+                                <div className="pw-booking-code-hint">{t.success.keepNumber}</div>
                             </div>
 
-                            <div style={{background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '12px', padding: '24px', marginBottom: '24px'}}>
-                                <p style={{fontSize: '14px', color: '#1e40af'}}>
-                                    <strong>{t.success.important}</strong> {t.success.emailSent} <strong>{formData.customer_email}</strong>.
-                                </p>
+                            <div style={{marginBottom: '16px'}}>
+                                <div className="pw-detail-row">
+                                    <span className="pw-detail-key">{t.success.date}</span>
+                                    <span className="pw-detail-val">
+                                        {new Date(formData.reservation_date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
+                                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                        })}
+                                    </span>
+                                </div>
+                                <div className="pw-detail-row">
+                                    <span className="pw-detail-key">{t.success.time}</span>
+                                    <span className="pw-detail-val">15:45{language === 'de' ? ' Uhr' : ''}</span>
+                                </div>
+                                <div className="pw-detail-row">
+                                    <span className="pw-detail-key">{t.success.guests}</span>
+                                    <span className="pw-detail-val">{formData.party_size}</span>
+                                </div>
+                                {stripeEnabled && formData.payment_amount > 0 && (
+                                    <div className="pw-detail-row">
+                                        <span className="pw-detail-key">{t.success.paid}</span>
+                                        <span className="pw-detail-val" style={{color: '#4a7c59'}}>€{(formData.payment_amount / 100).toFixed(2)}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="pw-notice pw-notice-info" style={{marginBottom: '24px'}}>
+                                {t.success.emailSent} <strong>{formData.customer_email}</strong>{t.success.emailSent2}
                             </div>
 
                             <button
+                                className="pw-btn-primary"
                                 onClick={() => {
-                                    setSuccess(false);
-                                    setStep(1);
-                                    setBookingCode('');
+                                    setSuccess(false); setStep(1); setBookingCode('');
                                     setFormDataAndRef({
-                                        party_size: 2,
-                                        reservation_date: '',
-                                        reservation_time: '15:45',
-                                        room_id: rooms[0]?.id || '',
-                                        customer_name: '',
-                                        customer_email: '',
-                                        customer_phone: '',
-                                        special_requests: '',
-                                        payment_amount: 35000,
+                                        party_size: 2, reservation_date: '', reservation_time: '15:45',
+                                        room_id: rooms[0]?.id || '', customer_name: '', customer_email: '',
+                                        customer_phone: '', special_requests: '', payment_amount: 35000,
                                     });
-                                    if (cardElement) {
-                                        cardElement.clear();
-                                    }
+                                    if (cardElement) cardElement.clear();
                                 }}
-                                style={{background: '#1e293b', color: 'white', padding: '16px 32px', borderRadius: '12px', fontWeight: '600', border: 'none', cursor: 'pointer', fontSize: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', transition: 'transform 0.2s'}}
-                                onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                             >
                                 {t.success.newReservation}
                             </button>
@@ -1101,442 +1540,326 @@
             }
 
             return (
-                <div style={{maxWidth: '672px', margin: '0 auto', padding: '16px', background: 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'}}>
-                    <div style={{marginBottom: '24px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
-                            <h2 style={{fontSize: '24px', fontWeight: 'bold', color: '#0f172a'}}>{t.title}</h2>
-                            <button
-                                onClick={toggleLanguage}
-                                style={{padding: '8px 16px', background: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s'}}
-                                onMouseOver={(e) => e.target.style.background = '#e2e8f0'}
-                                onMouseOut={(e) => e.target.style.background = '#f1f5f9'}
-                            >
-                                {language === 'de' ? 'EN' : 'DE'}
-                            </button>
+                <div className="pw-widget">
+                    <div className="pw-header">
+                        <div className="pw-header-top">
+                            <div>
+                                <div className="pw-title">{t.title}</div>
+                                <div className="pw-subtitle">{t.subtitle}</div>
+                            </div>
+                            <button className="pw-lang-btn" onClick={toggleLanguage}>{language === 'de' ? 'EN' : 'DE'}</button>
                         </div>
-                        <p style={{fontSize: '16px', color: '#475569'}}>{t.subtitle}</p>
 
-                        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px'}}>
-                            {(stripeEnabled ? [1, 2, 3] : [1, 2]).map((s, index, arr) => (
-                                <div key={s} style={{display: 'flex', alignItems: 'center', flex: 1}}>
-                                    <div style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '14px',
-                                        fontWeight: 'bold',
-                                        background: step >= s ? '#10b981' : '#e2e8f0',
-                                        color: step >= s ? 'white' : '#94a3b8',
-                                        boxShadow: step >= s ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' : 'none',
-                                        transform: step >= s ? 'scale(1.1)' : 'scale(1)',
-                                        transition: 'all 0.3s'
-                                    }}>
-                                        {s}
-                                    </div>
-                                    {index < arr.length - 1 && (
-                                        <div style={{
-                                            height: '6px',
-                                            flex: 1,
-                                            margin: '0 6px',
-                                            borderRadius: '3px',
-                                            background: step > s ? '#10b981' : '#e2e8f0',
-                                            transition: 'all 0.3s'
-                                        }} />
-                                    )}
-                                </div>
-                            ))}
+                        <div className="pw-steps">
+                            {stepLabels.map((label, index) => {
+                                const s = index + 1;
+                                const isDone = step > s;
+                                const isActive = step === s;
+                                const isPending = step < s;
+                                return (
+                                    <React.Fragment key={s}>
+                                        <div className="pw-step-wrapper">
+                                            <div className={`pw-step-dot ${isDone ? 'done' : isActive ? 'active' : 'pending'}`}>
+                                                {isDone ? <IconCheckSm /> : s}
+                                            </div>
+                                            <div className={`pw-step-label ${isDone ? 'done' : isActive ? 'active' : 'pending'}`}>{label}</div>
+                                        </div>
+                                        {index < stepLabels.length - 1 && (
+                                            <div className={`pw-step-line ${isDone ? 'done' : 'pending'}`} />
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {error && (
-                        <div style={{marginBottom: '24px', background: '#fef2f2', border: '2px solid #fecaca', color: '#991b1b', padding: '16px 20px', borderRadius: '12px', fontWeight: '500'}}>
-                            {error}
-                        </div>
-                    )}
+                    <div className="pw-body">
+                        {error && (
+                            <div className="pw-notice pw-notice-error" style={{marginBottom: '18px'}}>{error}</div>
+                        )}
 
-                    {availabilityChecked && step === 1 && !error && (
-                        <div style={{marginBottom: '24px', background: '#ecfdf5', border: '2px solid #a7f3d0', color: '#065f46', padding: '16px 20px', borderRadius: '12px', fontWeight: '500'}}>
-                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                                <span>{t.step1.available}</span>
+                        {availabilityChecked && step === 1 && !error && (
+                            <div className="pw-notice pw-notice-success" style={{marginBottom: '18px'}}>
+                                <IconCheckSm /><span>{t.step1.available}</span>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {step === 1 && (
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step1.heading}</h3>
-
+                        {step === 1 && (
                             <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Calendar /> <span style={{marginLeft: '8px'}}>{t.step1.selectDate}</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formData.reservation_date}
-                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, reservation_date: e.target.value }))}
-                                    min={(() => {
-                                        const now = new Date();
-                                        const currentHour = now.getHours();
-                                        if (currentHour >= 12) {
-                                            now.setDate(now.getDate() + 1);
-                                        }
-                                        return now.toISOString().split('T')[0];
-                                    })()}
-                                    style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none', height: '48px', boxSizing: 'border-box'}}
-                                />
-                            </div>
+                                <div className="pw-section-title">{t.step1.heading}</div>
 
-                            <div style={{background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: '12px', padding: '16px'}}>
-                                <label style={{display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '6px'}}>
-                                    {t.step1.timeFixed}
-                                </label>
-                                <div style={{fontSize: '24px', fontWeight: 'bold', color: '#10b981'}}>15:45{language === 'de' ? ' Uhr' : ''}</div>
-                                <p style={{fontSize: '12px', color: '#64748b', marginTop: '4px'}}>{t.step1.timeNote}</p>
-                            </div>
-
-                            <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Users /> <span style={{marginLeft: '8px'}}>{t.step1.partySize}</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="10"
-                                    value={formData.party_size}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        const numValue = parseInt(value);
-                                        if (value === '' || (numValue >= 1 && numValue <= 10)) {
-                                            setFormDataAndRef(prev => ({ ...prev, party_size: value === '' ? '' : numValue }));
-                                        }
-                                    }}
-                                    style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
-                                />
-                            </div>
-
-                            {rooms.length > 1 && (
-                                <div>
-                                    <label style={{display: 'block', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                        {t.step1.area}
-                                    </label>
-                                    <select
-                                        value={formData.room_id}
-                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, room_id: e.target.value }))}
-                                        style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
-                                    >
-                                        {rooms.map((room) => (
-                                            <option key={room.id} value={room.id}>{room.name}</option>
-                                        ))}
-                                    </select>
+                                <div className="pw-field">
+                                    <div className="pw-label"><IconCalendar />{t.step1.selectDate}</div>
+                                    <input
+                                        type="date"
+                                        className="pw-input"
+                                        value={formData.reservation_date}
+                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, reservation_date: e.target.value }))}
+                                        min={(() => {
+                                            const now = new Date();
+                                            if (now.getHours() >= 12) now.setDate(now.getDate() + 1);
+                                            return now.toISOString().split('T')[0];
+                                        })()}
+                                    />
                                 </div>
-                            )}
-                        </div>
-                    )}
 
-                    {step === 2 && (
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step2.heading}</h3>
-
-                            {!stripeEnabled && (
-                                <div style={{background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '12px', padding: '20px'}}>
-                                    <p style={{fontSize: '14px', color: '#1e40af'}}>
-                                        <strong>Info:</strong> {t.step2.noDeposit}
-                                    </p>
-                                </div>
-                            )}
-
-                            <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Users /> <span style={{marginLeft: '8px'}}>{t.step2.name}</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.customer_name}
-                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_name: e.target.value }))}
-                                    placeholder={t.step2.placeholder.name}
-                                    style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Mail /> <span style={{marginLeft: '8px'}}>{t.step2.email}</span>
-                                </label>
-                                <input
-                                    type="email"
-                                    value={formData.customer_email}
-                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_email: e.target.value }))}
-                                    placeholder={t.step2.placeholder.email}
-                                    style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <Phone /> <span style={{marginLeft: '8px'}}>{t.step2.phone}</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={formData.customer_phone}
-                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_phone: e.target.value }))}
-                                    placeholder={t.step2.placeholder.phone}
-                                    style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', height: '48px', boxSizing: 'border-box'}}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', color: '#334155', marginBottom: '10px'}}>
-                                    <MessageSquare /> <span style={{marginLeft: '8px'}}>{t.step2.specialRequests}</span>
-                                </label>
-                                <textarea
-                                    value={formData.special_requests}
-                                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, special_requests: e.target.value }))}
-                                    rows={4}
-                                    placeholder={t.step2.placeholder.requests}
-                                    style={{width: '100%', padding: '12px 12px', border: '2px solid #cbd5e1', borderRadius: '12px', fontSize: '16px', boxSizing: 'border-box'}}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 3 && stripeEnabled && (
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                            <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px'}}>{t.step3.heading}</h3>
-
-                            {isTestMode && (
-                                <div style={{background: '#fef3c7', border: '2px solid #fcd34d', borderRadius: '12px', padding: '16px'}}>
-                                    <p style={{fontSize: '13px', color: '#78350f', fontWeight: '600', marginBottom: '8px'}}>
-                                        {language === 'de' ? '⚠️ Test-Modus' : '⚠️ Test Mode'}
-                                    </p>
-                                    <p style={{fontSize: '13px', color: '#78350f', marginBottom: '8px'}}>
-                                        {language === 'de'
-                                            ? 'Verwenden Sie eine Test-Kartennummer:'
-                                            : 'Use a test card number:'}
-                                    </p>
-                                    <p style={{fontSize: '13px', color: '#78350f', fontFamily: 'monospace', background: '#fef9e5', padding: '8px', borderRadius: '6px'}}>
-                                        4242 4242 4242 4242
-                                    </p>
-                                    <p style={{fontSize: '12px', color: '#92400e', marginTop: '8px'}}>
-                                        {language === 'de'
-                                            ? 'CVC: beliebige 3 Ziffern • Ablaufdatum: beliebiges zukünftiges Datum'
-                                            : 'CVC: any 3 digits • Expiry: any future date'}
-                                    </p>
-                                </div>
-                            )}
-
-                            <div style={{background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderRadius: '16px', padding: '24px', border: '2px solid #e2e8f0'}}>
-                                <h4 style={{fontWeight: 'bold', fontSize: '18px', color: '#0f172a', marginBottom: '16px'}}>{t.step3.summary}</h4>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '16px'}}>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <span style={{color: '#475569'}}>{t.step3.date}</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>
-                                            {new Date(formData.reservation_date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
-                                                weekday: 'short',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            })}
-                                        </span>
-                                    </div>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <span style={{color: '#475569'}}>{t.step3.time}</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>15:45{language === 'de' ? ' Uhr' : ''}</span>
-                                    </div>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                        <span style={{color: '#475569'}}>{t.step3.guests}</span>
-                                        <span style={{fontWeight: '600', color: '#0f172a'}}>{formData.party_size}</span>
-                                    </div>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', marginTop: '12px', borderTop: '2px solid #cbd5e1'}}>
-                                        <span style={{fontWeight: 'bold', fontSize: '18px', color: '#334155'}}>{t.step3.deposit}</span>
-                                        <span style={{fontWeight: 'bold', fontSize: '24px', color: '#10b981'}}>
-                                            €{(formData.payment_amount / 100).toFixed(2)}
-                                        </span>
+                                <div className="pw-field">
+                                    <div className="pw-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{t.step1.timeFixed}</div>
+                                    <div className="pw-time-block">
+                                        <div>
+                                            <div className="pw-time-label-text">{t.step1.timeNote}</div>
+                                            <div className="pw-time-value">15:45{language === 'de' ? ' Uhr' : ''}</div>
+                                        </div>
+                                        <div style={{opacity: 0.25}}>
+                                            <IconClock />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div style={{background: '#fef3c7', border: '2px solid #fcd34d', borderRadius: '12px', padding: '20px'}}>
-                                <p style={{fontSize: '14px', color: '#78350f'}}>
-                                    <strong>{t.success.important}</strong> {t.step3.depositRequired} €{(formData.payment_amount / 100).toFixed(2)} {t.step3.depositRequired2}
-                                </p>
-                            </div>
-
-                            <div>
-                                <label style={{display: 'flex', alignItems: 'center', fontSize: '16px', fontWeight: '600', color: '#334155', marginBottom: '12px'}}>
-                                    <CreditCard /> <span style={{marginLeft: '8px'}}>{t.step3.paymentMethod}</span>
-                                </label>
-
-                {paymentRequest && (
-                                    <div style={{marginBottom: '16px'}}>
+                                <div className="pw-field">
+                                    <div className="pw-label"><IconUsers />{t.step1.partySize} <span style={{fontWeight: '400', opacity: 0.6}}>— {t.step1.partySizeHint}</span></div>
+                                    <div className="pw-stepper">
                                         <button
                                             type="button"
-                                            onClick={async () => {
-                                                setLoading(true);
-                                                setError('');
-                                                // Read from ref — always has the latest values regardless of closure age
-                                                const prFd = formDataRef.current;
-                                                try {
-                                                    // Re-verify availability to get fresh table IDs
-                                                    const prAvailability = await checkAvailability(prFd);
-                                                    if (!prAvailability.available) {
-                                                        setStep(1);
-                                                        setAvailabilityChecked(false);
-                                                        setSelectedTables([]);
-                                                        setError(prAvailability.message || t.errors.noAvailability);
-                                                        setLoading(false);
-                                                        return;
-                                                    }
-                                                    const prFreshTables = prAvailability.selected_tables || [];
+                                            className="pw-stepper-btn"
+                                            disabled={formData.party_size <= 1}
+                                            onClick={() => setFormDataAndRef(prev => ({ ...prev, party_size: Math.max(1, prev.party_size - 1) }))}
+                                        >−</button>
+                                        <div className="pw-stepper-val">{formData.party_size}</div>
+                                        <button
+                                            type="button"
+                                            className="pw-stepper-btn"
+                                            disabled={formData.party_size >= 10}
+                                            onClick={() => setFormDataAndRef(prev => ({ ...prev, party_size: Math.min(10, prev.party_size + 1) }))}
+                                        >+</button>
+                                    </div>
+                                </div>
 
-                                                    const secret = await createPaymentIntent();
-                                                    if (!secret) {
-                                                        throw new Error(t.errors.paymentError);
-                                                    }
-
-                                                    paymentRequest.update({
-                                                        total: {
-                                                            label: language === 'de' ? 'Reservierungs-Anzahlung' : 'Reservation Deposit',
-                                                            amount: prFd.payment_amount,
-                                                        },
-                                                    });
-
-                                                    // Remove any existing listeners
-                                                    paymentRequest.off('paymentmethod');
-
-                                                    // Add the payment method handler
-                                                    paymentRequest.on('paymentmethod', async (ev) => {
-                                                        try {
-                                                            const result = await stripe.confirmCardPayment(secret, {
-                                                                payment_method: ev.paymentMethod.id,
-                                                            });
-
-                                                            if (result.error) {
-                                                                ev.complete('fail');
-                                                                await logAbandonment('payment_failed', 'Payment Request API error', result.error.message, null);
-                                                                setError(processStripeError(result.error.message));
-                                                                setLoading(false);
-                                                            } else {
-                                                                ev.complete('success');
-
-                                                                const reservationData = {
-                                                                    customer_name: prFd.customer_name,
-                                                                    customer_email: prFd.customer_email,
-                                                                    customer_phone: prFd.customer_phone || '',
-                                                                    party_size: prFd.party_size,
-                                                                    reservation_date: prFd.reservation_date,
-                                                                    reservation_time: prFd.reservation_time,
-                                                                    duration_minutes: 120,
-                                                                    status: 'confirmed',
-                                                                    special_requests: prFd.special_requests || '',
-                                                                    payment_status: 'paid',
-                                                                    payment_amount: prFd.payment_amount / 100,
-                                                                    payment_method: 'stripe',
-                                                                    stripe_payment_intent_id: result.paymentIntent.id,
-                                                                    booking_method: 'online',
-                                                                    room_id: prFd.room_id,
-                                                                    selected_tables: prFreshTables,
-                                                                };
-
-                                                                const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
-                                                                const response = await fetch(apiUrl, {
-                                                                    method: 'POST',
-                                                                    headers: {
-                                                                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE',
-                                                                        'Content-Type': 'application/json',
-                                                                    },
-                                                                    body: JSON.stringify(reservationData),
-                                                                });
-
-                                                                const responseData = await response.json();
-                                                                if (response.ok) {
-                                                                    setBookingCode(responseData.booking_code);
-                                                                    setSuccess(true);
-                                                                    setLoading(false);
-                                                                } else {
-                                                                    throw new Error(responseData.error || 'Fehler beim Erstellen der Reservierung');
-                                                                }
-                                                            }
-                                                        } catch (err) {
-                                                            ev.complete('fail');
-                                                            setError(err.message || t.errors.paymentError);
-                                                            setLoading(false);
-                                                        }
-                                                    });
-
-                                                    paymentRequest.show();
-                                                } catch (err) {
-                                                    setError(err.message || t.errors.paymentError);
-                                                    setLoading(false);
-                                                }
-                                            }}
-                                            disabled={loading}
-                                            style={{width: '100%', padding: '14px 20px', background: loading ? '#94a3b8' : '#1e293b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '16px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: loading ? 0.5 : 1}}
+                                {rooms.length > 1 && (
+                                    <div className="pw-field">
+                                        <div className="pw-label"><IconMap />{t.step1.area}</div>
+                                        <select
+                                            className="pw-select"
+                                            value={formData.room_id}
+                                            onChange={(e) => setFormDataAndRef(prev => ({ ...prev, room_id: e.target.value }))}
                                         >
-                                            <CreditCard />
-                                            {loading ? t.buttons.processing : t.step3.appleGooglePay}
-                                        </button>
-                                        <div style={{position: 'relative', margin: '24px 0'}}>
-                                            <div style={{position: 'absolute', inset: 0, display: 'flex', alignItems: 'center'}}>
-                                                <div style={{width: '100%', borderTop: '1px solid #cbd5e1'}}></div>
-                                            </div>
-                                            <div style={{position: 'relative', display: 'flex', justifyContent: 'center', fontSize: '14px'}}>
-                                                <span style={{background: 'white', padding: '0 16px', color: '#64748b'}}>{t.step3.orPayWithCard}</span>
-                                            </div>
+                                            {rooms.map((room) => (
+                                                <option key={room.id} value={room.id}>{room.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div>
+                                <div className="pw-section-title">{t.step2.heading}</div>
+
+                                {!stripeEnabled && (
+                                    <div className="pw-notice pw-notice-info" style={{marginBottom: '18px'}}>
+                                        {t.step2.noDeposit}
+                                    </div>
+                                )}
+
+                                <div className="pw-field">
+                                    <div className="pw-label"><IconUsers />{t.step2.nameReq}</div>
+                                    <input
+                                        type="text"
+                                        className="pw-input"
+                                        value={formData.customer_name}
+                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_name: e.target.value }))}
+                                        placeholder={t.step2.placeholder.name}
+                                    />
+                                </div>
+
+                                <div className="pw-field">
+                                    <div className="pw-label"><IconMail />{t.step2.emailReq}</div>
+                                    <input
+                                        type="email"
+                                        className="pw-input"
+                                        value={formData.customer_email}
+                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_email: e.target.value }))}
+                                        placeholder={t.step2.placeholder.email}
+                                    />
+                                </div>
+
+                                <div className="pw-field">
+                                    <div className="pw-label"><IconPhone />{t.step2.phoneOpt}</div>
+                                    <input
+                                        type="tel"
+                                        className="pw-input"
+                                        value={formData.customer_phone}
+                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, customer_phone: e.target.value }))}
+                                        placeholder={t.step2.placeholder.phone}
+                                    />
+                                </div>
+
+                                <div className="pw-field">
+                                    <div className="pw-label"><IconMsg />{t.step2.specialReqOpt}</div>
+                                    <textarea
+                                        className="pw-textarea"
+                                        value={formData.special_requests}
+                                        onChange={(e) => setFormDataAndRef(prev => ({ ...prev, special_requests: e.target.value }))}
+                                        rows={3}
+                                        placeholder={t.step2.placeholder.requests}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && stripeEnabled && (
+                            <div>
+                                <div className="pw-section-title">{t.step3.heading}</div>
+
+                                {isTestMode && (
+                                    <div style={{marginBottom: '16px'}}>
+                                        <div className="pw-test-badge">
+                                            <IconWarn />
+                                            {t.step3.testMode}
+                                        </div>
+                                        <div className="pw-notice pw-notice-amber">
+                                            <div style={{marginBottom: '6px'}}>{t.step3.testCardInfo}</div>
+                                            <div className="pw-mono">4242 4242 4242 4242</div>
+                                            <div style={{marginTop: '6px', fontSize: '12px', opacity: '0.8'}}>{t.step3.testCardHint}</div>
                                         </div>
                                     </div>
                                 )}
 
-                                <div id="card-element"></div>
-                            </div>
+                                <div className="pw-summary-card">
+                                    <div className="pw-summary-title">{t.step3.summary}</div>
+                                    <div className="pw-summary-row">
+                                        <span className="pw-summary-key">{t.step3.date}</span>
+                                        <span className="pw-summary-val">
+                                            {new Date(formData.reservation_date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
+                                                weekday: 'short', month: 'long', day: 'numeric', year: 'numeric'
+                                            })}
+                                        </span>
+                                    </div>
+                                    <div className="pw-summary-row">
+                                        <span className="pw-summary-key">{t.step3.time}</span>
+                                        <span className="pw-summary-val">15:45{language === 'de' ? ' Uhr' : ''}</span>
+                                    </div>
+                                    <div className="pw-summary-row">
+                                        <span className="pw-summary-key">{t.step3.guests}</span>
+                                        <span className="pw-summary-val">{formData.party_size}</span>
+                                    </div>
+                                    <div className="pw-summary-row" style={{paddingTop: '14px', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)', borderBottom: 'none'}}>
+                                        <span className="pw-summary-total-key">{t.step3.deposit}</span>
+                                        <span className="pw-summary-total-val">€{(formData.payment_amount / 100).toFixed(2)}</span>
+                                    </div>
+                                </div>
 
-                            <div style={{background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: '12px', padding: '20px'}}>
-                                <p style={{fontSize: '12px', color: '#1e40af'}}>
-                                    {t.step3.securePayment}
-                                </p>
+                                <div className="pw-notice pw-notice-amber" style={{marginBottom: '20px'}}>
+                                    {t.step3.depositRequired} <strong>€{(formData.payment_amount / 100).toFixed(2)}</strong> {t.step3.depositRequired2}
+                                </div>
+
+                                <div style={{marginBottom: '8px'}}>
+                                    <div className="pw-payment-section-label">
+                                        <IconCard />{t.step3.paymentMethod}
+                                    </div>
+
+                                    {paymentRequest && (
+                                        <div>
+                                            <button
+                                                type="button"
+                                                className="pw-btn-primary"
+                                                onClick={async () => {
+                                                    setLoading(true);
+                                                    setError('');
+                                                    const prFd = formDataRef.current;
+                                                    try {
+                                                        const prAvailability = await checkAvailability(prFd);
+                                                        if (!prAvailability.available) {
+                                                            setStep(1); setAvailabilityChecked(false); setSelectedTables([]);
+                                                            setError(prAvailability.message || t.errors.noAvailability);
+                                                            setLoading(false); return;
+                                                        }
+                                                        const prFreshTables = prAvailability.selected_tables || [];
+                                                        const secret = await createPaymentIntent();
+                                                        if (!secret) throw new Error(t.errors.paymentError);
+                                                        paymentRequest.update({ total: { label: language === 'de' ? 'Reservierungs-Anzahlung' : 'Reservation Deposit', amount: prFd.payment_amount } });
+                                                        paymentRequest.off('paymentmethod');
+                                                        paymentRequest.on('paymentmethod', async (ev) => {
+                                                            try {
+                                                                const result = await stripe.confirmCardPayment(secret, { payment_method: ev.paymentMethod.id });
+                                                                if (result.error) {
+                                                                    ev.complete('fail');
+                                                                    await logAbandonment('payment_failed', 'Payment Request API error', result.error.message, null);
+                                                                    setError(processStripeError(result.error.message)); setLoading(false);
+                                                                } else {
+                                                                    ev.complete('success');
+                                                                    const reservationData = {
+                                                                        customer_name: prFd.customer_name, customer_email: prFd.customer_email, customer_phone: prFd.customer_phone || '',
+                                                                        party_size: prFd.party_size, reservation_date: prFd.reservation_date, reservation_time: prFd.reservation_time,
+                                                                        duration_minutes: 120, status: 'confirmed', special_requests: prFd.special_requests || '',
+                                                                        payment_status: 'paid', payment_amount: prFd.payment_amount / 100, payment_method: 'stripe',
+                                                                        stripe_payment_intent_id: result.paymentIntent.id, booking_method: 'online',
+                                                                        room_id: prFd.room_id, selected_tables: prFreshTables,
+                                                                    };
+                                                                    const apiUrl = 'https://qwwerwkekvmaswusvgxy.supabase.co/functions/v1/create-reservation';
+                                                                    const response = await fetch(apiUrl, {
+                                                                        method: 'POST',
+                                                                        headers: { 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE', 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify(reservationData),
+                                                                    });
+                                                                    const responseData = await response.json();
+                                                                    if (response.ok) { setBookingCode(responseData.booking_code); setSuccess(true); setLoading(false); }
+                                                                    else throw new Error(responseData.error || t.errors.creationError);
+                                                                }
+                                                            } catch (err) { ev.complete('fail'); setError(err.message || t.errors.paymentError); setLoading(false); }
+                                                        });
+                                                        paymentRequest.show();
+                                                    } catch (err) { setError(err.message || t.errors.paymentError); setLoading(false); }
+                                                }}
+                                                disabled={loading}
+                                                style={{marginBottom: '0'}}
+                                            >
+                                                {loading ? <><span className="pw-spinner"></span>{t.buttons.processing}</> : t.step3.appleGooglePay}
+                                            </button>
+                                            <div className="pw-divider">{t.step3.orPayWithCard}</div>
+                                        </div>
+                                    )}
+
+                                    <div className="pw-card-container" id="card-element"></div>
+                                </div>
+
+                                <div className="pw-security-note">
+                                    <IconLock />
+                                    <span>{t.step3.securePayment}</span>
+                                </div>
                             </div>
+                        )}
+
+                        <div className="pw-btn-row">
+                            {step > 1 && (
+                                <button className="pw-btn-secondary" onClick={() => setStep(step - 1)} style={{flex: '0 0 auto', width: 'auto', padding: '14px 24px'}}>
+                                    {t.buttons.back}
+                                </button>
+                            )}
+                            {step < totalSteps ? (
+                                <button
+                                    className="pw-btn-amber"
+                                    onClick={handleNextStep}
+                                    disabled={loading}
+                                    style={{flex: 1}}
+                                >
+                                    {loading
+                                        ? <><span className="pw-spinner"></span>{step === 1 ? t.buttons.checkingAvailability : t.buttons.creatingReservation}</>
+                                        : (step === 2 && !stripeEnabled ? t.buttons.completeReservation : t.buttons.next)
+                                    }
+                                </button>
+                            ) : (
+                                <button
+                                    className="pw-btn-amber"
+                                    onClick={handleSubmit}
+                                    disabled={loading}
+                                    style={{flex: 1}}
+                                >
+                                    {loading ? <><span className="pw-spinner"></span>{t.buttons.processing}</> : t.step3.payNow}
+                                </button>
+                            )}
                         </div>
-                    )}
-
-                    <div style={{display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap'}}>
-                        {step > 1 && (
-                            <button
-                                onClick={() => setStep(step - 1)}
-                                style={{flex: 1, minWidth: '120px', padding: '14px 20px', border: '2px solid #cbd5e1', color: '#334155', borderRadius: '12px', background: 'white', fontWeight: '600', fontSize: '16px', cursor: 'pointer'}}
-                            >
-                                {t.buttons.back}
-                            </button>
-                        )}
-                        {step < 3 ? (
-                            <button
-                                onClick={handleNextStep}
-                                disabled={loading}
-                                style={{flex: 1, minWidth: '120px', padding: '14px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '16px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)', transition: 'transform 0.2s', opacity: loading ? 0.5 : 1}}
-                                onMouseOver={(e) => !loading && (e.target.style.transform = 'scale(1.05)')}
-                                onMouseOut={(e) => !loading && (e.target.style.transform = 'scale(1)')}
-                            >
-                                {loading && step === 1
-                                    ? t.buttons.checkingAvailability
-                                    : loading && step === 2 && !stripeEnabled
-                                    ? t.buttons.creatingReservation
-                                    : step === 2 && !stripeEnabled
-                                    ? t.buttons.completeReservation
-                                    : t.buttons.next}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleSubmit}
-                                disabled={loading}
-                                style={{flex: 1, minWidth: '200px', padding: '14px 20px', background: loading ? '#94a3b8' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '16px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)', opacity: loading ? 0.5 : 1}}
-                            >
-                                {loading ? t.buttons.processing : t.step3.payNow}
-                            </button>
-                        )}
                     </div>
                 </div>
             );
