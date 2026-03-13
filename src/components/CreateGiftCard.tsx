@@ -193,68 +193,65 @@ export function CreateGiftCard() {
 
   if (success) {
     return (
-      <div className="max-w-md mx-auto py-8">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-6">
-            <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+      <div className="max-w-2xl mx-auto py-8 px-2">
+        <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-10 text-center shadow-sm">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 mb-6">
+            <Check className="w-7 h-7 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-1">Gutschein ausgestellt</h2>
-          <p className="text-sm text-slate-400 dark:text-slate-500">Erfolgreich erstellt und gespeichert</p>
-        </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gutschein ausgestellt</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-10">Erfolgreich erstellt und gespeichert</p>
 
-        <div className="mb-10">
-          <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-amber-500 dark:text-amber-400 text-center mb-4">Code</p>
-          <div className="border-t border-b border-amber-200 dark:border-amber-800/50 py-5 text-center bg-amber-50/50 dark:bg-amber-900/10 rounded-sm">
-            <p className="text-3xl font-mono font-bold text-amber-700 dark:text-amber-300 tracking-[0.2em]">{createdCode}</p>
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl py-6 px-8 mb-8 w-full">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-amber-600 dark:text-amber-400 mb-3">Gutschein-Code</p>
+            <p className="text-4xl font-mono font-bold text-amber-700 dark:text-amber-300 tracking-[0.25em]">{createdCode}</p>
           </div>
-        </div>
 
-        <div className="space-y-3">
-          <button
-            onClick={downloadPdf}
-            disabled={downloadingPdf}
-            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors duration-150 flex items-center justify-center gap-2 disabled:opacity-40"
-          >
-            {downloadingPdf ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
-            ) : (
-              <><Download className="w-4 h-4" /><span>PDF herunterladen</span></>
-            )}
-          </button>
-          <button
-            onClick={() => { setSuccess(false); setCreatedCode(''); setCreatedGiftCardId(''); }}
-            className="w-full h-12 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors duration-150"
-          >
-            Weiteren Gutschein erstellen
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={downloadPdf}
+              disabled={downloadingPdf}
+              className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm"
+            >
+              {downloadingPdf ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
+              ) : (
+                <><Download className="w-4 h-4" /><span>PDF herunterladen</span></>
+              )}
+            </button>
+            <button
+              onClick={() => { setSuccess(false); setCreatedCode(''); setCreatedGiftCardId(''); }}
+              className="flex-1 h-12 bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all duration-150"
+            >
+              Weiteren Gutschein erstellen
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto py-2">
+    <div className="max-w-2xl mx-auto py-6 px-2">
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Gutschein erstellen</h1>
-        <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">Manuell einen Gutschein ausstellen</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Gutschein erstellen</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manuell einen Gutschein ausstellen</p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-8">
+        <div className="space-y-6">
 
-          {/* Amount */}
-          <div>
-            <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 mb-4">Betrag</p>
-            <div className="flex gap-2 mb-4">
+          <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-6 sm:p-8 shadow-sm">
+            <p className="text-xs font-semibold tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 mb-5">Betrag</p>
+            <div className="flex gap-3 mb-5">
               {PRESET_AMOUNTS.map((amount) => (
                 <button
                   key={amount}
                   type="button"
                   onClick={() => handleAmountSelect(amount)}
-                  className={`flex-1 h-11 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                  className={`flex-1 h-14 rounded-xl text-base font-bold transition-all duration-150 ${
                     !isCustomAmount && formData.amount === amount
-                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                      : 'bg-transparent border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-700 hover:text-amber-600 dark:hover:text-amber-400'
+                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                      : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-200 dark:hover:border-amber-700/50'
                   }`}
                 >
                   €{amount}
@@ -262,89 +259,90 @@ export function CreateGiftCard() {
               ))}
             </div>
             <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium pointer-events-none">€</span>
               <input
                 type="number"
                 min={MIN_AMOUNT}
                 step="1"
                 value={formData.customAmount}
                 onChange={(e) => handleCustomAmountChange(e.target.value)}
-                placeholder={`Individuell (mind. €${MIN_AMOUNT})`}
-                className={`w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b transition-colors duration-150 ${
+                placeholder={`Individueller Betrag (mind. €${MIN_AMOUNT})`}
+                className={`w-full pl-8 pr-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-150 focus:outline-none ${
                   isCustomAmount
-                    ? 'border-amber-500 dark:border-amber-400'
-                    : 'border-slate-200 dark:border-slate-700 focus:border-amber-400 dark:focus:border-amber-500'
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-400 dark:border-amber-600 text-slate-900 dark:text-white'
+                    : 'bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-amber-50 dark:focus:bg-amber-900/20 focus:border-amber-300 dark:focus:border-amber-600'
                 }`}
               />
             </div>
+
+            <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Gesamtbetrag</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Gültig für 1 Jahr</p>
+              </div>
+              <p className="text-5xl font-bold text-amber-500 dark:text-amber-400 tracking-tight tabular-nums">
+                €{isNaN(finalAmount) ? '0' : finalAmount.toFixed(0)}
+              </p>
+            </div>
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-800" />
-
-          {/* Recipient */}
-          <div>
-            <p className="text-[10px] font-medium tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 mb-4">
-              Empfänger <span className="font-normal normal-case tracking-normal text-slate-300 dark:text-slate-600">— Optional</span>
+          <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-6 sm:p-8 shadow-sm">
+            <p className="text-xs font-semibold tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 mb-5">
+              Empfänger <span className="font-normal normal-case tracking-normal text-slate-300 dark:text-slate-600 ml-1">— Optional</span>
             </p>
-            <div className="space-y-5">
-              <div className="relative">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Name</label>
                 <input
                   type="text"
                   value={formData.recipientName}
                   onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
-                  placeholder="Name"
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-sky-400 dark:focus:border-sky-500 transition-colors duration-150"
+                  placeholder="z.B. Maria Muster"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-sky-300 dark:focus:border-sky-600 focus:bg-sky-50 dark:focus:bg-sky-900/20 transition-all duration-150"
                 />
               </div>
-              <div className="relative">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">E-Mail</label>
                 <input
                   type="email"
                   value={formData.recipientEmail}
                   onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
-                  placeholder="E-Mail"
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-sky-400 dark:focus:border-sky-500 transition-colors duration-150"
+                  placeholder="empfaenger@beispiel.de"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-sky-300 dark:focus:border-sky-600 focus:bg-sky-50 dark:focus:bg-sky-900/20 transition-all duration-150"
                 />
               </div>
-              <div className="relative">
-                <textarea
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  rows={3}
-                  maxLength={500}
-                  placeholder="Persönliche Nachricht…"
-                  className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none pb-2 border-b border-slate-200 dark:border-slate-700 focus:border-sky-400 dark:focus:border-sky-500 transition-colors duration-150 resize-none"
-                />
-                <span className="absolute bottom-3 right-0 text-[11px] text-slate-300 dark:text-slate-600">{formData.message.length}/500</span>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Persönliche Nachricht</label>
+                <div className="relative">
+                  <textarea
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    rows={3}
+                    maxLength={500}
+                    placeholder="Eine persönliche Nachricht für den Empfänger…"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-sky-300 dark:focus:border-sky-600 focus:bg-sky-50 dark:focus:bg-sky-900/20 transition-all duration-150 resize-none"
+                  />
+                  <span className="absolute bottom-3 right-3 text-xs text-slate-300 dark:text-slate-600">{formData.message.length}/500</span>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="border-t border-slate-100 dark:border-slate-800" />
-
-          {/* Total */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Gesamtbetrag</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Gültig für 1 Jahr</p>
-            </div>
-            <p className="text-4xl font-bold text-amber-500 dark:text-amber-400 tracking-tight tabular-nums">
-              €{isNaN(finalAmount) ? '0' : finalAmount.toFixed(2)}
-            </p>
           </div>
 
           {error && (
-            <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm shadow-emerald-600/20 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-semibold rounded-xl shadow-sm shadow-emerald-600/20 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
+              <><Loader2 className="w-5 h-5 animate-spin" /><span>Wird erstellt…</span></>
             ) : (
-              <><Gift className="w-4 h-4" /><span>Gutschein erstellen</span></>
+              <><Gift className="w-5 h-5" /><span>Gutschein erstellen</span></>
             )}
           </button>
 
