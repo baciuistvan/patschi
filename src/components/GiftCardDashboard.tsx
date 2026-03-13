@@ -2,15 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Gift, Plus, Home, CreditCard, Settings as SettingsIcon, BarChart, DollarSign, Loader2, RefreshCw, LogOut, Sun, Moon, ChevronRight, Calendar, Users, Shield, Palette } from 'lucide-react';
-import { GiftCardTemplates } from './GiftCardTemplates';
+import { Gift, Plus, Home, CreditCard, Settings as SettingsIcon, BarChart, DollarSign, Loader2, RefreshCw, LogOut, Sun, Moon, ChevronRight, Calendar, Users, Shield } from 'lucide-react';
 import { CreateGiftCard } from './CreateGiftCard';
 import { ManageGiftCards } from './ManageGiftCards';
 import { SettingsPage } from './SettingsPage';
 import { UserManagement } from './UserManagement';
 import { supabase } from '../lib/supabase';
 
-type View = 'home' | 'create-card' | 'manage-cards' | 'templates' | 'settings' | 'user-management';
+type View = 'home' | 'create-card' | 'manage-cards' | 'settings' | 'user-management';
 
 interface GiftCardStats {
   totalValue: number;
@@ -32,7 +31,6 @@ const NAV_ITEMS: { view: View; icon: React.ElementType; label: string }[] = [
   { view: 'home', icon: Home, label: 'Übersicht' },
   { view: 'create-card', icon: Plus, label: 'Gutschein erstellen' },
   { view: 'manage-cards', icon: CreditCard, label: 'Gutscheine verwalten' },
-  { view: 'templates', icon: Palette, label: 'Vorlagen' },
   { view: 'settings', icon: SettingsIcon, label: 'Einstellungen' },
 ];
 
@@ -479,7 +477,6 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
           {currentView === 'home' && <HomeView />}
           {currentView === 'create-card' && <CreateGiftCard />}
           {currentView === 'manage-cards' && <ManageGiftCards />}
-          {currentView === 'templates' && <GiftCardTemplates />}
           {currentView === 'settings' && <SettingsPage />}
           {currentView === 'user-management' && <UserManagement />}
         </main>
