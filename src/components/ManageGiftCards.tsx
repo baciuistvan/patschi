@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, Check, X, CreditCard, Calendar, DollarSign, User, Mail, Download, CreditCard as Edit2, Trash2 } from 'lucide-react';
+import { Search, Loader2, Check, X, CreditCard, Calendar, Euro, User, Mail, Download, Upload, Trash2, ChevronRight, RefreshCw, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { generateGiftCardPDF } from '../lib/pdfGenerator';
 
@@ -22,6 +22,13 @@ interface GiftCard {
   stripe_payment_intent_id?: string;
 }
 
+const STATUS_CONFIG = {
+  active: { label: 'Aktiv', bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800', dot: 'bg-emerald-500' },
+  redeemed: { label: 'Eingelöst', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800', dot: 'bg-blue-500' },
+  expired: { label: 'Abgelaufen', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', border: 'border-red-200 dark:border-red-800', dot: 'bg-red-500' },
+  cancelled: { label: 'Storniert', bg: 'bg-slate-50 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-700', dot: 'bg-slate-400' },
+};
+
 export function ManageGiftCards() {
   const [searchBarcode, setSearchBarcode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +41,7 @@ export function ManageGiftCards() {
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
   const [updatingValidity, setUpdatingValidity] = useState<string | null>(null);
   const [deletingCard, setDeletingCard] = useState<string | null>(null);
+  const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
 
   useEffect(() => {
     loadAllCards();
@@ -46,7 +54,6 @@ export function ManageGiftCards() {
         .from('gift_cards')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setAllCards(data || []);
     } catch (err) {
@@ -61,89 +68,46 @@ export function ManageGiftCards() {
     setError('');
     setLoading(true);
     setGiftCard(null);
-
     try {
       const { data, error } = await supabase
         .from('gift_cards')
         .select('*')
         .eq('barcode', searchBarcode.trim())
         .maybeSingle();
-
       if (error) throw error;
-
       if (!data) {
         setError('Gutschein mit diesem Barcode nicht gefunden');
       } else {
         setGiftCard(data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800';
-      case 'redeemed':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800';
-      case 'expired':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800';
-      case 'cancelled':
-        return 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-800';
-      default:
-        return 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-600';
-    }
-  };
+  const isExpired = (expiryDate: string) => new Date(expiryDate) < new Date();
 
-  const isExpired = (expiryDate: string) => {
-    return new Date(expiryDate) < new Date();
-  };
-
-  const isValid = (card: GiftCard) => {
-    return card.status === 'active' && card.current_balance > 0 && !isExpired(card.expiry_date);
-  };
+  const isValid = (card: GiftCard) =>
+    card.status === 'active' && card.current_balance > 0 && !isExpired(card.expiry_date);
 
   const toggleValidity = async (card: GiftCard) => {
     try {
       setUpdatingValidity(card.id);
-
       const isCurrentlyValid = isValid(card);
+      const updateData: Record<string, unknown> = isCurrentlyValid
+        ? { status: 'cancelled' }
+        : { status: 'active', current_balance: card.original_amount, is_redeemed: false, redeemed_at: null, redeemed_by: null };
 
-      let updateData: any = {};
-
-      if (isCurrentlyValid) {
-        // Mark as cancelled (ungültig)
-        updateData.status = 'cancelled';
-      } else {
-        // Mark as active (gültig) and restore balance to original amount
-        updateData.status = 'active';
-        updateData.current_balance = card.original_amount;
-        updateData.is_redeemed = false;
-        updateData.redeemed_at = null;
-        updateData.redeemed_by = null;
-      }
-
-      const { error } = await supabase
-        .from('gift_cards')
-        .update(updateData)
-        .eq('id', card.id);
-
+      const { error } = await supabase.from('gift_cards').update(updateData).eq('id', card.id);
       if (error) throw error;
-
-      // Reload the cards
       await loadAllCards();
-
-      // If this is the currently viewed card, update it
-      if (giftCard?.id === card.id) {
-        const updatedCard = { ...card, ...updateData };
-        setGiftCard(updatedCard);
-      }
+      if (giftCard?.id === card.id) setGiftCard({ ...card, ...updateData } as GiftCard);
+      if (selectedCard?.id === card.id) setSelectedCard({ ...card, ...updateData } as GiftCard);
     } catch (err) {
       console.error('Error updating validity:', err);
-      alert('Fehler beim Aktualisieren der Gültigkeit. Bitte versuchen Sie es erneut.');
+      alert('Fehler beim Aktualisieren der Gültigkeit.');
     } finally {
       setUpdatingValidity(null);
     }
@@ -152,16 +116,9 @@ export function ManageGiftCards() {
   const downloadPdf = async (giftCardId: string, code: string) => {
     try {
       setDownloadingPdf(giftCardId);
-
       const { data: giftCardData, error } = await supabase
-        .from('gift_cards')
-        .select('*')
-        .eq('id', giftCardId)
-        .single();
-
-      if (error || !giftCardData) {
-        throw new Error('Gift card not found');
-      }
+        .from('gift_cards').select('*').eq('id', giftCardId).single();
+      if (error || !giftCardData) throw new Error('Gift card not found');
 
       if (giftCardData.pdf_url) {
         const a = document.createElement('a');
@@ -172,11 +129,7 @@ export function ManageGiftCards() {
         a.click();
         document.body.removeChild(a);
       } else {
-        const blob = await generateGiftCardPDF({
-          ...giftCardData,
-          showPurchaser: !!giftCardData.stripe_payment_intent_id
-        });
-
+        const blob = await generateGiftCardPDF({ ...giftCardData, showPurchaser: !!giftCardData.stripe_payment_intent_id });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -187,9 +140,7 @@ export function ManageGiftCards() {
         document.body.removeChild(a);
       }
     } catch (err) {
-      console.error('Error downloading PDF:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to download PDF. Please try again.';
-      alert(errorMessage);
+      alert(err instanceof Error ? err.message : 'PDF-Download fehlgeschlagen.');
     } finally {
       setDownloadingPdf(null);
     }
@@ -198,63 +149,31 @@ export function ManageGiftCards() {
   const uploadPdfToHosting = async (giftCardId: string) => {
     try {
       setUploadingPdf(giftCardId);
-
       const { data: giftCardData, error } = await supabase
-        .from('gift_cards')
-        .select('*')
-        .eq('id', giftCardId)
-        .single();
+        .from('gift_cards').select('*').eq('id', giftCardId).single();
+      if (error || !giftCardData) throw new Error('Gift card not found');
 
-      if (error || !giftCardData) {
-        throw new Error('Gift card not found');
-      }
-
-      const blob = await generateGiftCardPDF({
-        ...giftCardData,
-        showPurchaser: !!giftCardData.stripe_payment_intent_id
-      });
-
+      const blob = await generateGiftCardPDF({ ...giftCardData, showPurchaser: !!giftCardData.stripe_payment_intent_id });
       const formData = new FormData();
       formData.append('giftCardId', giftCardId);
       formData.append('pdf', blob, `gift-card-${giftCardData.code}.pdf`);
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
+      if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-gift-card-pdf`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: formData,
-        }
+        { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` }, body: formData }
       );
-
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload PDF');
+        throw new Error(errorData.error || 'Upload fehlgeschlagen');
       }
-
       const result = await response.json();
       alert('PDF erfolgreich hochgeladen! URL: ' + result.pdf_url);
-
       await loadAllCards();
-      if (giftCard?.id === giftCardId) {
-        const { data: updated } = await supabase
-          .from('gift_cards')
-          .select('*')
-          .eq('id', giftCardId)
-          .single();
-        if (updated) setGiftCard(updated);
-      }
     } catch (err) {
-      console.error('Error uploading PDF:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload PDF. Please try again.';
-      alert(errorMessage);
+      alert(err instanceof Error ? err.message : 'PDF-Upload fehlgeschlagen.');
     } finally {
       setUploadingPdf(null);
     }
@@ -263,416 +182,397 @@ export function ManageGiftCards() {
   const resendEmail = async (giftCardId: string) => {
     try {
       setSendingEmail(giftCardId);
-
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
+      if (!session) throw new Error('Not authenticated');
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-gift-card-email`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ giftCardId }),
-        }
+        { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ giftCardId }) }
       );
-
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send email');
+        throw new Error(errorData.error || 'E-Mail senden fehlgeschlagen');
       }
-
       alert('E-Mail erfolgreich gesendet!');
     } catch (err) {
-      console.error('Error sending email:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send email. Please try again.';
-      alert(errorMessage);
+      alert(err instanceof Error ? err.message : 'E-Mail senden fehlgeschlagen.');
     } finally {
       setSendingEmail(null);
     }
   };
 
   const deleteGiftCard = async (card: GiftCard) => {
-    if (!confirm(`Möchten Sie den Gutschein "${card.code}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-      return;
-    }
-
+    if (!confirm(`Gutschein "${card.code}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
     try {
       setDeletingCard(card.id);
-
-      const { error } = await supabase
-        .from('gift_cards')
-        .delete()
-        .eq('id', card.id);
-
+      const { error } = await supabase.from('gift_cards').delete().eq('id', card.id);
       if (error) throw error;
-
-      // Reload the cards
       await loadAllCards();
-
-      // If this is the currently viewed card, clear it
-      if (giftCard?.id === card.id) {
-        setGiftCard(null);
-      }
-
-      alert('Gutschein erfolgreich gelöscht');
+      if (giftCard?.id === card.id) setGiftCard(null);
+      if (selectedCard?.id === card.id) setSelectedCard(null);
     } catch (err) {
-      console.error('Error deleting gift card:', err);
-      alert('Fehler beim Löschen des Gutscheins. Bitte versuchen Sie es erneut.');
+      alert('Fehler beim Löschen des Gutscheins.');
     } finally {
       setDeletingCard(null);
     }
   };
 
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('de-DE', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const formatCurrency = (amount: number) => `€${Number(amount).toFixed(2)}`;
+
+  const activeCard = selectedCard || giftCard;
+
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Gutschein nach Barcode suchen</h2>
-          <p className="text-slate-600 dark:text-slate-400">Geben Sie die Barcodenummer ein, um Gutscheindetails und Gültigkeit zu prüfen</p>
+      {/* Search Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">Gutschein suchen</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Barcodenummer eingeben um Details zu prüfen</p>
         </div>
-
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={searchBarcode}
-              onChange={(e) => setSearchBarcode(e.target.value)}
-              placeholder="Barcodenummer eingeben"
-              className="flex-1 px-4 py-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-green-500 focus:outline-none transition"
-              required
-            />
+        <div className="p-6">
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchBarcode}
+                onChange={(e) => setSearchBarcode(e.target.value)}
+                placeholder="Barcodenummer eingeben..."
+                className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all"
+                required
+              />
+            </div>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
             >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Search className="w-5 h-5" />
-              )}
-              <span>Suchen</span>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Suchen
             </button>
-          </div>
-        </form>
+          </form>
 
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-            <p className="text-red-800 dark:text-red-400 text-sm font-medium">{error}</p>
-          </div>
-        )}
+          {error && (
+            <div className="mt-4 flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            </div>
+          )}
 
-        {giftCard && (
-          <div className={`border-2 rounded-xl p-6 ${
-            isValid(giftCard)
-              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-          }`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                {isValid(giftCard) ? (
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <Check className="w-6 h-6 text-green-600" />
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                    <X className="w-6 h-6 text-red-600" />
-                  </div>
-                )}
-                <div>
-                  <h3 className={`text-xl font-bold ${
-                    isValid(giftCard) ? 'text-green-900 dark:text-green-400' : 'text-red-900 dark:text-red-400'
+          {giftCard && (
+            <div className={`mt-5 rounded-xl border-2 p-5 transition-all ${
+              isValid(giftCard)
+                ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
+                : 'bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+            }`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isValid(giftCard) ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'
                   }`}>
-                    {isValid(giftCard) ? 'Gültiger Gutschein' : 'Ungültiger Gutschein'}
-                  </h3>
-                  <p className={`text-sm ${
-                    isValid(giftCard) ? 'text-green-700 dark:text-green-500' : 'text-red-700 dark:text-red-500'
-                  }`}>
-                    {isValid(giftCard) ? 'Dieser Gutschein kann verwendet werden' : 'Dieser Gutschein kann nicht verwendet werden'}
-                  </p>
+                    {isValid(giftCard)
+                      ? <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      : <X className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    }
+                  </div>
+                  <div>
+                    <p className={`font-semibold text-sm ${isValid(giftCard) ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'}`}>
+                      {isValid(giftCard) ? 'Gültiger Gutschein' : 'Ungültiger Gutschein'}
+                    </p>
+                    <p className={`text-xs ${isValid(giftCard) ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>
+                      {isValid(giftCard) ? 'Kann verwendet werden' : 'Kann nicht verwendet werden'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(giftCard.status)}`}>
-                {giftCard.status.toUpperCase()}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CreditCard className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Gutschein-Code</span>
-                </div>
-                <p className="font-mono font-bold text-slate-900 dark:text-white">{giftCard.code}</p>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Ursprünglicher Betrag</span>
-                </div>
-                <p className="text-xl font-bold text-slate-900 dark:text-white">€{Number(giftCard.original_amount).toFixed(2)}</p>
+                {(() => {
+                  const cfg = STATUS_CONFIG[giftCard.status] || STATUS_CONFIG.cancelled;
+                  return (
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                      {cfg.label}
+                    </span>
+                  );
+                })()}
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Status</span>
-                </div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                  {giftCard.status === 'redeemed' ? 'Eingelöst' : giftCard.status === 'active' ? 'Aktiv' : giftCard.status === 'expired' ? 'Abgelaufen' : 'Storniert'}
-                </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                {[
+                  { label: 'Code', value: <span className="font-mono text-xs">{giftCard.code}</span> },
+                  { label: 'Betrag', value: <span className="font-semibold">{formatCurrency(giftCard.original_amount)}</span> },
+                  { label: 'Empfänger', value: <><p className="font-medium text-xs">{giftCard.recipient_name}</p><p className="text-slate-500 dark:text-slate-400 text-xs truncate">{giftCard.recipient_email}</p></> },
+                  { label: 'Käufer', value: <><p className="font-medium text-xs">{giftCard.purchaser_name}</p><p className="text-slate-500 dark:text-slate-400 text-xs truncate">{giftCard.purchaser_email}</p></> },
+                  { label: 'Kaufdatum', value: <span className="text-xs">{formatDate(giftCard.purchase_date)}</span> },
+                  { label: 'Ablaufdatum', value: <span className={`text-xs font-medium ${isExpired(giftCard.expiry_date) ? 'text-red-600 dark:text-red-400' : ''}`}>{formatDate(giftCard.expiry_date)}{isExpired(giftCard.expiry_date) && ' (abgelaufen)'}</span> },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-white dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/50">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+                    <div className="text-slate-900 dark:text-white">{value}</div>
+                  </div>
+                ))}
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Empfänger</span>
+              {giftCard.message && (
+                <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700/50 mb-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Nachricht</p>
+                  <p className="text-sm text-slate-900 dark:text-white">{giftCard.message}</p>
                 </div>
-                <p className="font-semibold text-slate-900 dark:text-white">{giftCard.recipient_name}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{giftCard.recipient_email}</p>
-              </div>
+              )}
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Käufer</span>
-                </div>
-                <p className="font-semibold text-slate-900 dark:text-white">{giftCard.purchaser_name}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{giftCard.purchaser_email}</p>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Kaufdatum</span>
-                </div>
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  {new Date(giftCard.purchase_date).toLocaleDateString('de-DE', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Ablaufdatum</span>
-                </div>
-                <p className={`font-semibold ${
-                  isExpired(giftCard.expiry_date)
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-slate-900 dark:text-white'
-                }`}>
-                  {new Date(giftCard.expiry_date).toLocaleDateString('de-DE', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                  {isExpired(giftCard.expiry_date) && ' (Abgelaufen)'}
-                </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => downloadPdf(giftCard.id, giftCard.code)}
+                  disabled={downloadingPdf === giftCard.id}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {downloadingPdf === giftCard.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  PDF herunterladen
+                </button>
+                <button
+                  onClick={() => resendEmail(giftCard.id)}
+                  disabled={sendingEmail === giftCard.id}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {sendingEmail === giftCard.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                  E-Mail senden
+                </button>
               </div>
             </div>
-
-            {giftCard.message && (
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4">
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Nachricht</p>
-                <p className="text-slate-900 dark:text-white">{giftCard.message}</p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <button
-                onClick={() => downloadPdf(giftCard.id, giftCard.code)}
-                disabled={downloadingPdf === giftCard.id}
-                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {downloadingPdf === giftCard.id ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>PDF wird erstellt...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    <span>Gutschein-PDF herunterladen</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => uploadPdfToHosting(giftCard.id)}
-                disabled={uploadingPdf === giftCard.id}
-                className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {uploadingPdf === giftCard.id ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>PDF wird hochgeladen...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    <span>PDF zu Hosting hochladen</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => resendEmail(giftCard.id)}
-                disabled={sendingEmail === giftCard.id}
-                className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {sendingEmail === giftCard.id ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>E-Mail wird gesendet...</span>
-                  </>
-                ) : (
-                  <>
-                    <Mail className="w-5 h-5" />
-                    <span>E-Mail erneut senden</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Aktuelle Gutscheine</h2>
-          <p className="text-slate-600 dark:text-slate-400">Die letzten 10 erstellten Gutscheine</p>
+      {/* All Cards Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Alle Gutscheine</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              {loadingAll ? 'Wird geladen...' : `${allCards.length} Gutschein${allCards.length !== 1 ? 'e' : ''} gesamt`}
+            </p>
+          </div>
+          <button
+            onClick={loadAllCards}
+            disabled={loadingAll}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loadingAll ? 'animate-spin' : ''}`} />
+            Aktualisieren
+          </button>
         </div>
 
         {loadingAll ? (
-          <div className="text-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto" />
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
           </div>
         ) : allCards.length === 0 ? (
-          <div className="text-center py-12">
-            <CreditCard className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">Keine Gutscheine gefunden</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3">
+              <CreditCard className="w-6 h-6 text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-900 dark:text-white">Keine Gutscheine gefunden</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Erstellen Sie Ihren ersten Gutschein</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900 dark:text-white">Code</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900 dark:text-white">Empfänger</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900 dark:text-white">Guthaben</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900 dark:text-white">Gültig</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900 dark:text-white">Aktionen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allCards.map((card) => (
-                  <tr key={card.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
-                    <td className="py-3 px-4">
-                      <p className="font-mono text-sm text-slate-900 dark:text-white">{card.code}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">{card.recipient_name}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">{card.recipient_email}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">€{Number(card.original_amount).toFixed(2)}</p>
-                    </td>
-                    <td className="py-3 px-4">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <th className="text-left py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Code</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Empfänger</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Betrag</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gültig</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Erstellt</th>
+                    <th className="text-right py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {allCards.map((card) => {
+                    const cfg = STATUS_CONFIG[card.status] || STATUS_CONFIG.cancelled;
+                    const valid = isValid(card);
+                    return (
+                      <tr
+                        key={card.id}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                      >
+                        <td className="py-3.5 px-6">
+                          <span className="font-mono text-xs text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">{card.code}</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white leading-tight">{card.recipient_name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{card.recipient_email}</p>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(card.original_amount)}</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <button
+                            onClick={() => toggleValidity(card)}
+                            disabled={updatingValidity === card.id}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border disabled:opacity-50 disabled:cursor-not-allowed ${
+                              valid
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                            }`}
+                            title={valid ? 'Klicken um zu deaktivieren' : 'Klicken um zu aktivieren'}
+                          >
+                            {updatingValidity === card.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : valid ? (
+                              <ToggleRight className="w-3.5 h-3.5" />
+                            ) : (
+                              <ToggleLeft className="w-3.5 h-3.5" />
+                            )}
+                            {valid ? 'Gültig' : 'Ungültig'}
+                          </button>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(card.created_at)}</span>
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <div className="flex items-center justify-end gap-1">
+                            <ActionButton
+                              onClick={() => downloadPdf(card.id, card.code)}
+                              disabled={downloadingPdf === card.id}
+                              loading={downloadingPdf === card.id}
+                              title="PDF herunterladen"
+                              color="blue"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </ActionButton>
+                            <ActionButton
+                              onClick={() => uploadPdfToHosting(card.id)}
+                              disabled={uploadingPdf === card.id}
+                              loading={uploadingPdf === card.id}
+                              title="PDF hochladen"
+                              color="emerald"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                            </ActionButton>
+                            <ActionButton
+                              onClick={() => resendEmail(card.id)}
+                              disabled={sendingEmail === card.id}
+                              loading={sendingEmail === card.id}
+                              title="E-Mail senden"
+                              color="slate"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                            </ActionButton>
+                            <ActionButton
+                              onClick={() => deleteGiftCard(card)}
+                              disabled={deletingCard === card.id}
+                              loading={deletingCard === card.id}
+                              title="Löschen"
+                              color="red"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </ActionButton>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {allCards.map((card) => {
+                const cfg = STATUS_CONFIG[card.status] || STATUS_CONFIG.cancelled;
+                const valid = isValid(card);
+                return (
+                  <div key={card.id} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-2 py-1 rounded-lg">{card.code}</span>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white mt-2">{card.recipient_name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{card.recipient_email}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-base font-bold text-slate-900 dark:text-white">{formatCurrency(card.original_amount)}</span>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                          {cfg.label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
                       <button
                         onClick={() => toggleValidity(card)}
                         disabled={updatingValidity === card.id}
-                        className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border-2 transition font-medium text-sm ${
-                          isValid(card)
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border disabled:opacity-50 ${
+                          valid
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}
                       >
-                        {updatingValidity === card.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : isValid(card) ? (
-                          <>
-                            <Check className="w-4 h-4" />
-                            <span>Gültig</span>
-                            <Edit2 className="w-3 h-3 opacity-50" />
-                          </>
-                        ) : (
-                          <>
-                            <X className="w-4 h-4" />
-                            <span>Ungültig</span>
-                            <Edit2 className="w-3 h-3 opacity-50" />
-                          </>
-                        )}
+                        {updatingValidity === card.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : valid ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+                        {valid ? 'Gültig' : 'Ungültig'}
                       </button>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => downloadPdf(card.id, card.code)}
-                          disabled={downloadingPdf === card.id}
-                          className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Download PDF"
-                        >
-                          {downloadingPdf === card.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => uploadPdfToHosting(card.id)}
-                          disabled={uploadingPdf === card.id}
-                          className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="PDF zu Hosting hochladen"
-                        >
-                          {uploadingPdf === card.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => resendEmail(card.id)}
-                          disabled={sendingEmail === card.id}
-                          className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="E-Mail erneut senden"
-                        >
-                          {sendingEmail === card.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Mail className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => deleteGiftCard(card)}
-                          disabled={deletingCard === card.id}
-                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Gutschein löschen"
-                        >
-                          {deletingCard === card.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
+                      <div className="flex items-center gap-1">
+                        <ActionButton onClick={() => downloadPdf(card.id, card.code)} disabled={downloadingPdf === card.id} loading={downloadingPdf === card.id} title="PDF" color="blue">
+                          <Download className="w-3.5 h-3.5" />
+                        </ActionButton>
+                        <ActionButton onClick={() => resendEmail(card.id)} disabled={sendingEmail === card.id} loading={sendingEmail === card.id} title="E-Mail" color="slate">
+                          <Mail className="w-3.5 h-3.5" />
+                        </ActionButton>
+                        <ActionButton onClick={() => deleteGiftCard(card)} disabled={deletingCard === card.id} loading={deletingCard === card.id} title="Löschen" color="red">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </ActionButton>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
+  );
+}
+
+const COLOR_MAP: Record<string, string> = {
+  blue: 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20',
+  emerald: 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
+  slate: 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800',
+  red: 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20',
+};
+
+function ActionButton({
+  children,
+  onClick,
+  disabled,
+  loading,
+  title,
+  color,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled: boolean;
+  loading: boolean;
+  title: string;
+  color: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`p-2 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${COLOR_MAP[color] || COLOR_MAP.slate}`}
+    >
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : children}
+    </button>
   );
 }
