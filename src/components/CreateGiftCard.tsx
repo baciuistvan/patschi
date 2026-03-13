@@ -194,23 +194,23 @@ export function CreateGiftCard() {
   if (success) {
     return (
       <div className="max-w-2xl mx-auto py-8 px-2">
-        <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-10 text-center shadow-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 mb-6">
-            <Check className="w-7 h-7 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+        <div className="bg-white/70 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/30 p-10 text-center shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-900/20 mb-6">
+            <Check className="w-7 h-7 text-emerald-500 dark:text-emerald-400" strokeWidth={2} />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gutschein ausgestellt</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-10">Erfolgreich erstellt und gespeichert</p>
+          <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-1">Gutschein ausgestellt</h2>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mb-10">Erfolgreich erstellt und gespeichert</p>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl py-6 px-8 mb-8 w-full">
-            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-amber-600 dark:text-amber-400 mb-3">Gutschein-Code</p>
-            <p className="text-4xl font-mono font-bold text-amber-700 dark:text-amber-300 tracking-[0.25em]">{createdCode}</p>
+          <div className="bg-amber-50/60 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-700/25 rounded-xl py-6 px-8 mb-8 w-full">
+            <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-amber-500/80 dark:text-amber-400/70 mb-3">Gutschein-Code</p>
+            <p className="text-4xl font-mono font-bold text-amber-600/80 dark:text-amber-300/80 tracking-[0.25em]">{createdCode}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={downloadPdf}
               disabled={downloadingPdf}
-              className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm"
+              className="flex-1 h-11 bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm shadow-emerald-500/10"
             >
               {downloadingPdf ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
@@ -220,7 +220,7 @@ export function CreateGiftCard() {
             </button>
             <button
               onClick={() => { setSuccess(false); setCreatedCode(''); setCreatedGiftCardId(''); }}
-              className="flex-1 h-12 bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all duration-150"
+              className="flex-1 h-11 bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-sm font-medium rounded-xl transition-all duration-150 border border-slate-100 dark:border-slate-700/30"
             >
               Weiteren Gutschein erstellen
             </button>
@@ -232,26 +232,26 @@ export function CreateGiftCard() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-2">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Gutschein erstellen</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manuell einen Gutschein ausstellen</p>
+      <div className="mb-7">
+        <h1 className="text-xl font-semibold text-slate-700 dark:text-slate-200">Gutschein erstellen</h1>
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">Manuell einen Gutschein ausstellen</p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
+        <div className="space-y-5">
 
-          <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-6 sm:p-8 shadow-sm">
-            <p className="text-xs font-semibold tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 mb-5">Betrag</p>
-            <div className="flex gap-3 mb-5">
+          <div className="bg-white/70 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/30 p-5 sm:p-7 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+            <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-slate-300 dark:text-slate-600 mb-4">Betrag</p>
+            <div className="flex gap-2.5 mb-4">
               {PRESET_AMOUNTS.map((amount) => (
                 <button
                   key={amount}
                   type="button"
                   onClick={() => handleAmountSelect(amount)}
-                  className={`flex-1 h-14 rounded-xl text-base font-bold transition-all duration-150 ${
+                  className={`flex-1 h-12 rounded-xl text-sm font-semibold transition-all duration-150 ${
                     !isCustomAmount && formData.amount === amount
-                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
-                      : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-amber-600 dark:hover:text-amber-400 border border-transparent hover:border-amber-200 dark:hover:border-amber-700/50'
+                      ? 'bg-amber-400/70 text-white shadow-sm shadow-amber-400/15'
+                      : 'bg-slate-50 dark:bg-slate-700/30 text-slate-500 dark:text-slate-400 hover:bg-amber-50/70 dark:hover:bg-amber-900/10 hover:text-amber-500 dark:hover:text-amber-400 border border-slate-100 dark:border-slate-700/30 hover:border-amber-100 dark:hover:border-amber-700/30'
                   }`}
                 >
                   €{amount}
@@ -259,7 +259,7 @@ export function CreateGiftCard() {
               ))}
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium pointer-events-none">€</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 text-sm pointer-events-none">€</span>
               <input
                 type="number"
                 min={MIN_AMOUNT}
@@ -267,52 +267,52 @@ export function CreateGiftCard() {
                 value={formData.customAmount}
                 onChange={(e) => handleCustomAmountChange(e.target.value)}
                 placeholder={`Individueller Betrag (mind. €${MIN_AMOUNT})`}
-                className={`w-full pl-8 pr-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-150 focus:outline-none ${
+                className={`w-full pl-7 pr-4 py-3 rounded-xl text-sm transition-all duration-150 focus:outline-none ${
                   isCustomAmount
-                    ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-400 dark:border-amber-600 text-slate-900 dark:text-white'
-                    : 'bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-700 dark:text-slate-300 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-amber-50 dark:focus:bg-amber-900/20 focus:border-amber-300 dark:focus:border-amber-600'
+                    ? 'bg-amber-50/60 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-600/30 text-slate-700 dark:text-slate-200'
+                    : 'bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/30 text-slate-600 dark:text-slate-300 placeholder-slate-300 dark:placeholder-slate-600 focus:bg-amber-50/60 dark:focus:bg-amber-900/10 focus:border-amber-200/60 dark:focus:border-amber-600/30'
                 }`}
               />
             </div>
 
-            <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+            <div className="mt-5 pt-5 border-t border-slate-50 dark:border-slate-700/20 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Gesamtbetrag</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Gültig für 1 Jahr</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Gesamtbetrag</p>
+                <p className="text-xs text-slate-300 dark:text-slate-600 mt-0.5">Gültig für 1 Jahr</p>
               </div>
-              <p className="text-5xl font-bold text-amber-500 dark:text-amber-400 tracking-tight tabular-nums">
+              <p className="text-5xl font-bold text-amber-400/80 dark:text-amber-400/70 tracking-tight tabular-nums">
                 €{isNaN(finalAmount) ? '0' : finalAmount.toFixed(0)}
               </p>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-6 sm:p-8 shadow-sm">
-            <p className="text-xs font-semibold tracking-[0.15em] uppercase text-slate-400 dark:text-slate-500 mb-5">
-              Empfänger <span className="font-normal normal-case tracking-normal text-slate-300 dark:text-slate-600 ml-1">— Optional</span>
+          <div className="bg-white/70 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/30 p-5 sm:p-7 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+            <p className="text-[10px] font-semibold tracking-[0.15em] uppercase text-slate-300 dark:text-slate-600 mb-4">
+              Empfänger <span className="font-normal normal-case tracking-normal text-slate-200 dark:text-slate-700 ml-1">— Optional</span>
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Name</label>
+                <label className="block text-xs font-medium text-slate-400 dark:text-slate-500 mb-1.5">Name</label>
                 <input
                   type="text"
                   value={formData.recipientName}
                   onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
                   placeholder="z.B. Maria Muster"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-sky-300 dark:focus:border-sky-600 focus:bg-sky-50 dark:focus:bg-sky-900/20 transition-all duration-150"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/30 text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-sm focus:outline-none focus:border-sky-200/60 dark:focus:border-sky-600/30 focus:bg-sky-50/40 dark:focus:bg-sky-900/10 transition-all duration-150"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">E-Mail</label>
+                <label className="block text-xs font-medium text-slate-400 dark:text-slate-500 mb-1.5">E-Mail</label>
                 <input
                   type="email"
                   value={formData.recipientEmail}
                   onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
                   placeholder="empfaenger@beispiel.de"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-sky-300 dark:focus:border-sky-600 focus:bg-sky-50 dark:focus:bg-sky-900/20 transition-all duration-150"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/30 text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-sm focus:outline-none focus:border-sky-200/60 dark:focus:border-sky-600/30 focus:bg-sky-50/40 dark:focus:bg-sky-900/10 transition-all duration-150"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Persönliche Nachricht</label>
+                <label className="block text-xs font-medium text-slate-400 dark:text-slate-500 mb-1.5">Persönliche Nachricht</label>
                 <div className="relative">
                   <textarea
                     value={formData.message}
@@ -320,16 +320,16 @@ export function CreateGiftCard() {
                     rows={3}
                     maxLength={500}
                     placeholder="Eine persönliche Nachricht für den Empfänger…"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700/60 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-sky-300 dark:focus:border-sky-600 focus:bg-sky-50 dark:focus:bg-sky-900/20 transition-all duration-150 resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/30 text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-sm focus:outline-none focus:border-sky-200/60 dark:focus:border-sky-600/30 focus:bg-sky-50/40 dark:focus:bg-sky-900/10 transition-all duration-150 resize-none"
                   />
-                  <span className="absolute bottom-3 right-3 text-xs text-slate-300 dark:text-slate-600">{formData.message.length}/500</span>
+                  <span className="absolute bottom-2.5 right-3 text-xs text-slate-200 dark:text-slate-700">{formData.message.length}/500</span>
                 </div>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+            <div className="bg-red-50/60 dark:bg-red-900/10 border border-red-100 dark:border-red-800/20 text-red-500/80 dark:text-red-400/70 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -337,12 +337,12 @@ export function CreateGiftCard() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-semibold rounded-xl shadow-sm shadow-emerald-600/20 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full h-12 bg-emerald-500/80 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-sm shadow-emerald-500/10 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /><span>Wird erstellt…</span></>
+              <><Loader2 className="w-4 h-4 animate-spin" /><span>Wird erstellt…</span></>
             ) : (
-              <><Gift className="w-5 h-5" /><span>Gutschein erstellen</span></>
+              <><Gift className="w-4 h-4" /><span>Gutschein erstellen</span></>
             )}
           </button>
 
