@@ -384,7 +384,6 @@ export function ManageGiftCards() {
                     <th className="text-left py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Code</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Empfänger</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Betrag</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gültig</th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Erstellt</th>
                     <th className="text-right py-3 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Aktionen</th>
@@ -392,30 +391,27 @@ export function ManageGiftCards() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {allCards.map((card) => {
-                    const cfg = STATUS_CONFIG[card.status] || STATUS_CONFIG.cancelled;
                     const valid = isValid(card);
                     return (
                       <tr
                         key={card.id}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                        className={`transition-colors group border-l-4 ${
+                          valid
+                            ? 'border-l-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10'
+                            : 'border-l-red-400 hover:bg-red-50/40 dark:hover:bg-red-900/10'
+                        }`}
                       >
-                        <td className="py-3.5 px-6">
-                          <span className="font-mono text-xs text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">{card.code}</span>
+                        <td className="py-4 px-6">
+                          <span className="font-mono text-sm text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">{card.code}</span>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <p className="text-sm font-medium text-slate-900 dark:text-white leading-tight">{card.recipient_name}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{card.recipient_email}</p>
+                        <td className="py-4 px-4">
+                          <p className="text-base font-medium text-slate-900 dark:text-white leading-tight">{card.recipient_name}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{card.recipient_email}</p>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(card.original_amount)}</span>
+                        <td className="py-4 px-4">
+                          <span className="text-base font-semibold text-slate-900 dark:text-white">{formatCurrency(card.original_amount)}</span>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                            {cfg.label}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           <button
                             onClick={() => toggleValidity(card)}
                             disabled={updatingValidity === card.id}
@@ -436,10 +432,10 @@ export function ManageGiftCards() {
                             {valid ? 'Gültig' : 'Ungültig'}
                           </button>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(card.created_at)}</span>
+                        <td className="py-4 px-4">
+                          <span className="text-sm text-slate-500 dark:text-slate-400">{formatDate(card.created_at)}</span>
                         </td>
-                        <td className="py-3.5 px-6">
+                        <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-1">
                             <ActionButton
                               onClick={() => downloadPdf(card.id, card.code)}
@@ -489,22 +485,17 @@ export function ManageGiftCards() {
             {/* Mobile Cards */}
             <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
               {allCards.map((card) => {
-                const cfg = STATUS_CONFIG[card.status] || STATUS_CONFIG.cancelled;
                 const valid = isValid(card);
                 return (
-                  <div key={card.id} className="p-4">
+                  <div key={card.id} className={`p-4 border-l-4 ${valid ? 'border-l-emerald-400' : 'border-l-red-400'}`}>
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-2 py-1 rounded-lg">{card.code}</span>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white mt-2">{card.recipient_name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{card.recipient_email}</p>
+                        <span className="font-mono text-sm bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white px-2.5 py-1 rounded-lg">{card.code}</span>
+                        <p className="text-base font-medium text-slate-900 dark:text-white mt-2">{card.recipient_name}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{card.recipient_email}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <span className="text-base font-bold text-slate-900 dark:text-white">{formatCurrency(card.original_amount)}</span>
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          {cfg.label}
-                        </span>
+                        <span className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(card.original_amount)}</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
