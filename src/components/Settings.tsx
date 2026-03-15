@@ -81,7 +81,7 @@ export function Settings() {
         {activeTab === 'hosting' && (
           <div className="space-y-6">
             <HostingConfiguration onConfigChange={setHasHostingConfig} />
-            <FileUploadManager hasConfiguration={hasHostingConfig} />
+            <FileUploadManager hasConfiguration={hasHostingConfig} defaultSelected={['reservation-widget']} />
           </div>
         )}
         {activeTab === 'logs' && <SystemLogs />}

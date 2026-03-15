@@ -194,6 +194,21 @@ export async function prepareGiftCardWidget(): Promise<FileItem[]> {
   }
 }
 
+export async function prepareJobsWidget(): Promise<FileItem[]> {
+  try {
+    const htmlContent = await fetchFileContent('/jobs-widget.html');
+    return [
+      {
+        remotePath: 'jobs-widget.html',
+        content: htmlContent,
+      },
+    ];
+  } catch (error) {
+    console.error('Error preparing Jobs Widget:', error);
+    throw new Error('Failed to prepare Jobs Widget');
+  }
+}
+
 export function calculateTotalSize(files: FileItem[]): number {
   return files.reduce((total, file) => {
     const size = new Blob([file.content]).size;

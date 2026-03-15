@@ -13,6 +13,7 @@ import {
   prepareCrewDashboard,
   prepareReservationWidget,
   prepareGiftCardWidget,
+  prepareJobsWidget,
   prepareTestUpload,
   calculateTotalSize,
   formatFileSize,
@@ -31,10 +32,11 @@ interface FilePackageOption {
 
 interface FileUploadManagerProps {
   hasConfiguration: boolean;
+  defaultSelected?: string[];
 }
 
-export default function FileUploadManager({ hasConfiguration }: FileUploadManagerProps) {
-  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
+export default function FileUploadManager({ hasConfiguration, defaultSelected }: FileUploadManagerProps) {
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set(defaultSelected ?? []));
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [uploadResult, setUploadResult] = useState<{
@@ -77,6 +79,13 @@ export default function FileUploadManager({ hasConfiguration }: FileUploadManage
       description: 'Gift card purchase interface',
       files: ['gift-card-widget.html'],
       prepareFunction: prepareGiftCardWidget,
+    {
+      id: 'jobs-widget',
+      name: 'Offene Stellen Widget',
+      description: 'Job listings widget for displaying open positions',
+      files: ['jobs-widget.html'],
+      prepareFunction: prepareJobsWidget,
+    },
     },
   ];
 
