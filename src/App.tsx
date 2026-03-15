@@ -9,12 +9,13 @@ import { GiftCardWidget } from './components/GiftCardWidget';
 import { GiftCardSuccess } from './components/GiftCardSuccess';
 import { SystemSelector } from './components/SystemSelector';
 import { GiftCardDashboard } from './components/GiftCardDashboard';
+import { WebsiteToolsDashboard } from './components/WebsiteToolsDashboard';
 import { ConfigurationWizard } from './components/ConfigurationWizard';
 import { StandaloneCrewDashboard } from './components/StandaloneCrewDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { isConfigured } from './lib/supabase';
 
-type SystemType = 'reservations' | 'gift-cards' | null;
+type SystemType = 'reservations' | 'gift-cards' | 'website-tools' | null;
 
 function AppContent() {
   const { user, adminUser, loading } = useAuth();
@@ -99,13 +100,7 @@ function AppContent() {
     return <SystemSelector onSelectSystem={setSelectedSystem} />;
   }
 
-  const handleSwitchSystem = () => {
-    if (selectedSystem === 'reservations') {
-      setSelectedSystem('gift-cards');
-    } else if (selectedSystem === 'gift-cards') {
-      setSelectedSystem('reservations');
-    }
-  };
+  const handleSwitchSystem = () => setSelectedSystem(null);
 
   if (selectedSystem === 'reservations') {
     return <Dashboard onSwitchSystem={handleSwitchSystem} />;
@@ -113,6 +108,10 @@ function AppContent() {
 
   if (selectedSystem === 'gift-cards') {
     return <GiftCardDashboard onSwitchSystem={handleSwitchSystem} />;
+  }
+
+  if (selectedSystem === 'website-tools') {
+    return <WebsiteToolsDashboard onSwitchSystem={handleSwitchSystem} />;
   }
 
   return <Dashboard onSwitchSystem={handleSwitchSystem} />;

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offene Stellen</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface-hover: #f4f7f6;
+      --border: #e5e9e8;
+      --text-primary: #1a1f1e;
+      --text-secondary: #4b5653;
+      --text-muted: #8a9290;
+      --teal: #0d9488;
+      --teal-light: #f0fdfb;
+      --teal-border: #99f6e4;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --shadow-hover: 0 8px 32px rgba(0,0,0,0.10);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 32px;
+    }
+
+    .header-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: clamp(26px, 5vw, 36px);
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .header-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 0;
+      gap: 12px;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty {
+      text-align: center;
+      padding: 64px 24px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .empty-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--teal-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .empty-icon svg { color: var(--teal); }
+
+    .empty h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .empty p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .jobs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .job-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .job-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: var(--teal-border);
+    }
+
+    .job-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 20px 22px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .job-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--teal-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .job-icon svg { color: var(--teal); }
+
+    .job-main { flex: 1; min-width: 0; }
+
+    .job-title-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    .job-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .job-type-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .badge-vollzeit    { background: #dbeafe; color: #1d4ed8; }
+    .badge-teilzeit    { background: #e0f2fe; color: #0369a1; }
+    .badge-minijob     { background: #fef3c7; color: #92400e; }
+    .badge-aushilfe    { background: #ffedd5; color: #c2410c; }
+    .badge-praktikum   { background: #ccfbf1; color: #0f766e; }
+    .badge-ausbildung  { background: #d1fae5; color: #065f46; }
+    .badge-default     { background: #f1f5f9; color: #475569; }
+
+    .job-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .job-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .job-meta-item svg {
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .job-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s, transform 0.2s;
+      color: var(--text-muted);
+    }
+
+    .job-toggle:hover {
+      background: var(--teal-light);
+      border-color: var(--teal-border);
+      color: var(--teal);
+    }
+
+    .job-toggle.open {
+      background: var(--teal-light);
+      border-color: var(--teal-border);
+      color: var(--teal);
+    }
+
+    .job-toggle svg {
+      transition: transform 0.25s ease;
+    }
+
+    .job-toggle.open svg {
+      transform: rotate(180deg);
+    }
+
+    .job-details {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 20px 22px 22px;
+    }
+
+    .job-details.open {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 600px) {
+      .detail-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .detail-section h4 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .detail-section p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      white-space: pre-line;
+    }
+
+    .apply-section {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .apply-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .apply-btn-primary {
+      background: var(--teal);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(13,148,136,0.25);
+    }
+
+    .apply-btn-primary:hover {
+      background: #0f766e;
+      box-shadow: 0 4px 16px rgba(13,148,136,0.35);
+      transform: translateY(-1px);
+    }
+
+    .apply-btn-secondary {
+      background: var(--surface);
+      color: var(--teal);
+      border: 1.5px solid var(--teal-border);
+    }
+
+    .apply-btn-secondary:hover {
+      background: var(--teal-light);
+    }
+
+    .count-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .count-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--teal);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-label">Karriere</div>
+      <h1 class="header-title">Offene Stellen</h1>
+      <p class="header-subtitle">Wir freuen uns auf deine Bewerbung!</p>
+    </div>
+
+    <div id="app">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <span>Stellen werden geladen...</span>
+      </div>
+      <div id="content" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://qwwerwkekvmaswusvgxy.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
+
+    const openCards = new Set();
+
+    function badgeClass(type) {
+      const map = {
+        'vollzeit': 'badge-vollzeit',
+        'teilzeit': 'badge-teilzeit',
+        'minijob': 'badge-minijob',
+        'aushilfe': 'badge-aushilfe',
+        'praktikum': 'badge-praktikum',
+        'ausbildung': 'badge-ausbildung',
+      };
+      return map[(type || '').toLowerCase()] || 'badge-default';
+    }
+
+    function icon(paths, size = 16) {
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    }
+
+    const icons = {
+      briefcase: icon('<rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
+      mapPin: icon('<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>'),
+      chevronDown: icon('<path d="m6 9 6 6 6-6"/>'),
+      mail: icon('<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'),
+      link: icon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+      arrowRight: icon('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>'),
+    };
+
+    function toggleCard(id) {
+      const details = document.getElementById('details-' + id);
+      const toggle = document.getElementById('toggle-' + id);
+      if (openCards.has(id)) {
+        openCards.delete(id);
+        details.classList.remove('open');
+        toggle.classList.remove('open');
+      } else {
+        openCards.add(id);
+        details.classList.add('open');
+        toggle.classList.add('open');
+      }
+    }
+
+    function renderJob(job) {
+      const hasDept = job.department && job.department.trim();
+      const hasLocation = job.location && job.location.trim();
+      const hasDesc = job.description && job.description.trim();
+      const hasReqs = job.requirements && job.requirements.trim();
+      const hasEmail = job.apply_email && job.apply_email.trim();
+      const hasUrl = job.apply_url && job.apply_url.trim();
+      const hasApply = hasEmail || hasUrl;
+      const hasDetails = hasDesc || hasReqs || hasApply;
+
+      return `
+        <div class="job-card" id="card-${job.id}">
+          <div class="job-header" onclick="toggleCard('${job.id}')">
+            <div class="job-icon">
+              ${icons.briefcase}
+            </div>
+            <div class="job-main">
+              <div class="job-title-row">
+                <span class="job-title">${escHtml(job.title)}</span>
+                ${job.job_type ? `<span class="job-type-badge ${badgeClass(job.job_type)}">${escHtml(job.job_type)}</span>` : ''}
+              </div>
+              <div class="job-meta">
+                ${hasDept ? `<span class="job-meta-item">${icons.briefcase} ${escHtml(job.department)}</span>` : ''}
+                ${hasLocation ? `<span class="job-meta-item">${icons.mapPin} ${escHtml(job.location)}</span>` : ''}
+              </div>
+            </div>
+            ${hasDetails ? `
+            <button class="job-toggle" id="toggle-${job.id}" onclick="event.stopPropagation(); toggleCard('${job.id}')" aria-label="Details anzeigen">
+              ${icons.chevronDown}
+            </button>` : ''}
+          </div>
+
+          ${hasDetails ? `
+          <div class="job-details" id="details-${job.id}">
+            <div class="detail-grid">
+              ${hasDesc ? `<div class="detail-section"><h4>Stellenbeschreibung</h4><p>${escHtml(job.description)}</p></div>` : ''}
+              ${hasReqs ? `<div class="detail-section"><h4>Anforderungen</h4><p>${escHtml(job.requirements)}</p></div>` : ''}
+            </div>
+            ${hasApply ? `
+            <div class="apply-section">
+              ${hasEmail ? `<a href="mailto:${escHtml(job.apply_email)}" class="apply-btn apply-btn-primary">${icons.mail} Jetzt bewerben</a>` : ''}
+              ${hasUrl && !hasEmail ? `<a href="${escHtml(job.apply_url)}" target="_blank" rel="noopener noreferrer" class="apply-btn apply-btn-primary">${icons.arrowRight} Zur Bewerbung</a>` : ''}
+              ${hasUrl && hasEmail ? `<a href="${escHtml(job.apply_url)}" target="_blank" rel="noopener noreferrer" class="apply-btn apply-btn-secondary">${icons.link} Online bewerben</a>` : ''}
+            </div>` : ''}
+          </div>` : ''}
+        </div>
+      `;
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function loadJobs() {
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/job_listings?select=*&is_active=eq.true&order=sort_order.asc,created_at.desc`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            }
+          }
+        );
+
+        if (!res.ok) throw new Error('Fehler beim Laden');
+
+        const jobs = await res.json();
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('content');
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+
+        if (!jobs || jobs.length === 0) {
+          content.innerHTML = `
+            <div class="empty">
+              <div class="empty-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <h3>Aktuell keine offenen Stellen</h3>
+              <p>Schau bald wieder vorbei – wir freuen uns auf neue Bewerbungen!</p>
+            </div>
+          `;
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="count-bar">
+            <span class="count-dot"></span>
+            <span>${jobs.length} offene ${jobs.length === 1 ? 'Stelle' : 'Stellen'}</span>
+          </div>
+          <div class="jobs-list">
+            ${jobs.map(renderJob).join('')}
+          </div>
+        `;
+
+      } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        document.getElementById('content').innerHTML = `
+          <div class="empty">
+            <div class="empty-icon" style="background:#fef2f2;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            </div>
+            <h3>Fehler beim Laden</h3>
+            <p>Bitte Seite neu laden.</p>
+          </div>
+        `;
+      }
+    }
+
+    loadJobs();
+  </script>
+</body>
+</html>

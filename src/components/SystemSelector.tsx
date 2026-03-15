@@ -1,4 +1,4 @@
-import { Calendar, Gift } from 'lucide-react';
+import { Calendar, Gift, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +6,7 @@ import { LogOut, Globe, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface SystemSelectorProps {
-  onSelectSystem: (system: 'reservations' | 'gift-cards') => void;
+  onSelectSystem: (system: 'reservations' | 'gift-cards' | 'website-tools') => void;
 }
 
 export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
@@ -133,7 +133,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 max-w-3xl">
+        <div className="grid md:grid-cols-3 gap-4 max-w-5xl">
           <button
             onClick={() => onSelectSystem('reservations')}
             style={{
@@ -193,6 +193,37 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
                 {t('system_selector.gift_card_desc')}
               </p>
               <div className="flex items-center gap-1.5 text-emerald-500 dark:text-emerald-400 text-sm font-medium">
+                <span className="translate-x-0 group-hover:translate-x-0.5 transition-transform duration-300">Auswählen</span>
+                <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-1 transition-transform duration-300" />
+              </div>
+            </div>
+          </button>
+          <button
+            onClick={() => onSelectSystem('website-tools')}
+            style={{
+              transition: 'opacity 0.65s cubic-bezier(0.22,1,0.36,1) 0.65s, transform 0.65s cubic-bezier(0.22,1,0.36,1) 0.65s, box-shadow 0.3s ease, border-color 0.3s ease',
+            }}
+            className={`card-shimmer group relative overflow-hidden rounded-3xl text-left
+              bg-white dark:bg-[#111113]
+              border border-black/5 dark:border-white/8
+              hover:border-teal-200/80 dark:hover:border-teal-500/30
+              hover:shadow-2xl hover:shadow-teal-500/8 dark:hover:shadow-teal-500/15
+              hover:-translate-y-1.5
+              p-8
+              ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-teal-500/5 dark:bg-teal-500/8 blur-3xl -translate-y-12 translate-x-12 group-hover:bg-teal-500/10 dark:group-hover:bg-teal-500/15 transition-all duration-700" />
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-teal-500/10 dark:bg-teal-500/15 flex items-center justify-center mb-8 group-hover:bg-teal-500 transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-teal-500/30">
+                <Globe className="w-5 h-5 text-teal-500 dark:text-teal-400 group-hover:text-white transition-colors duration-300" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">
+                Website Tools
+              </h3>
+              <p className="text-slate-400 dark:text-slate-500 text-sm leading-relaxed mb-8">
+                Stellenanzeigen verwalten und auf der Website einbetten.
+              </p>
+              <div className="flex items-center gap-1.5 text-teal-500 dark:text-teal-400 text-sm font-medium">
                 <span className="translate-x-0 group-hover:translate-x-0.5 transition-transform duration-300">Auswählen</span>
                 <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-1 transition-transform duration-300" />
               </div>
