@@ -1,8 +1,7 @@
-import { Calendar, Gift, Globe } from 'lucide-react';
+import { Calendar, Gift, Globe, LogOut, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Globe, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface SystemSelectorProps {
