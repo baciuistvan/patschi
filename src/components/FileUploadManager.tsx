@@ -79,13 +79,13 @@ export default function FileUploadManager({ hasConfiguration, defaultSelected }:
       description: 'Gift card purchase interface',
       files: ['gift-card-widget.html'],
       prepareFunction: prepareGiftCardWidget,
+    },
     {
       id: 'jobs-widget',
       name: 'Offene Stellen Widget',
       description: 'Job listings widget for displaying open positions',
       files: ['jobs-widget.html'],
       prepareFunction: prepareJobsWidget,
-    },
     },
   ];
 
