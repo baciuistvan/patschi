@@ -57,7 +57,7 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
                 <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                   <span className="text-white font-bold text-xs tracking-tight">PB</span>
                 </div>
-                <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-tight">{t('app.title')}</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-tight">Patschi Backend</span>
               </div>
             </div>
 
