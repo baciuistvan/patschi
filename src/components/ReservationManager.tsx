@@ -5,11 +5,13 @@ import {
   Trash2, Plus, CreditCard as Edit2, Printer, RefreshCw, Search,
   Copy, Send, AlertCircle, List, LayoutGrid, ArrowRight,
   CalendarDays, CreditCard, ChevronDown, ChevronUp, X, StickyNote,
+  ScrollText,
 } from 'lucide-react';
 
 import { useLanguage } from '../contexts/LanguageContext';
 import { ReservationFloorPlanView } from './ReservationFloorPlanView';
 import { useAuth } from '../contexts/AuthContext';
+import { SystemLogs } from './SystemLogs';
 
 type ReservationWithTable = Reservation & {
   table?: Table;
@@ -222,6 +224,7 @@ export function ReservationManager() {
   const [reservations, setReservations] = useState<ReservationWithTable[]>([]);
   const [allReservationsForConflicts, setAllReservationsForConflicts] = useState<ReservationWithTable[]>([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly' | 'payment_link'>('monthly');
+  const [showLogs, setShowLogs] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<ReservationWithTable | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -1101,6 +1104,26 @@ export function ReservationManager() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setFilter('payment_link'); setShowLogs(false); }}
+            className={`relative p-2 rounded-xl transition-all duration-150 ${filter === 'payment_link' && !showLogs ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}
+            title="Zahlung"
+          >
+            <CreditCard className="w-4 h-4" />
+            {unpaidPaymentLinkCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 text-[9px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
+                {unpaidPaymentLinkCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setShowLogs(v => !v)}
+            className={`p-2 rounded-xl transition-all duration-150 ${showLogs ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}
+            title="Protokoll"
+          >
+            <ScrollText className="w-4 h-4" />
+          </button>
+          <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5">
             <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`} title="Liste">
               <List className="w-4 h-4" />
@@ -1121,6 +1144,23 @@ export function ReservationManager() {
           </button>
         </div>
       </div>
+
+      {showLogs && (
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <ScrollText className="w-4 h-4 text-blue-500" />
+              Protokoll
+            </div>
+            <button onClick={() => setShowLogs(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-4">
+            <SystemLogs />
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-2 no-print">
         <div className="relative flex-1">
