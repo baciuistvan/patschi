@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const LOGO_URL = "https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png";
+const LOGO_URL = "https://patschi.at/wp-content/uploads/2023/04/Patschi-Logo-neu-transparent-e1773749723681.png";
 
 const emailHeader = (subtitle: string) => `
   <tr>

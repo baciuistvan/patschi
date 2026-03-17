@@ -216,7 +216,7 @@ Deno.serve(async (req: Request) => {
 </html>`;
     } else {
       // Use default beautiful template — matches the Reservation Widget design
-      const logoUrl = "https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png";
+      const logoUrl = "https://patschi.at/wp-content/uploads/2023/04/Patschi-Logo-neu-transparent-e1773749723681.png";
       const headerSubtitle = is_payment_confirmation ? 'Zahlungsbestätigung' : 'Tisch Reservierung';
       const headerBg = is_payment_confirmation ? '#eaf2ed' : (payment_link_url ? '#f5eddc' : '#eaf2ed');
       const headerBorder = is_payment_confirmation ? '#c6dece' : (payment_link_url ? '#e0d4bb' : '#c6dece');
