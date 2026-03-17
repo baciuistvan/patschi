@@ -246,7 +246,7 @@ Deno.serve(async (req: Request) => {
                 <!-- Logo header -->
                 <tr>
                   <td style="background-color:#1e1e1e;padding:28px 40px 20px 40px;text-align:center;">
-                    <img src="${logoUrl}" alt="Patschi Serfaus" width="220" style="max-width:220px;height:auto;display:block;margin:0 auto 12px auto;" />
+                    <img src="${logoUrl}" alt="Patschi Serfaus" width="180" style="max-width:180px;height:auto;display:block;margin:0 auto 12px auto;" />
                     <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">${headerSubtitle}</p>
                   </td>
                 </tr>
