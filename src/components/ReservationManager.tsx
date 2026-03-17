@@ -1194,22 +1194,6 @@ export function ReservationManager() {
               {tab.label}
             </button>
           ))}
-          <button
-            onClick={() => setFilter('payment_link')}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide transition-all duration-200 whitespace-nowrap flex items-center gap-1.5 border ${
-              filter === 'payment_link'
-                ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/30 scale-[1.03]'
-                : 'text-slate-400 dark:text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            Zahlung
-            {unpaidPaymentLinkCount > 0 && (
-              <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full ${filter === 'payment_link' ? 'bg-white text-amber-600' : 'bg-amber-500 text-white'}`}>
-                {unpaidPaymentLinkCount}
-              </span>
-            )}
-          </button>
           </div>
 
           <div className="relative flex-shrink-0" ref={datePickerRef}>
