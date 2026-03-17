@@ -216,6 +216,17 @@ Deno.serve(async (req: Request) => {
 </html>`;
     } else {
       // Use default beautiful template — matches the Reservation Widget design
+      const logoUrl = "https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG";
+      const headerSubtitle = is_payment_confirmation ? 'Zahlungsbestätigung' : 'Tisch Reservierung';
+      const headerBg = is_payment_confirmation ? '#eaf2ed' : (payment_link_url ? '#f5eddc' : '#eaf2ed');
+      const headerBorder = is_payment_confirmation ? '#c6dece' : (payment_link_url ? '#e0d4bb' : '#c6dece');
+      const headerTitle = is_payment_confirmation ? 'Zahlung bestätigt!' : 'Reservierung bestätigt!';
+      const headerSubtext = is_payment_confirmation
+        ? 'Ihre Anzahlung wurde erfolgreich verarbeitet.'
+        : payment_link_url
+        ? 'Bitte leisten Sie die Anzahlung zur Bestätigung.'
+        : 'Vielen Dank für Ihre Buchung.';
+
       htmlBody = `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -223,62 +234,47 @@ Deno.serve(async (req: Request) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${is_payment_confirmation ? 'Zahlungsbestätigung' : 'Reservierungsbestätigung'}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#f7f3ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f3ee;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
-          <!-- Top brand bar -->
           <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <p style="margin:0;font-size:13px;color:#64748b;letter-spacing:0.05em;text-transform:uppercase;font-weight:600;">Tisch Reservierung</p>
-            </td>
-          </tr>
-
-          <!-- Main card -->
-          <tr>
-            <td style="background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,0.12),0 4px 16px rgba(15,23,42,0.06);">
-
-              <!-- Success header -->
+            <td style="background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:6px 6px 9px rgba(0,0,0,0.12);">
               <table width="100%" cellpadding="0" cellspacing="0">
+
+                <!-- Logo header -->
                 <tr>
-                  <td style="background-color:${is_payment_confirmation ? '#ecfdf5' : '#f0fdf4'};padding:40px 40px 32px 40px;text-align:center;border-bottom:1px solid ${is_payment_confirmation ? '#d1fae5' : '#dcfce7'};">
-                    <!-- Circle check icon -->
-                    <div style="display:inline-block;width:72px;height:72px;background-color:#10b981;border-radius:50%;margin-bottom:20px;line-height:72px;text-align:center;">
-                      <span style="color:#ffffff;font-size:36px;line-height:72px;">&#10003;</span>
-                    </div>
-                    <h1 style="margin:0 0 8px 0;font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;">${is_payment_confirmation ? 'Zahlung bestätigt!' : 'Reservierung bestätigt!'}</h1>
-                    <p style="margin:0;font-size:15px;color:#475569;">
-                      ${is_payment_confirmation
-                        ? 'Ihre Anzahlung wurde erfolgreich verarbeitet.'
-                        : payment_link_url
-                        ? 'Bitte leisten Sie die Anzahlung zur Bestätigung.'
-                        : 'Vielen Dank für Ihre Buchung.'}
-                    </p>
+                  <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
+                    <img src="${logoUrl}" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+                    <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">${headerSubtitle}</p>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Booking code -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Status header -->
                 <tr>
-                  <td style="padding:32px 40px 24px 40px;text-align:center;">
-                    <p style="margin:0 0 10px 0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">Ihre Buchungsnummer</p>
-                    <div style="display:inline-block;background-color:#f0fdf4;border:2px solid #10b981;border-radius:16px;padding:14px 32px;">
-                      <span style="font-size:30px;font-weight:700;color:#059669;letter-spacing:4px;font-family:'Courier New',Courier,monospace;">${booking_code}</span>
-                    </div>
-                    <p style="margin:10px 0 0 0;font-size:12px;color:#94a3b8;">Bitte bewahren Sie diese Nummer auf</p>
+                  <td style="background-color:${headerBg};padding:28px 40px 24px 40px;text-align:center;border-bottom:1px solid ${headerBorder};">
+                    <h1 style="margin:0 0 6px 0;font-size:24px;font-weight:700;color:#1e1e1e;letter-spacing:-0.3px;">${headerTitle}</h1>
+                    <p style="margin:0;font-size:14px;color:#5a5550;">${headerSubtext}</p>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Greeting -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Booking code -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <p style="margin:0;font-size:16px;color:#334155;line-height:1.65;">
-                      Liebe/r <strong style="color:#0f172a;">${customer_name}</strong>,<br><br>
+                  <td style="padding:28px 40px 20px 40px;text-align:center;">
+                    <p style="margin:0 0 8px 0;font-size:11px;color:#9a948e;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">Ihre Buchungsnummer</p>
+                    <div style="display:inline-block;background-color:#f5eddc;border:2px solid #b8924a;border-radius:4px;padding:12px 32px;">
+                      <span style="font-size:28px;font-weight:700;color:#b8924a;letter-spacing:4px;font-family:'Courier New',Courier,monospace;">${booking_code}</span>
+                    </div>
+                    <p style="margin:8px 0 0 0;font-size:12px;color:#9a948e;">Bitte bewahren Sie diese Nummer auf</p>
+                  </td>
+                </tr>
+
+                <!-- Greeting -->
+                <tr>
+                  <td style="padding:0 40px 24px 40px;">
+                    <p style="margin:0;font-size:15px;color:#3a3a3a;line-height:1.7;">
+                      Liebe/r <strong style="color:#1e1e1e;">${customer_name}</strong>,<br><br>
                       ${is_payment_confirmation
                         ? 'vielen Dank für Ihre Zahlung! Ihre Reservierung ist nun vollständig bestätigt. Wir freuen uns sehr, Sie bei uns begrüßen zu dürfen.'
                         : payment_link_url
@@ -287,63 +283,53 @@ Deno.serve(async (req: Request) => {
                     </p>
                   </td>
                 </tr>
-              </table>
 
-              ${payment_link_url ? `
-              <!-- Payment CTA -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                ${payment_link_url ? `
+                <!-- Payment CTA -->
                 <tr>
-                  <td style="padding:0 40px 32px 40px;text-align:center;">
-                    <a href="${payment_link_url}" style="display:inline-block;background-color:#10b981;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:12px;font-size:16px;font-weight:700;letter-spacing:0.01em;box-shadow:0 4px 14px rgba(16,185,129,0.4);">Jetzt Anzahlung leisten &rarr;</a>
-                    <p style="margin:12px 0 0 0;font-size:13px;color:#64748b;">Betrag: <strong style="color:#0f172a;">&#8364;${depositAmountFormatted}</strong></p>
+                  <td style="padding:0 40px 28px 40px;text-align:center;">
+                    <a href="${payment_link_url}" style="display:inline-block;background-color:#b8924a;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:4px;font-size:15px;font-weight:700;letter-spacing:0.02em;">Jetzt Anzahlung leisten &rarr;</a>
+                    <p style="margin:10px 0 0 0;font-size:13px;color:#5a5550;">Betrag: <strong style="color:#1e1e1e;">&#8364;${depositAmountFormatted}</strong></p>
                   </td>
                 </tr>
-              </table>
-              ` : ''}
+                ` : ''}
 
-              <!-- Details card -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Details card -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border-radius:16px;border:2px solid #e2e8f0;">
+                  <td style="padding:0 40px 24px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f3ee;border-radius:4px;border:1px solid #d4cec4;">
                       <tr>
-                        <td style="padding:24px 28px;">
-                          <p style="margin:0 0 18px 0;font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.08em;">Reservierungsdetails</p>
-
-                          <!-- Date row -->
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:20px 24px;">
+                          <p style="margin:0 0 14px 0;font-size:11px;font-weight:700;color:#1e1e1e;text-transform:uppercase;letter-spacing:0.1em;">Reservierungsdetails</p>
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Datum</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">${formattedDate}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Datum</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">${formattedDate}</td>
                             </tr>
                           </table>
-                          <!-- Time row -->
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Uhrzeit</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">${reservation_time} Uhr</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Uhrzeit</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">${reservation_time} Uhr</td>
                             </tr>
                           </table>
-                          <!-- Party size row -->
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Personen</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">${party_size} ${party_size === 1 ? 'Person' : 'Personen'}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Personen</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">${party_size} ${party_size === 1 ? 'Person' : 'Personen'}</td>
                             </tr>
                           </table>
-                          <!-- Table row -->
-                          <table width="100%" cellpadding="0" cellspacing="0" style="${payment_amount > 0 ? 'border-bottom:1px solid #e2e8f0;' : ''}">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="${payment_amount > 0 ? 'border-bottom:1px solid #d4cec4;' : ''}">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Tisch</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">${table_number}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Tisch</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">${table_number}</td>
                             </tr>
                           </table>
                           ${payment_amount > 0 ? `
-                          <!-- Payment row -->
                           <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
-                              <td style="padding:14px 0 2px 0;font-size:15px;color:#475569;font-weight:600;">${is_payment_confirmation ? 'Bezahlt' : 'Anzahlung'}</td>
-                              <td style="padding:14px 0 2px 0;font-size:20px;color:#10b981;font-weight:800;text-align:right;">&#8364;${depositAmountFormatted}</td>
+                              <td style="padding:12px 0 2px 0;font-size:14px;color:#5a5550;font-weight:600;">${is_payment_confirmation ? 'Bezahlt' : 'Anzahlung'}</td>
+                              <td style="padding:12px 0 2px 0;font-size:18px;color:${is_payment_confirmation ? '#4a7c59' : '#b8924a'};font-weight:800;text-align:right;">&#8364;${depositAmountFormatted}</td>
                             </tr>
                           </table>
                           ` : ''}
@@ -352,53 +338,47 @@ Deno.serve(async (req: Request) => {
                     </table>
                   </td>
                 </tr>
-              </table>
 
-              ${special_requests ? `
-              <!-- Special requests -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                ${special_requests ? `
+                <!-- Special requests -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fffbeb;border:2px solid #fcd34d;border-radius:16px;">
+                  <td style="padding:0 40px 24px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fffbeb;border:1px solid #f0d080;border-radius:4px;">
                       <tr>
-                        <td style="padding:18px 22px;">
-                          <p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;">Besondere Wünsche</p>
-                          <p style="margin:0;font-size:14px;color:#78350f;line-height:1.55;">${special_requests}</p>
+                        <td style="padding:14px 18px;">
+                          <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;">Besondere Wünsche</p>
+                          <p style="margin:0;font-size:13px;color:#78350f;line-height:1.55;">${special_requests}</p>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
-              </table>
-              ` : ''}
+                ` : ''}
 
-              ${is_payment_confirmation ? `
-              <!-- Payment confirmed notice -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                ${is_payment_confirmation ? `
+                <!-- Payment confirmed notice -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdf4;border:2px solid #86efac;border-radius:16px;">
+                  <td style="padding:0 40px 24px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eaf2ed;border:1px solid #a8d4b8;border-radius:4px;">
                       <tr>
-                        <td style="padding:18px 22px;">
-                          <p style="margin:0 0 6px 0;font-size:13px;font-weight:700;color:#15803d;">Zahlung erfolgreich verarbeitet</p>
-                          <p style="margin:0;font-size:13px;color:#166534;line-height:1.55;">Ihre Anzahlung von &#8364;${depositAmountFormatted} wurde erfolgreich verarbeitet. Ihre Reservierung ist nun vollständig bestätigt.</p>
+                        <td style="padding:14px 18px;">
+                          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;color:#2d6a4a;">Zahlung erfolgreich verarbeitet</p>
+                          <p style="margin:0;font-size:13px;color:#2d6a4a;line-height:1.55;">Ihre Anzahlung von &#8364;${depositAmountFormatted} wurde erfolgreich verarbeitet. Ihre Reservierung ist nun vollständig bestätigt.</p>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
-              </table>
-              ` : ''}
+                ` : ''}
 
-              <!-- Important info -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Important info -->
                 <tr>
-                  <td style="padding:0 40px 40px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eff6ff;border:2px solid #bfdbfe;border-radius:16px;">
+                  <td style="padding:0 40px 32px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef2f8;border:1px solid #c4d0e8;border-radius:4px;">
                       <tr>
-                        <td style="padding:18px 22px;">
-                          <p style="margin:0 0 8px 0;font-size:13px;font-weight:700;color:#1e40af;">Wichtige Hinweise</p>
-                          <p style="margin:0;font-size:13px;color:#1e3a8a;line-height:1.7;">
+                        <td style="padding:16px 20px;">
+                          <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;color:#3a5a8a;">Wichtige Hinweise</p>
+                          <p style="margin:0;font-size:13px;color:#3a5a8a;line-height:1.7;">
                             &bull; Bitte erscheinen Sie p&uuml;nktlich zu Ihrer Reservierung<br>
                             &bull; Bei Versp&auml;tung &uuml;ber 15 Minuten kann Ihre Reservierung verfallen<br>
                             &bull; Bei Stornierung oder &Auml;nderungen kontaktieren Sie uns bitte rechtzeitig
@@ -408,23 +388,19 @@ Deno.serve(async (req: Request) => {
                     </table>
                   </td>
                 </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
+                    <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settingsMap.smtp_from_name || 'Patschi Serfaus'}</p>
+                    <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settingsMap.smtp_from_email || ''}</p>
+                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+                  </td>
+                </tr>
+
               </table>
-
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding:28px 40px;text-align:center;">
-              <p style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:#0f172a;">Wir freuen uns auf Ihren Besuch!</p>
-              <p style="margin:0 0 16px 0;font-size:13px;color:#64748b;">Bei Fragen stehen wir Ihnen gerne zur Verf&uuml;gung.</p>
-              <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
-                <strong style="color:#475569;">${settingsMap.smtp_from_name || 'Restaurant'}</strong><br>
-                ${settingsMap.smtp_from_email || ''}
-              </p>
-            </td>
-          </tr>
-
         </table>
       </td>
     </tr>

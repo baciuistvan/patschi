@@ -104,102 +104,90 @@ Deno.serve(async (req: Request) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ihr Geschenkgutschein</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#f7f3ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f3ee;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
-          <!-- Brand label -->
           <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <p style="margin:0;font-size:13px;color:#64748b;letter-spacing:0.05em;text-transform:uppercase;font-weight:600;">Geschenkgutschein</p>
-            </td>
-          </tr>
-
-          <!-- Main card -->
-          <tr>
-            <td style="background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,0.12),0 4px 16px rgba(15,23,42,0.06);">
-
-              <!-- Header -->
+            <td style="background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:6px 6px 9px rgba(0,0,0,0.12);">
               <table width="100%" cellpadding="0" cellspacing="0">
+
+                <!-- Logo header -->
                 <tr>
-                  <td style="background-color:#f0fdf4;padding:40px 40px 32px 40px;text-align:center;border-bottom:1px solid #dcfce7;">
-                    <div style="display:inline-block;width:72px;height:72px;background-color:#10b981;border-radius:50%;margin-bottom:20px;text-align:center;line-height:72px;">
-                      <span style="color:#ffffff;font-size:36px;line-height:72px;">&#127873;</span>
-                    </div>
-                    <h1 style="margin:0 0 8px 0;font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;">Sie haben einen Gutschein!</h1>
-                    <p style="margin:0;font-size:15px;color:#475569;">{{purchaser_name}} hat Ihnen etwas Besonderes geschenkt.</p>
+                  <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
+                    <img src="https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+                    <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">Geschenkgutschein</p>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Amount highlight -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Status header -->
                 <tr>
-                  <td style="padding:32px 40px 24px 40px;text-align:center;">
-                    <p style="margin:0 0 10px 0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">Gutscheinwert</p>
-                    <div style="display:inline-block;background-color:#f0fdf4;border:2px solid #10b981;border-radius:16px;padding:14px 40px;">
-                      <span style="font-size:36px;font-weight:800;color:#059669;letter-spacing:1px;">&#8364;{{amount}}</span>
+                  <td style="background-color:#f5eddc;padding:28px 40px 24px 40px;text-align:center;border-bottom:1px solid #e0d4bb;">
+                    <h1 style="margin:0 0 6px 0;font-size:24px;font-weight:700;color:#1e1e1e;letter-spacing:-0.3px;">Sie haben einen Gutschein!</h1>
+                    <p style="margin:0;font-size:14px;color:#5a5550;">{{purchaser_name}} hat Ihnen etwas Besonderes geschenkt.</p>
+                  </td>
+                </tr>
+
+                <!-- Amount highlight -->
+                <tr>
+                  <td style="padding:28px 40px 20px 40px;text-align:center;">
+                    <p style="margin:0 0 8px 0;font-size:11px;color:#9a948e;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;">Gutscheinwert</p>
+                    <div style="display:inline-block;background-color:#f5eddc;border:2px solid #b8924a;border-radius:4px;padding:14px 40px;">
+                      <span style="font-size:34px;font-weight:800;color:#b8924a;letter-spacing:1px;">&#8364;{{amount}}</span>
                     </div>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Greeting -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Greeting -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <p style="margin:0;font-size:16px;color:#334155;line-height:1.65;">
-                      Hallo <strong style="color:#0f172a;">{{recipient_name}}</strong>,<br><br>
-                      <strong style="color:#0f172a;">{{purchaser_name}}</strong> hat Ihnen einen Geschenkgutschein im Wert von <strong style="color:#10b981;">&#8364;{{amount}}</strong> geschenkt. Wir freuen uns auf Ihren Besuch!
+                  <td style="padding:0 40px 24px 40px;">
+                    <p style="margin:0;font-size:15px;color:#3a3a3a;line-height:1.7;">
+                      Hallo <strong style="color:#1e1e1e;">{{recipient_name}}</strong>,<br><br>
+                      <strong style="color:#1e1e1e;">{{purchaser_name}}</strong> hat Ihnen einen Geschenkgutschein im Wert von <strong style="color:#b8924a;">&#8364;{{amount}}</strong> geschenkt. Wir freuen uns auf Ihren Besuch!
                     </p>
                   </td>
                 </tr>
-              </table>
 
-              {{#if message}}
-              <!-- Personal message -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                {{#if message}}
+                <!-- Personal message -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fffbeb;border:2px solid #fcd34d;border-radius:16px;">
+                  <td style="padding:0 40px 24px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fffbeb;border:1px solid #f0d080;border-radius:4px;">
                       <tr>
-                        <td style="padding:18px 22px;">
-                          <p style="margin:0 0 6px 0;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;">Pers&ouml;nliche Nachricht</p>
+                        <td style="padding:14px 18px;">
+                          <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;">Pers&ouml;nliche Nachricht</p>
                           <p style="margin:0;font-size:14px;color:#78350f;line-height:1.55;font-style:italic;">&ldquo;{{message}}&rdquo;</p>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
-              </table>
-              {{/if}}
+                {{/if}}
 
-              <!-- Details card -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Details card -->
                 <tr>
-                  <td style="padding:0 40px 28px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border-radius:16px;border:2px solid #e2e8f0;">
+                  <td style="padding:0 40px 24px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f3ee;border-radius:4px;border:1px solid #d4cec4;">
                       <tr>
-                        <td style="padding:24px 28px;">
-                          <p style="margin:0 0 18px 0;font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.08em;">Gutschein-Details</p>
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:20px 24px;">
+                          <p style="margin:0 0 14px 0;font-size:11px;font-weight:700;color:#1e1e1e;text-transform:uppercase;letter-spacing:0.1em;">Gutschein-Details</p>
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Gutschein-Code</td>
-                              <td style="padding:11px 0;font-size:15px;color:#0f172a;font-weight:700;text-align:right;font-family:'Courier New',Courier,monospace;letter-spacing:2px;">{{code}}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Gutschein-Code</td>
+                              <td style="padding:10px 0;font-size:15px;color:#1e1e1e;font-weight:700;text-align:right;font-family:'Courier New',Courier,monospace;letter-spacing:2px;">{{code}}</td>
                             </tr>
                           </table>
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Barcode</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">{{barcode}}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Barcode</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">{{barcode}}</td>
                             </tr>
                           </table>
                           <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">G&uuml;ltig bis</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">{{expiry_date}}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">G&uuml;ltig bis</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">{{expiry_date}}</td>
                             </tr>
                           </table>
                         </td>
@@ -207,32 +195,27 @@ Deno.serve(async (req: Request) => {
                     </table>
                   </td>
                 </tr>
-              </table>
 
-              <!-- PDF download button -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- PDF download button -->
                 <tr>
-                  <td style="padding:0 40px 40px 40px;text-align:center;">
-                    <a href="{{pdf_url}}" style="display:inline-block;background-color:#10b981;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:12px;font-size:16px;font-weight:700;letter-spacing:0.01em;box-shadow:0 4px 14px rgba(16,185,129,0.4);">Gutschein als PDF herunterladen &rarr;</a>
-                    <p style="margin:12px 0 0 0;font-size:12px;color:#94a3b8;">Das PDF enth&auml;lt alle Details und den Barcode zum Einl&ouml;sen.</p>
+                  <td style="padding:0 40px 32px 40px;text-align:center;">
+                    <a href="{{pdf_url}}" style="display:inline-block;background-color:#b8924a;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:4px;font-size:15px;font-weight:700;letter-spacing:0.02em;">Gutschein als PDF herunterladen &rarr;</a>
+                    <p style="margin:10px 0 0 0;font-size:12px;color:#9a948e;">Das PDF enth&auml;lt alle Details und den Barcode zum Einl&ouml;sen.</p>
                   </td>
                 </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
+                    <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settings.smtp_from_name || 'Patschi Serfaus'}</p>
+                    <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settings.smtp_from_email || ''}</p>
+                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+                  </td>
+                </tr>
+
               </table>
-
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding:28px 40px;text-align:center;">
-              <p style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:#0f172a;">Wir freuen uns auf Ihren Besuch!</p>
-              <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
-                <strong style="color:#475569;">${settings.smtp_from_name || 'Restaurant'}</strong><br>
-                ${settings.smtp_from_email || ''}
-              </p>
-            </td>
-          </tr>
-
         </table>
       </td>
     </tr>
@@ -308,76 +291,70 @@ Wir freuen uns auf Ihren Besuch!
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Geschenkgutschein erfolgreich gekauft</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#f7f3ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f3ee;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
           <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <p style="margin:0;font-size:13px;color:#64748b;letter-spacing:0.05em;text-transform:uppercase;font-weight:600;">Kaufbest&auml;tigung</p>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,0.12),0 4px 16px rgba(15,23,42,0.06);">
-
-              <!-- Header -->
+            <td style="background-color:#ffffff;border-radius:4px;overflow:hidden;box-shadow:6px 6px 9px rgba(0,0,0,0.12);">
               <table width="100%" cellpadding="0" cellspacing="0">
+
+                <!-- Logo header -->
                 <tr>
-                  <td style="background-color:#f0fdf4;padding:40px 40px 32px 40px;text-align:center;border-bottom:1px solid #dcfce7;">
-                    <div style="display:inline-block;width:72px;height:72px;background-color:#10b981;border-radius:50%;margin-bottom:20px;text-align:center;line-height:72px;">
-                      <span style="color:#ffffff;font-size:36px;line-height:72px;">&#10003;</span>
-                    </div>
-                    <h1 style="margin:0 0 8px 0;font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;">Kauf erfolgreich!</h1>
-                    <p style="margin:0;font-size:15px;color:#475569;">Ihr Geschenkgutschein wurde erstellt und versendet.</p>
+                  <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
+                    <img src="https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+                    <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">Kaufbest&auml;tigung</p>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Greeting -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Status header -->
                 <tr>
-                  <td style="padding:32px 40px 28px 40px;">
-                    <p style="margin:0;font-size:16px;color:#334155;line-height:1.65;">
-                      Hallo <strong style="color:#0f172a;">${giftCard.purchaser_name}</strong>,<br><br>
-                      vielen Dank f&uuml;r Ihren Kauf! Ihr Geschenkgutschein wurde erfolgreich erstellt und direkt an <strong style="color:#0f172a;">${giftCard.recipient_email}</strong> gesendet.
+                  <td style="background-color:#eaf2ed;padding:28px 40px 24px 40px;text-align:center;border-bottom:1px solid #c6dece;">
+                    <h1 style="margin:0 0 6px 0;font-size:24px;font-weight:700;color:#1e1e1e;letter-spacing:-0.3px;">Kauf erfolgreich!</h1>
+                    <p style="margin:0;font-size:14px;color:#5a5550;">Ihr Geschenkgutschein wurde erstellt und versendet.</p>
+                  </td>
+                </tr>
+
+                <!-- Greeting -->
+                <tr>
+                  <td style="padding:28px 40px 24px 40px;">
+                    <p style="margin:0;font-size:15px;color:#3a3a3a;line-height:1.7;">
+                      Hallo <strong style="color:#1e1e1e;">${giftCard.purchaser_name}</strong>,<br><br>
+                      vielen Dank f&uuml;r Ihren Kauf! Ihr Geschenkgutschein wurde erfolgreich erstellt und direkt an <strong style="color:#1e1e1e;">${giftCard.recipient_email}</strong> gesendet.
                     </p>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Details card -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Details card -->
                 <tr>
-                  <td style="padding:0 40px 40px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border-radius:16px;border:2px solid #e2e8f0;">
+                  <td style="padding:0 40px 24px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7f3ee;border-radius:4px;border:1px solid #d4cec4;">
                       <tr>
-                        <td style="padding:24px 28px;">
-                          <p style="margin:0 0 18px 0;font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.08em;">Gutschein-Details</p>
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:20px 24px;">
+                          <p style="margin:0 0 14px 0;font-size:11px;font-weight:700;color:#1e1e1e;text-transform:uppercase;letter-spacing:0.1em;">Gutschein-Details</p>
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Gutschein-Code</td>
-                              <td style="padding:11px 0;font-size:15px;color:#0f172a;font-weight:700;text-align:right;font-family:'Courier New',Courier,monospace;letter-spacing:2px;">${giftCard.code}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Gutschein-Code</td>
+                              <td style="padding:10px 0;font-size:15px;color:#1e1e1e;font-weight:700;text-align:right;font-family:'Courier New',Courier,monospace;letter-spacing:2px;">${giftCard.code}</td>
                             </tr>
                           </table>
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Betrag</td>
-                              <td style="padding:11px 0;font-size:20px;color:#10b981;font-weight:800;text-align:right;">&#8364;${buyerAmount}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Betrag</td>
+                              <td style="padding:10px 0;font-size:18px;color:#b8924a;font-weight:800;text-align:right;">&#8364;${buyerAmount}</td>
                             </tr>
                           </table>
-                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e2e8f0;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d4cec4;">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">Empf&auml;nger</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">${giftCard.recipient_name || giftCard.recipient_email}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">Empf&auml;nger</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">${giftCard.recipient_name || giftCard.recipient_email}</td>
                             </tr>
                           </table>
                           <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
-                              <td style="padding:11px 0;font-size:14px;color:#64748b;font-weight:500;">G&uuml;ltig bis</td>
-                              <td style="padding:11px 0;font-size:14px;color:#0f172a;font-weight:700;text-align:right;">${buyerExpiryDate}</td>
+                              <td style="padding:10px 0;font-size:14px;color:#5a5550;font-weight:500;">G&uuml;ltig bis</td>
+                              <td style="padding:10px 0;font-size:14px;color:#1e1e1e;font-weight:700;text-align:right;">${buyerExpiryDate}</td>
                             </tr>
                           </table>
                         </td>
@@ -385,16 +362,14 @@ Wir freuen uns auf Ihren Besuch!
                     </table>
                   </td>
                 </tr>
-              </table>
 
-              <!-- Info notice -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+                <!-- Info notice -->
                 <tr>
-                  <td style="padding:0 40px 40px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eff6ff;border:2px solid #bfdbfe;border-radius:16px;">
+                  <td style="padding:0 40px 32px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef2f8;border:1px solid #c4d0e8;border-radius:4px;">
                       <tr>
-                        <td style="padding:18px 22px;">
-                          <p style="margin:0;font-size:13px;color:#1e3a8a;line-height:1.7;">
+                        <td style="padding:14px 18px;">
+                          <p style="margin:0;font-size:13px;color:#3a5a8a;line-height:1.7;">
                             Eine Kopie des Gutscheins wurde an die E-Mail-Adresse des Empf&auml;ngers gesendet. Der Gutschein kann direkt bei uns eingel&ouml;st werden.
                           </p>
                         </td>
@@ -402,22 +377,19 @@ Wir freuen uns auf Ihren Besuch!
                     </table>
                   </td>
                 </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
+                    <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settings.smtp_from_name || 'Patschi Serfaus'}</p>
+                    <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settings.smtp_from_email || ''}</p>
+                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+                  </td>
+                </tr>
+
               </table>
-
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding:28px 40px;text-align:center;">
-              <p style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:#0f172a;">Vielen Dank f&uuml;r Ihr Vertrauen!</p>
-              <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
-                <strong style="color:#475569;">${settings.smtp_from_name || 'Restaurant'}</strong><br>
-                ${settings.smtp_from_email || ''}
-              </p>
-            </td>
-          </tr>
-
         </table>
       </td>
     </tr>
