@@ -216,7 +216,7 @@ Deno.serve(async (req: Request) => {
 </html>`;
     } else {
       // Use default beautiful template — matches the Reservation Widget design
-      const logoUrl = "https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG";
+      const logoUrl = "https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png";
       const headerSubtitle = is_payment_confirmation ? 'Zahlungsbestätigung' : 'Tisch Reservierung';
       const headerBg = is_payment_confirmation ? '#eaf2ed' : (payment_link_url ? '#f5eddc' : '#eaf2ed');
       const headerBorder = is_payment_confirmation ? '#c6dece' : (payment_link_url ? '#e0d4bb' : '#c6dece');
@@ -394,7 +394,7 @@ Deno.serve(async (req: Request) => {
                   <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
                     <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settingsMap.smtp_from_name || 'Patschi Serfaus'}</p>
                     <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settingsMap.smtp_from_email || ''}</p>
-                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
                   </td>
                 </tr>
 

@@ -116,7 +116,7 @@ Deno.serve(async (req: Request) => {
                 <!-- Logo header -->
                 <tr>
                   <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
-                    <img src="https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+                    <img src="https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
                     <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">Geschenkgutschein</p>
                   </td>
                 </tr>
@@ -209,7 +209,7 @@ Deno.serve(async (req: Request) => {
                   <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
                     <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settings.smtp_from_name || 'Patschi Serfaus'}</p>
                     <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settings.smtp_from_email || ''}</p>
-                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
                   </td>
                 </tr>
 
@@ -303,7 +303,7 @@ Wir freuen uns auf Ihren Besuch!
                 <!-- Logo header -->
                 <tr>
                   <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
-                    <img src="https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+                    <img src="https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
                     <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">Kaufbest&auml;tigung</p>
                   </td>
                 </tr>
@@ -383,7 +383,7 @@ Wir freuen uns auf Ihren Besuch!
                   <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
                     <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settings.smtp_from_name || 'Patschi Serfaus'}</p>
                     <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settings.smtp_from_email || ''}</p>
-                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
                   </td>
                 </tr>
 

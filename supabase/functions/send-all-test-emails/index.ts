@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const LOGO_URL = "https://patschi.services/Patschi_Serfaus_-_Logo_transparent_schwarz.PNG";
+const LOGO_URL = "https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png";
 
 const emailHeader = (subtitle: string) => `
   <tr>
@@ -23,7 +23,7 @@ const emailFooter = (fromName: string, fromEmail: string) => `
     <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
       <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${fromName}</p>
       <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${fromEmail}</p>
-      <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi Apres Ski Serfaus &bull; by K&ouml;hle</p>
+      <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
     </td>
   </tr>
 `;
