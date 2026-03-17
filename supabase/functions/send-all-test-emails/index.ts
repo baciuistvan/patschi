@@ -18,12 +18,17 @@ const emailHeader = (subtitle: string) => `
   </tr>
 `;
 
-const emailFooter = (fromName: string, fromEmail: string) => `
+const emailFooter = (fromName: string, _fromEmail: string) => `
   <tr>
     <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
-      <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${fromName}</p>
-      <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${fromEmail}</p>
-      <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
+      <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${fromName}</p>
+      <p style="margin:0 0 10px 0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
+      <p style="margin:0;font-size:12px;color:#9a948e;line-height:1.8;">
+        <strong style="color:#5a5550;">Kontakt</strong><br>
+        Email: <a href="mailto:info@patschi.at" style="color:#b8924a;text-decoration:none;">info@patschi.at</a><br>
+        Tel: +43 (0) 5476 6290<br>
+        Dorfbahnstra&szlig;e 82, 6534 Serfaus
+      </p>
     </td>
   </tr>
 `;
