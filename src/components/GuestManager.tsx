@@ -11,6 +11,7 @@ interface Guest {
   customer_email: string;
   customer_phone: string;
   reservation_count: number;
+  completed_visits: number;
   total_spent: string;
   last_visit_date: string;
   first_visit_date: string;
@@ -67,8 +68,9 @@ const statusConfig = {
 };
 
 function getTier(guest: Guest): 'vip' | 'returning' | 'new' {
-  if (guest.reservation_count >= 5 || parseFloat(guest.total_spent) >= 1000) return 'vip';
-  if (guest.reservation_count >= 2) return 'returning';
+  const visits = guest.completed_visits;
+  if (visits >= 8 || parseFloat(guest.total_spent) >= 1500) return 'vip';
+  if (visits >= 3) return 'returning';
   return 'new';
 }
 
@@ -146,7 +148,7 @@ function GuestCard({ guest, selected, onClick }: { guest: Guest; selected: boole
       <div className="hidden sm:flex items-center gap-5 flex-shrink-0">
         <div className="text-right">
           <p className={`text-sm font-semibold tabular-nums ${selected ? 'text-white dark:text-slate-900' : 'text-slate-900 dark:text-white'}`}>
-            {guest.reservation_count}
+            {guest.completed_visits}
           </p>
           <p className={`text-xs ${selected ? 'text-slate-400 dark:text-slate-500' : 'text-slate-400 dark:text-slate-500'}`}>Besuche</p>
         </div>
@@ -226,7 +228,7 @@ function GuestDetailPanel({ guest, reservations, loading, onClose }: {
   const tier = getTier(guest);
   const cfg = tierConfig[tier];
   const initials = guest.customer_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-  const avg = guest.reservation_count > 0 ? parseFloat(guest.total_spent) / guest.reservation_count : 0;
+  const avg = guest.completed_visits > 0 ? parseFloat(guest.total_spent) / guest.completed_visits : 0;
   const days = daysSince(guest.last_visit_date);
 
   return (
@@ -275,13 +277,13 @@ function GuestDetailPanel({ guest, reservations, loading, onClose }: {
 
       <div className="flex-shrink-0 px-6 py-4 border-b border-slate-100 dark:border-slate-800">
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Besuche gesamt" value={String(guest.reservation_count)} />
+          <StatTile label="Abgeschlossene Besuche" value={String(guest.completed_visits)} sub={`${guest.reservation_count} Reservierungen gesamt`} />
           <StatTile label="Ausgaben gesamt" value={`€${parseFloat(guest.total_spent).toFixed(2)}`} />
-          <StatTile label="Ø pro Besuch" value={`€${avg.toFixed(2)}`} />
+          <StatTile label="Ø pro Besuch" value={guest.completed_visits > 0 ? `€${avg.toFixed(2)}` : '—'} />
           <StatTile
             label="Letzter Besuch"
-            value={days === 0 ? 'Heute' : `vor ${days}T`}
-            sub={formatDate(guest.last_visit_date)}
+            value={!guest.last_visit_date ? '—' : days === 0 ? 'Heute' : `vor ${days}T`}
+            sub={guest.last_visit_date ? formatDate(guest.last_visit_date) : undefined}
           />
         </div>
       </div>
@@ -332,42 +334,44 @@ export function GuestManager() {
   const fetchGuests = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_guest_statistics');
+      const today = new Date().toISOString().split('T')[0];
 
-      if (error) {
-        const { data: reservations, error: reservationError } = await supabase
-          .from('reservations')
-          .select('customer_name, customer_email, customer_phone, payment_amount, reservation_date')
-          .not('customer_email', 'is', null)
-          .neq('customer_email', '');
+      const { data: reservations, error: reservationError } = await supabase
+        .from('reservations')
+        .select('customer_name, customer_email, customer_phone, payment_amount, reservation_date, status')
+        .not('customer_email', 'is', null)
+        .neq('customer_email', '');
 
-        if (reservationError) throw reservationError;
+      if (reservationError) throw reservationError;
 
-        const guestMap = new Map<string, Guest>();
-        reservations?.forEach((res) => {
-          const key = res.customer_email;
-          if (guestMap.has(key)) {
-            const g = guestMap.get(key)!;
-            g.reservation_count += 1;
+      const guestMap = new Map<string, Guest>();
+      reservations?.forEach((res) => {
+        const key = res.customer_email;
+        const isPastNonCancelled = res.status !== 'cancelled' && res.reservation_date <= today;
+
+        if (guestMap.has(key)) {
+          const g = guestMap.get(key)!;
+          g.reservation_count += 1;
+          if (isPastNonCancelled) {
+            g.completed_visits += 1;
             g.total_spent = (parseFloat(g.total_spent) + parseFloat(res.payment_amount || '0')).toFixed(2);
-            if (res.reservation_date > g.last_visit_date) g.last_visit_date = res.reservation_date;
-            if (res.reservation_date < g.first_visit_date) g.first_visit_date = res.reservation_date;
-          } else {
-            guestMap.set(key, {
-              customer_name: res.customer_name,
-              customer_email: res.customer_email,
-              customer_phone: res.customer_phone || '',
-              reservation_count: 1,
-              total_spent: (parseFloat(res.payment_amount || '0')).toFixed(2),
-              last_visit_date: res.reservation_date,
-              first_visit_date: res.reservation_date,
-            });
           }
-        });
-        setGuests(Array.from(guestMap.values()));
-      } else {
-        setGuests(data || []);
-      }
+          if (res.reservation_date > g.last_visit_date && isPastNonCancelled) g.last_visit_date = res.reservation_date;
+          if (res.reservation_date < g.first_visit_date) g.first_visit_date = res.reservation_date;
+        } else {
+          guestMap.set(key, {
+            customer_name: res.customer_name,
+            customer_email: res.customer_email,
+            customer_phone: res.customer_phone || '',
+            reservation_count: 1,
+            completed_visits: isPastNonCancelled ? 1 : 0,
+            total_spent: isPastNonCancelled ? (parseFloat(res.payment_amount || '0')).toFixed(2) : '0.00',
+            last_visit_date: isPastNonCancelled ? res.reservation_date : '',
+            first_visit_date: res.reservation_date,
+          });
+        }
+      });
+      setGuests(Array.from(guestMap.values()));
     } catch (err) {
       console.error('Error fetching guests:', err);
     } finally {
@@ -414,9 +418,9 @@ export function GuestManager() {
       if (!matchesSearch) return false;
 
       switch (filterType) {
-        case 'new': return g.reservation_count === 1;
-        case 'returning': return g.reservation_count >= 2 && g.reservation_count < 5;
-        case 'vip': return g.reservation_count >= 5 || parseFloat(g.total_spent) >= 1000;
+        case 'new': return getTier(g) === 'new';
+        case 'returning': return getTier(g) === 'returning';
+        case 'vip': return getTier(g) === 'vip';
         default: return true;
       }
     });
@@ -457,7 +461,8 @@ export function GuestManager() {
 
   const totalSpend = guests.reduce((s, g) => s + parseFloat(g.total_spent), 0);
   const vipCount = guests.filter(g => getTier(g) === 'vip').length;
-  const avgSpend = guests.length > 0 ? totalSpend / guests.length : 0;
+  const guestsWithVisits = guests.filter(g => g.completed_visits > 0);
+  const avgSpend = guestsWithVisits.length > 0 ? totalSpend / guestsWithVisits.length : 0;
 
   const sortLabels: Record<SortField, string> = {
     last_visit: 'Letzter Besuch',
