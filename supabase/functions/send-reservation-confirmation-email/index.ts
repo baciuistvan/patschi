@@ -245,8 +245,8 @@ Deno.serve(async (req: Request) => {
 
                 <!-- Logo header -->
                 <tr>
-                  <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
-                    <img src="${logoUrl}" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+                  <td style="background-color:#1e1e1e;padding:28px 40px 20px 40px;text-align:center;">
+                    <img src="${logoUrl}" alt="Patschi Serfaus" width="120" style="max-width:120px;height:auto;display:block;margin:0 auto 12px auto;" />
                     <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">${headerSubtitle}</p>
                   </td>
                 </tr>
@@ -392,9 +392,14 @@ Deno.serve(async (req: Request) => {
                 <!-- Footer -->
                 <tr>
                   <td style="padding:28px 40px 32px 40px;text-align:center;border-top:1px solid #ede8e0;">
-                    <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settingsMap.smtp_from_name || 'Patschi Serfaus'}</p>
-                    <p style="margin:0 0 12px 0;font-size:13px;color:#9a948e;">${settingsMap.smtp_from_email || ''}</p>
-                    <p style="margin:0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
+                    <p style="margin:0 0 2px 0;font-size:14px;font-weight:700;color:#1e1e1e;">${settingsMap.smtp_from_name || 'Patschi Serfaus'}</p>
+                    <p style="margin:0 0 10px 0;font-size:11px;color:#b8b2aa;letter-spacing:0.05em;">Patschi &bull; by K&ouml;hle</p>
+                    <p style="margin:0;font-size:12px;color:#9a948e;line-height:1.8;">
+                      <strong style="color:#5a5550;">Kontakt</strong><br>
+                      Email: <a href="mailto:info@patschi.at" style="color:#b8924a;text-decoration:none;">info@patschi.at</a><br>
+                      Tel: +43 (0) 5476 6290<br>
+                      Dorfbahnstra&szlig;e 82, 6534 Serfaus
+                    </p>
                   </td>
                 </tr>
 
