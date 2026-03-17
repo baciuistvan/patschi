@@ -121,9 +121,6 @@ export function SystemSelector({ onSelectSystem }: SystemSelectorProps) {
           style={{ transition: 'opacity 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s, transform 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s' }}
           className={`mb-20 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}
         >
-          <p className="text-xs font-semibold tracking-widest text-slate-400 dark:text-slate-500 uppercase mb-4">
-            {t('app.title')}
-          </p>
           <h2 className="text-5xl sm:text-6xl font-bold text-slate-900 dark:text-white tracking-tight leading-none mb-4">
             {t('system_selector.title')}
           </h2>
