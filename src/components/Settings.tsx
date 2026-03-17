@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Code, CreditCard, Clock, Mail, Upload, TrendingDown, LayoutGrid, ScrollText } from 'lucide-react';
+import { Building2, Code, CreditCard, Clock, Mail, Upload, LayoutGrid, ScrollText } from 'lucide-react';
 import { RoomSettings } from './RoomSettings';
 import { WidgetSettings } from './WidgetSettings';
 import { StripeSettings } from './StripeSettings';
@@ -7,12 +7,11 @@ import { BookingHours } from './BookingHours';
 import { EmailSettings } from './EmailSettings';
 import HostingConfiguration from './HostingConfiguration';
 import FileUploadManager from './FileUploadManager';
-import { AbandonedReservations } from './AbandonedReservations';
 import { FloorPlanManager } from './FloorPlanManager';
 import { SystemLogs } from './SystemLogs';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type SettingsTab = 'rooms' | 'floor-plan' | 'widget' | 'stripe' | 'hours' | 'email' | 'hosting' | 'abandoned' | 'logs';
+type SettingsTab = 'rooms' | 'floor-plan' | 'widget' | 'stripe' | 'hours' | 'email' | 'hosting' | 'logs';
 
 interface SettingsOption {
   id: SettingsTab;
@@ -32,7 +31,6 @@ export function Settings() {
     { id: 'widget', icon: Code, label: t('settings.widget') },
     { id: 'stripe', icon: CreditCard, label: t('settings.stripe') },
     { id: 'hours', icon: Clock, label: t('settings.booking_hours') },
-    { id: 'abandoned', icon: TrendingDown, label: 'Abgebrochen' },
     { id: 'email', icon: Mail, label: t('settings.email') },
     { id: 'hosting', icon: Upload, label: 'Hosting', showBadge: hasHostingConfig },
     { id: 'logs', icon: ScrollText, label: 'Protokoll' },
@@ -76,7 +74,6 @@ export function Settings() {
         {activeTab === 'widget' && <WidgetSettings />}
         {activeTab === 'stripe' && <StripeSettings />}
         {activeTab === 'hours' && <BookingHours />}
-        {activeTab === 'abandoned' && <AbandonedReservations />}
         {activeTab === 'email' && <EmailSettings />}
         {activeTab === 'hosting' && (
           <div className="space-y-6">

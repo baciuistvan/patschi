@@ -223,7 +223,7 @@ export function ReservationManager() {
 
   const [reservations, setReservations] = useState<ReservationWithTable[]>([]);
   const [allReservationsForConflicts, setAllReservationsForConflicts] = useState<ReservationWithTable[]>([]);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly' | 'payment_link'>('monthly');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'today' | 'date' | 'monthly' | 'payment_link' | 'abandoned'>('monthly');
   const [showLogs, setShowLogs] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<ReservationWithTable | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
@@ -426,34 +426,53 @@ export function ReservationManager() {
     else if (filter === 'date' && selectedDate) query = query.eq('reservation_date', selectedDate);
     else if (filter === 'payment_link') query = query.not('payment_link_url', 'is', null).neq('payment_status', 'paid');
 
-    const { data, error } = await query;
     let formatted: any[] = [];
-    if (!error && data) {
-      formatted = data.map(r => ({ ...r, reservation_tables: r.reservation_tables as any }));
-    }
 
-    if (filter === 'payment_link') {
+    if (filter === 'abandoned') {
       const { data: abandonedData, error: abandonedError } = await supabase
         .from('abandoned_reservations')
         .select('*')
-        .eq('payment_link_sent', true)
-        .is('recovery_reservation_id', null)
         .order('reservation_date', { ascending: true });
 
       if (!abandonedError && abandonedData) {
-        const abandonedFormatted = abandonedData.map(a => ({
+        formatted = abandonedData.map(a => ({
           id: a.id, customer_name: a.customer_name, customer_email: a.customer_email,
           customer_phone: a.customer_phone, reservation_date: a.reservation_date,
           reservation_time: a.reservation_time, party_size: a.party_size, room_id: a.room_id,
           status: 'pending' as const, payment_status: 'unpaid', booking_method: 'payment_link',
-          created_at: a.created_at, notes: 'Zahlungslink gesendet - wartet auf Zahlung',
+          created_at: a.created_at, notes: a.payment_link_sent ? 'Zahlungslink gesendet - wartet auf Zahlung' : 'Abgebrochen ohne Zahlung',
           reservation_tables: [], is_abandoned: true,
         }));
-        formatted = [...formatted, ...abandonedFormatted];
-        formatted.sort((a, b) => {
-          const dc = a.reservation_date.localeCompare(b.reservation_date);
-          return dc !== 0 ? dc : a.reservation_time.localeCompare(b.reservation_time);
-        });
+      }
+    } else {
+      const { data, error } = await query;
+      if (!error && data) {
+        formatted = data.map(r => ({ ...r, reservation_tables: r.reservation_tables as any }));
+      }
+
+      if (filter === 'payment_link') {
+        const { data: abandonedData, error: abandonedError } = await supabase
+          .from('abandoned_reservations')
+          .select('*')
+          .eq('payment_link_sent', true)
+          .is('recovery_reservation_id', null)
+          .order('reservation_date', { ascending: true });
+
+        if (!abandonedError && abandonedData) {
+          const abandonedFormatted = abandonedData.map(a => ({
+            id: a.id, customer_name: a.customer_name, customer_email: a.customer_email,
+            customer_phone: a.customer_phone, reservation_date: a.reservation_date,
+            reservation_time: a.reservation_time, party_size: a.party_size, room_id: a.room_id,
+            status: 'pending' as const, payment_status: 'unpaid', booking_method: 'payment_link',
+            created_at: a.created_at, notes: 'Zahlungslink gesendet - wartet auf Zahlung',
+            reservation_tables: [], is_abandoned: true,
+          }));
+          formatted = [...formatted, ...abandonedFormatted];
+          formatted.sort((a, b) => {
+            const dc = a.reservation_date.localeCompare(b.reservation_date);
+            return dc !== 0 ? dc : a.reservation_time.localeCompare(b.reservation_time);
+          });
+        }
       }
     }
 
@@ -832,6 +851,7 @@ export function ReservationManager() {
     { key: 'upcoming' as const, label: 'Bevorstehend' },
     { key: 'monthly' as const, label: 'Monatlich' },
     { key: 'all' as const, label: 'Alle' },
+    { key: 'abandoned' as const, label: 'Abgebrochen' },
   ];
 
   const TableGrid = ({ excludeId }: { excludeId?: string }) => (
