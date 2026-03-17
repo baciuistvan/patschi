@@ -116,7 +116,7 @@ Deno.serve(async (req: Request) => {
                 <!-- Logo header -->
                 <tr>
                   <td style="background-color:#1e1e1e;padding:28px 40px 20px 40px;text-align:center;">
-                    <img src="https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png" alt="Patschi Serfaus" width="120" style="max-width:120px;height:auto;display:block;margin:0 auto 12px auto;" />
+                    <img src="https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png" alt="Patschi Serfaus" width="180" style="max-width:180px;height:auto;display:block;margin:0 auto 12px auto;" />
                     <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">Geschenkgutschein</p>
                   </td>
                 </tr>
@@ -308,7 +308,7 @@ Wir freuen uns auf Ihren Besuch!
                 <!-- Logo header -->
                 <tr>
                   <td style="background-color:#1e1e1e;padding:28px 40px 20px 40px;text-align:center;">
-                    <img src="https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png" alt="Patschi Serfaus" width="120" style="max-width:120px;height:auto;display:block;margin:0 auto 12px auto;" />
+                    <img src="https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-Logo-neu-transparent-e1757582721442.png" alt="Patschi Serfaus" width="180" style="max-width:180px;height:auto;display:block;margin:0 auto 12px auto;" />
                     <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">Kaufbest&auml;tigung</p>
                   </td>
                 </tr>

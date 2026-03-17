@@ -12,7 +12,7 @@ const LOGO_URL = "https://patschi.at/wp-content/uploads/2023/04/cropped-Patschi-
 const emailHeader = (subtitle: string) => `
   <tr>
     <td style="background-color:#1e1e1e;padding:36px 40px 28px 40px;text-align:center;">
-      <img src="${LOGO_URL}" alt="Patschi Serfaus" width="200" style="max-width:200px;height:auto;display:block;margin:0 auto 16px auto;" />
+      <img src="${LOGO_URL}" alt="Patschi Serfaus" width="180" style="max-width:180px;height:auto;display:block;margin:0 auto 16px auto;" />
       <p style="margin:0;font-size:12px;color:#b8924a;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;">${subtitle}</p>
     </td>
   </tr>
