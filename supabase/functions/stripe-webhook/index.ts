@@ -62,20 +62,36 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    let event: Stripe.Event;
-    if (webhookSecret) {
+    let event: Stripe.Event | null = null;
+
+    const allSecrets = Array.from(new Set([
+      webhookSecret,
+      settingsMap["stripe_test_webhook_secret"],
+      settingsMap["stripe_live_webhook_secret"],
+      settingsMap["stripe_webhook_secret"],
+    ].filter(Boolean))) as string[];
+
+    for (const secret of allSecrets) {
       try {
-        event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      } catch (err) {
-        console.error("Webhook signature verification failed:", err);
+        event = await stripe.webhooks.constructEventAsync(body, signature, secret);
+        console.log("Signature verified with secret ending in:", secret.slice(-6));
+        break;
+      } catch (_err) {
+        // try next secret
+      }
+    }
+
+    if (!event) {
+      if (allSecrets.length === 0) {
+        console.warn("No webhook secrets configured — parsing event without verification");
+        event = JSON.parse(body) as Stripe.Event;
+      } else {
+        console.error("Signature verification failed against all known secrets");
         return new Response(JSON.stringify({ error: "Signature verification failed" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-    } else {
-      console.warn("No webhook secret configured — skipping signature verification");
-      event = JSON.parse(body) as Stripe.Event;
     }
 
     console.log("stripe-webhook event:", event.type);
