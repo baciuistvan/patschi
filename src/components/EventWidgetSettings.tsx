@@ -4,8 +4,7 @@ import { Copy, Check, Code, Globe, FileCode } from 'lucide-react';
 export function EventWidgetSettings() {
   const [copied, setCopied] = useState<string | null>(null);
 
-  const origin = window.location.origin;
-  const widgetUrl = `${origin}/events-widget.html`;
+  const widgetUrl = `https://patschi.at/events-widget.html`;
 
   const iframeCode = `<!-- Veranstaltungen Widget -->
 <iframe
