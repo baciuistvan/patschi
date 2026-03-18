@@ -134,7 +134,7 @@ Deno.serve(async (req: Request) => {
     page.drawText(gt, { x: (W - bold.widthOfTextAtSize(gt, 32)) / 2, y: H - mm(100), size: 32, font: bold, color: rgb(0.86, 0.15, 0.15) });
 
     const balance = parseFloat(String(giftCard.current_balance)).toFixed(2);
-    const amt = `\u20AC${balance}`;
+    const amt = `\u20AC  ${balance}`;
     page.drawText(amt, { x: (W - bold.widthOfTextAtSize(amt, 64)) / 2, y: H - mm(135), size: 64, font: bold, color: rgb(0, 0, 0) });
 
     const bxM = mm(20), bxW = W - bxM * 2, bxH = mm(22), bxY = H - mm(170);
