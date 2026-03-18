@@ -209,6 +209,21 @@ export async function prepareJobsWidget(): Promise<FileItem[]> {
   }
 }
 
+export async function prepareEventsWidget(): Promise<FileItem[]> {
+  try {
+    const htmlContent = await fetchFileContent('/events-widget.html');
+    return [
+      {
+        remotePath: 'events-widget.html',
+        content: htmlContent,
+      },
+    ];
+  } catch (error) {
+    console.error('Error preparing Events Widget:', error);
+    throw new Error('Failed to prepare Events Widget');
+  }
+}
+
 export function calculateTotalSize(files: FileItem[]): number {
   return files.reduce((total, file) => {
     const size = new Blob([file.content]).size;

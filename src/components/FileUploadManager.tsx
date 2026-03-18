@@ -14,6 +14,7 @@ import {
   prepareReservationWidget,
   prepareGiftCardWidget,
   prepareJobsWidget,
+  prepareEventsWidget,
   prepareTestUpload,
   calculateTotalSize,
   formatFileSize,
@@ -86,6 +87,13 @@ export default function FileUploadManager({ hasConfiguration, defaultSelected }:
       description: 'Job listings widget for displaying open positions',
       files: ['jobs-widget.html'],
       prepareFunction: prepareJobsWidget,
+    },
+    {
+      id: 'events-widget',
+      name: 'Veranstaltungen Widget',
+      description: 'Events widget for displaying upcoming events and parties',
+      files: ['events-widget.html'],
+      prepareFunction: prepareEventsWidget,
     },
   ];
 
