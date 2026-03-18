@@ -192,7 +192,11 @@ export function GiftCardWidget() {
       }
 
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+        if (window.top && window.top !== window) {
+          window.top.location.href = data.checkoutUrl;
+        } else {
+          window.location.href = data.checkoutUrl;
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
