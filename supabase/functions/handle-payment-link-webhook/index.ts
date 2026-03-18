@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.39.0";
+import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,140 +16,82 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const body = await req.text();
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const signature = req.headers.get("stripe-signature");
-    const body = await req.text();
-
-    // Get webhook secret from settings
-    const { data: webhookSecretData } = await supabase
+    const { data: settings } = await supabase
       .from("settings")
-      .select("value")
-      .eq("key", "stripe_webhook_secret")
-      .maybeSingle();
+      .select("key, value")
+      .in("key", ["stripe_mode", "stripe_live_secret_key", "stripe_test_secret_key", "stripe_live_webhook_secret", "stripe_test_webhook_secret", "stripe_webhook_secret"]);
 
-    const webhookSecret = webhookSecretData?.value;
+    const settingsMap: Record<string, string> = {};
+    settings?.forEach((s: { key: string; value: string }) => { settingsMap[s.key] = s.value; });
 
-    if (!webhookSecret) {
-      console.error("Webhook secret not configured");
-      return new Response(
-        JSON.stringify({ error: "Webhook secret not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    const stripeMode = settingsMap["stripe_mode"] || "live";
+    const stripeKey = stripeMode === "live"
+      ? settingsMap["stripe_live_secret_key"]
+      : settingsMap["stripe_test_secret_key"];
+    const webhookSecret = stripeMode === "live"
+      ? (settingsMap["stripe_live_webhook_secret"] || settingsMap["stripe_webhook_secret"])
+      : (settingsMap["stripe_test_webhook_secret"] || settingsMap["stripe_webhook_secret"]);
+
+    if (!stripeKey) {
+      console.error("Stripe secret key not configured for mode:", stripeMode);
+      return new Response(JSON.stringify({ received: true, warning: "Stripe key not configured" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
+
+    const signature = req.headers.get("stripe-signature");
     if (!signature) {
       console.error("No stripe-signature header");
-      return new Response(
-        JSON.stringify({ error: "No signature provided" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "No signature provided" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Verify webhook signature
-    let event;
+    if (!webhookSecret) {
+      console.error("Webhook secret not configured for mode:", stripeMode);
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let event: Stripe.Event;
     try {
-      // Manual signature verification since we can't use Stripe SDK in Deno edge functions
-      const crypto = globalThis.crypto.subtle;
-      const encoder = new TextEncoder();
-
-      // Extract timestamp and signatures from header
-      const signatureParts = signature.split(',');
-      let timestamp = '';
-      const signatures: string[] = [];
-
-      for (const part of signatureParts) {
-        const [key, value] = part.split('=');
-        if (key === 't') timestamp = value;
-        if (key === 'v1') signatures.push(value);
-      }
-
-      if (!timestamp || signatures.length === 0) {
-        throw new Error("Invalid signature format");
-      }
-
-      // Check timestamp tolerance (5 minutes)
-      const currentTime = Math.floor(Date.now() / 1000);
-      const timestampNum = parseInt(timestamp, 10);
-      if (currentTime - timestampNum > 300) {
-        throw new Error("Timestamp too old");
-      }
-
-      // Construct signed payload
-      const signedPayload = `${timestamp}.${body}`;
-
-      // Compute expected signature
-      // Stripe webhook secrets are "whsec_" + base64, so decode the base64 part
-      const base64Part = webhookSecret.startsWith('whsec_') ? webhookSecret.slice(6) : webhookSecret;
-      const keyBytes = Uint8Array.from(atob(base64Part), c => c.charCodeAt(0));
-      const keyData = keyBytes;
-      const messageData = encoder.encode(signedPayload);
-
-      const cryptoKey = await crypto.importKey(
-        'raw',
-        keyData,
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
-
-      const signatureBuffer = await crypto.sign('HMAC', cryptoKey, messageData);
-      const signatureArray = Array.from(new Uint8Array(signatureBuffer));
-      const expectedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-      // Compare with provided signatures
-      const signatureValid = signatures.some(sig => sig === expectedSignature);
-
-      if (!signatureValid) {
-        console.error("Signature verification failed");
-        return new Response(
-          JSON.stringify({ error: "Invalid signature" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      console.log("✓ Webhook signature verified");
-      event = JSON.parse(body);
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      console.log("Webhook signature verified. Event:", event.type);
     } catch (err) {
-      console.error("Signature verification error:", err);
-      return new Response(
-        JSON.stringify({ error: "Signature verification failed" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      console.error("Webhook signature verification failed:", err);
+      return new Response(JSON.stringify({ error: "Signature verification failed" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log("Webhook event received:", event.type);
-
-    // Handle checkout.session.completed event
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const paymentIntentId = session.payment_intent;
+      const session = event.data.object as Stripe.Checkout.Session;
+      const paymentIntentId = session.payment_intent as string;
       const customerEmail = session.customer_details?.email;
       const metadata = session.metadata || {};
 
       console.log("Payment completed for:", customerEmail);
       console.log("Payment intent:", paymentIntentId);
+      console.log("Session payment_link:", session.payment_link);
       console.log("Session metadata:", metadata);
 
       let reservation = null;
       let findError = null;
 
-      // First try to find by booking_code from metadata (most reliable for payment links)
       if (metadata.booking_code) {
         console.log("Looking for reservation by booking_code:", metadata.booking_code);
         const { data, error } = await supabase
@@ -157,12 +100,10 @@ Deno.serve(async (req: Request) => {
           .eq("booking_code", metadata.booking_code)
           .eq("payment_status", "unpaid")
           .maybeSingle();
-
         reservation = data;
         findError = error;
       }
 
-      // If not found by booking code, try by reservation_id from metadata
       if (!reservation && metadata.reservation_id) {
         console.log("Looking for reservation by reservation_id:", metadata.reservation_id);
         const { data, error } = await supabase
@@ -171,12 +112,10 @@ Deno.serve(async (req: Request) => {
           .eq("id", metadata.reservation_id)
           .eq("payment_status", "unpaid")
           .maybeSingle();
-
         reservation = data;
         findError = error;
       }
 
-      // If still not found, try by payment_link_id (Stripe payment links set this on the session)
       if (!reservation && session.payment_link) {
         console.log("Looking for reservation by payment_link_id:", session.payment_link);
         const { data, error } = await supabase
@@ -185,40 +124,37 @@ Deno.serve(async (req: Request) => {
           .eq("payment_link_id", session.payment_link)
           .eq("payment_status", "unpaid")
           .maybeSingle();
-
         reservation = data;
         findError = error;
       }
 
-      // If still not found, try by payment intent or customer email
       if (!reservation && (paymentIntentId || customerEmail)) {
         console.log("Looking for reservation by payment_intent or email");
+        const orFilter = [
+          paymentIntentId ? `stripe_payment_intent_id.eq.${paymentIntentId}` : null,
+          customerEmail ? `customer_email.eq.${customerEmail}` : null,
+        ].filter(Boolean).join(',');
+
         const { data: reservations, error } = await supabase
           .from("reservations")
           .select("*")
-          .or(`stripe_payment_intent_id.eq.${paymentIntentId},customer_email.eq.${customerEmail}`)
+          .or(orFilter)
           .eq("payment_status", "unpaid")
           .order("created_at", { ascending: false })
           .limit(1);
-
         reservation = reservations && reservations.length > 0 ? reservations[0] : null;
         findError = error;
       }
 
       if (findError) {
         console.error("Error finding reservation:", findError);
-        return new Response(
-          JSON.stringify({ error: "Database error" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+        return new Response(JSON.stringify({ error: "Database error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       if (reservation) {
-
-        // Update the reservation to mark as paid and confirmed
         const { error: updateError } = await supabase
           .from("reservations")
           .update({
@@ -232,99 +168,60 @@ Deno.serve(async (req: Request) => {
 
         if (updateError) {
           console.error("Error updating reservation:", updateError);
-          return new Response(
-            JSON.stringify({ error: "Failed to update reservation" }),
-            {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
+          return new Response(JSON.stringify({ error: "Failed to update reservation" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         console.log("Reservation updated successfully:", reservation.id);
 
-        // Notify admins via push notification
         try {
           await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${supabaseServiceKey}`,
-            },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },
             body: JSON.stringify({ reservation }),
           });
         } catch (notifyError) {
           console.error("[WEBHOOK] Error sending push notification:", notifyError);
         }
 
-        // Send payment confirmation email
         try {
-          const emailUrl = `${supabaseUrl}/functions/v1/send-reservation-confirmation-email`;
-          console.log('[WEBHOOK] Calling email function:', emailUrl);
-          console.log('[WEBHOOK] Reservation ID:', reservation.id);
-
-          const emailResponse = await fetch(emailUrl, {
+          const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-reservation-confirmation-email`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              reservationId: reservation.id,
-              is_payment_confirmation: true,
-            }),
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },
+            body: JSON.stringify({ reservationId: reservation.id, is_payment_confirmation: true }),
           });
-
-          const emailResponseText = await emailResponse.text();
-          console.log('[WEBHOOK] Email function status:', emailResponse.status);
-          console.log('[WEBHOOK] Email function response:', emailResponseText);
-
           if (!emailResponse.ok) {
-            console.error("[WEBHOOK] Failed to send payment confirmation email - Status:", emailResponse.status, "Response:", emailResponseText);
+            console.error("[WEBHOOK] Failed to send confirmation email, status:", emailResponse.status);
           } else {
-            console.log("[WEBHOOK] Payment confirmation email sent successfully");
+            console.log("[WEBHOOK] Confirmation email sent successfully");
           }
         } catch (emailError) {
           console.error("[WEBHOOK] Error calling email function:", emailError);
         }
 
         return new Response(
-          JSON.stringify({
-            success: true,
-            message: "Payment processed successfully",
-            reservationId: reservation.id
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ success: true, message: "Payment processed successfully", reservationId: reservation.id }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } else {
         console.log("No matching reservation found for payment");
         return new Response(
-          JSON.stringify({
-            success: true,
-            message: "No reservation found to update"
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ success: true, message: "No reservation found to update" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
 
-    // Handle payment_intent.succeeded — catches cases where the frontend
-    // successfully charged the customer but crashed before calling create-reservation
     if (event.type === "payment_intent.succeeded") {
-      const paymentIntent = event.data.object;
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
       const paymentIntentId = paymentIntent.id;
       const metadata = paymentIntent.metadata || {};
 
       console.log("[WEBHOOK] payment_intent.succeeded:", paymentIntentId);
       console.log("[WEBHOOK] Metadata:", metadata);
 
-      // Check if a reservation already exists for this payment intent
       const { data: existing } = await supabase
         .from("reservations")
         .select("id, booking_code")
@@ -339,11 +236,10 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Only proceed if we have enough metadata to create a reservation
       const { customer_name, customer_email, reservation_date, reservation_time, party_size } = metadata;
 
       if (!customer_name || !customer_email || !reservation_date || !reservation_time || !party_size) {
-        console.log("[WEBHOOK] Insufficient metadata to auto-create reservation — manual intervention needed");
+        console.log("[WEBHOOK] Insufficient metadata to auto-create reservation");
         console.log("[WEBHOOK] Available metadata keys:", Object.keys(metadata));
         return new Response(
           JSON.stringify({ success: true, message: "Insufficient metadata for auto-creation" }),
@@ -351,7 +247,6 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Generate booking code
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let booking_code = '';
       for (let i = 0; i < 8; i++) {
@@ -394,7 +289,6 @@ Deno.serve(async (req: Request) => {
 
       console.log("[WEBHOOK] Auto-created reservation:", reservation.id, "booking_code:", booking_code);
 
-      // Log the recovery
       try {
         await supabase.from('activity_logs').insert({
           event_type: 'reservation_created',
@@ -408,31 +302,20 @@ Deno.serve(async (req: Request) => {
         });
       } catch (_logErr) { /* non-blocking */ }
 
-      // Send confirmation email
       try {
         await fetch(`${supabaseUrl}/functions/v1/send-reservation-confirmation-email`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            reservationId: reservation.id,
-            is_payment_confirmation: true,
-          }),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },
+          body: JSON.stringify({ reservationId: reservation.id, is_payment_confirmation: true }),
         });
       } catch (emailError) {
         console.error("[WEBHOOK] Error sending confirmation email:", emailError);
       }
 
-      // Notify admins
       try {
         await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },
           body: JSON.stringify({ reservation }),
         });
       } catch (notifyError) {
@@ -445,28 +328,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Return success for other event types
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Webhook received"
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ success: true, message: "Webhook received" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
     console.error("Webhook handler error:", error);
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error"
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
