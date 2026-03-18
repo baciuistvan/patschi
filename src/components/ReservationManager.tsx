@@ -1115,35 +1115,69 @@ export function ReservationManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 no-print">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-600 dark:text-slate-300 tracking-tight">{t('reservations.title')}</h1>
-          <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
-            {getFilteredReservations().length > 0 && <span className="text-slate-600 dark:text-slate-400 font-medium">{getFilteredReservations().length} </span>}
-            Reservierungen
-          </p>
+      {/* Header */}
+      <div className="no-print">
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-600 dark:text-slate-300 tracking-tight">{t('reservations.title')}</h1>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-0.5">
+              {getFilteredReservations().length > 0 && <span className="text-slate-600 dark:text-slate-400 font-medium">{getFilteredReservations().length} </span>}
+              Reservierungen
+            </p>
+          </div>
+          <button
+            onClick={() => { setNewReservation(prev => ({ ...prev, reservation_date: selectedDate || formatDateLocal(new Date()) })); setShowCreateForm(true); }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Neue Reservierung
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Action header menu bar */}
+        <div className="flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <button
             onClick={() => { setFilter('payment_link'); setShowLogs(false); }}
-            className={`relative p-2 rounded-xl transition-all duration-150 ${filter === 'payment_link' && !showLogs ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}
-            title="Zahlung"
+            className={`relative flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'payment_link' && !showLogs ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-amber-600 dark:hover:text-amber-400'}`}
           >
-            <CreditCard className="w-4 h-4" />
-            {unpaidPaymentLinkCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 text-[9px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
-                {unpaidPaymentLinkCount}
-              </span>
-            )}
+            <div className="relative">
+              <CreditCard className="w-5 h-5" />
+              {unpaidPaymentLinkCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 text-[9px] font-bold bg-amber-500 text-white rounded-full flex items-center justify-center">
+                  {unpaidPaymentLinkCount}
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-semibold tracking-wide">Zahlung</span>
           </button>
+
+          <button
+            onClick={() => { setFilter('abandoned'); setShowLogs(false); }}
+            className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'abandoned' && !showLogs ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-orange-600 dark:hover:text-orange-400'}`}
+          >
+            <XCircle className="w-5 h-5" />
+            <span className="text-xs font-semibold tracking-wide">Abgebrochen</span>
+          </button>
+
           <button
             onClick={() => setShowLogs(v => !v)}
-            className={`p-2 rounded-xl transition-all duration-150 ${showLogs ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}
-            title="Protokoll"
+            className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${showLogs ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400'}`}
           >
-            <ScrollText className="w-4 h-4" />
+            <ScrollText className="w-5 h-5" />
+            <span className="text-xs font-semibold tracking-wide">Protokoll</span>
           </button>
-          <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
+
+          <button
+            onClick={() => window.print()}
+            className="flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-200"
+          >
+            <Printer className="w-5 h-5" />
+            <span className="text-xs font-semibold tracking-wide">Drucken</span>
+          </button>
+        </div>
+
+        {/* View mode toggle */}
+        <div className="flex items-center justify-end mt-2">
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5">
             <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all duration-150 ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`} title="Liste">
               <List className="w-4 h-4" />
@@ -1152,16 +1186,6 @@ export function ReservationManager() {
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
-          <button onClick={() => window.print()} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150" title="Drucken">
-            <Printer className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => { setNewReservation(prev => ({ ...prev, reservation_date: selectedDate || formatDateLocal(new Date()) })); setShowCreateForm(true); }}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 dark:bg-emerald-500 hover:bg-emerald-600 dark:hover:bg-emerald-600 text-white dark:text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-sm"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Neue Reservierung
-          </button>
         </div>
       </div>
 
