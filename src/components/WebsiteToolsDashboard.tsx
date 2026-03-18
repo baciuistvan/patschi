@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Globe, Briefcase, Code, Home, LogOut, Sun, Moon, ChevronRight, Plus, RefreshCw, Loader2, Menu, X, ArrowLeft } from 'lucide-react';
+import { Globe, Briefcase, Code, Home, LogOut, Sun, Moon, ChevronRight, Plus, RefreshCw, Loader2, Menu, X, ArrowLeft, CalendarDays, Code2 } from 'lucide-react';
 import { JobListings } from './JobListings';
 import { JobWidgetSettings } from './JobWidgetSettings';
+import { EventListings } from './EventListings';
+import { EventWidgetSettings } from './EventWidgetSettings';
 import { supabase } from '../lib/supabase';
 
-type View = 'home' | 'jobs' | 'widget';
+type View = 'home' | 'jobs' | 'widget' | 'events' | 'events-widget';
 
 interface WebsiteToolsDashboardProps {
   onSwitchSystem?: () => void;
@@ -18,10 +20,17 @@ interface JobStats {
   inactive: number;
 }
 
-const NAV_ITEMS: { view: View; icon: React.ElementType; label: string }[] = [
+interface EventStats {
+  total: number;
+  upcoming: number;
+}
+
+const NAV_ITEMS: { view: View; icon: React.ElementType; label: string; group?: string }[] = [
   { view: 'home', icon: Home, label: 'Übersicht' },
-  { view: 'jobs', icon: Briefcase, label: 'Offene Stellen' },
-  { view: 'widget', icon: Code, label: 'Widget Einbindung' },
+  { view: 'jobs', icon: Briefcase, label: 'Offene Stellen', group: 'Karriere' },
+  { view: 'widget', icon: Code, label: 'Stellen-Widget', group: 'Karriere' },
+  { view: 'events', icon: CalendarDays, label: 'Veranstaltungen', group: 'Events' },
+  { view: 'events-widget', icon: Code2, label: 'Events-Widget', group: 'Events' },
 ];
 
 export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardProps) {
@@ -31,6 +40,7 @@ export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardP
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState<JobStats>({ total: 0, active: 0, inactive: 0 });
+  const [eventStats, setEventStats] = useState<EventStats>({ total: 0, upcoming: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
@@ -40,10 +50,18 @@ export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardP
   const loadStats = async () => {
     setLoadingStats(true);
     try {
-      const { data } = await supabase.from('job_listings').select('is_active');
-      if (data) {
-        const active = data.filter(j => j.is_active).length;
-        setStats({ total: data.length, active, inactive: data.length - active });
+      const [jobRes, eventRes] = await Promise.all([
+        supabase.from('job_listings').select('is_active'),
+        supabase.from('events').select('date, is_active'),
+      ]);
+      if (jobRes.data) {
+        const active = jobRes.data.filter(j => j.is_active).length;
+        setStats({ total: jobRes.data.length, active, inactive: jobRes.data.length - active });
+      }
+      if (eventRes.data) {
+        const today = new Date().toISOString().slice(0, 10);
+        const upcoming = eventRes.data.filter(e => e.is_active && e.date >= today).length;
+        setEventStats({ total: eventRes.data.length, upcoming });
       }
     } catch {
       // ignore
@@ -87,55 +105,112 @@ export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardP
           <p className="text-sm text-slate-400">Lade Daten...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/5 dark:bg-teal-400/10 rounded-full -translate-y-8 translate-x-8" />
-            <div className="relative">
-              <div className="flex items-start justify-between mb-5">
-                <div className="w-11 h-11 bg-teal-50 dark:bg-teal-900/40 rounded-2xl flex items-center justify-center ring-1 ring-teal-100 dark:ring-teal-800/50">
-                  <Briefcase className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Karriere</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/5 dark:bg-teal-400/10 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 bg-teal-50 dark:bg-teal-900/40 rounded-2xl flex items-center justify-center ring-1 ring-teal-100 dark:ring-teal-800/50">
+                    <Briefcase className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/40 px-2.5 py-1 rounded-full">
+                    Gesamt
+                  </span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/40 px-2.5 py-1 rounded-full">
-                  Gesamt
-                </span>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stats.total}</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">Stellenanzeigen</p>
               </div>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stats.total}</p>
-              <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">Stellenanzeigen</p>
+            </div>
+
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/5 dark:bg-emerald-400/10 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 bg-emerald-50 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center ring-1 ring-emerald-100 dark:ring-emerald-800/50">
+                    <Globe className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 px-2.5 py-1 rounded-full">
+                    Aktiv
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stats.active}</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">Öffentlich sichtbar</p>
+              </div>
+            </div>
+
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+              onClick={() => setCurrentView('widget')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/5 dark:bg-blue-400/10 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 bg-blue-50 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center ring-1 ring-blue-100 dark:ring-blue-800/50">
+                    <Code className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                </div>
+                <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Stellen-Widget</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">iFrame-Code anzeigen</p>
+              </div>
             </div>
           </div>
 
-          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/5 dark:bg-emerald-400/10 rounded-full -translate-y-8 translate-x-8" />
-            <div className="relative">
-              <div className="flex items-start justify-between mb-5">
-                <div className="w-11 h-11 bg-emerald-50 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center ring-1 ring-emerald-100 dark:ring-emerald-800/50">
-                  <Globe className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide pt-2">Veranstaltungen</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 dark:bg-amber-400/10 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 bg-amber-50 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center ring-1 ring-amber-100 dark:ring-amber-800/50">
+                    <CalendarDays className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 px-2.5 py-1 rounded-full">
+                    Gesamt
+                  </span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 px-2.5 py-1 rounded-full">
-                  Aktiv
-                </span>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{eventStats.total}</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">Events</p>
               </div>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{stats.active}</p>
-              <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">Öffentlich sichtbar</p>
             </div>
-          </div>
 
-          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-            onClick={() => setCurrentView('widget')}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/5 dark:bg-blue-400/10 rounded-full -translate-y-8 translate-x-8" />
-            <div className="relative">
-              <div className="flex items-start justify-between mb-5">
-                <div className="w-11 h-11 bg-blue-50 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center ring-1 ring-blue-100 dark:ring-blue-800/50">
-                  <Code className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-400/5 dark:bg-orange-400/10 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 bg-orange-50 dark:bg-orange-900/40 rounded-2xl flex items-center justify-center ring-1 ring-orange-100 dark:ring-orange-800/50">
+                    <CalendarDays className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/40 px-2.5 py-1 rounded-full">
+                    Kommend
+                  </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{eventStats.upcoming}</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">Kommende Events</p>
               </div>
-              <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Widget einbinden</p>
-              <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">iFrame-Code anzeigen</p>
+            </div>
+
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+              onClick={() => setCurrentView('events-widget')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-400/5 dark:bg-blue-400/10 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-11 h-11 bg-blue-50 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center ring-1 ring-blue-100 dark:ring-blue-800/50">
+                    <Code2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                </div>
+                <p className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Events-Widget</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">iFrame-Code anzeigen</p>
+              </div>
             </div>
           </div>
         </div>
@@ -165,7 +240,33 @@ export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardP
               <Code className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Widget einbinden</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Stellen-Widget einbinden</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">iFrame-Code &amp; Anleitung</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 ml-auto group-hover:translate-x-0.5 transition-transform" />
+          </button>
+          <button
+            onClick={() => setCurrentView('events')}
+            className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-amber-200 dark:hover:border-amber-500/30 hover:bg-amber-50/50 dark:hover:bg-amber-500/5 transition-all group text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
+              <CalendarDays className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Veranstaltungen verwalten</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">Events erstellen &amp; bearbeiten</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 ml-auto group-hover:translate-x-0.5 transition-transform" />
+          </button>
+          <button
+            onClick={() => setCurrentView('events-widget')}
+            className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-all group text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+              <Code2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Events-Widget einbinden</p>
               <p className="text-xs text-slate-400 dark:text-slate-500">iFrame-Code &amp; Anleitung</p>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 ml-auto group-hover:translate-x-0.5 transition-transform" />
@@ -190,33 +291,38 @@ export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardP
           {!sidebarCollapsed && (
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">Website Tools</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">Stellenanzeigen & Widget</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">Stellen, Events & Widgets</p>
             </div>
           )}
         </div>
 
         <nav className="flex-1 py-4 px-2 overflow-y-auto space-y-0.5">
-          {NAV_ITEMS.map(({ view, icon: Icon, label }) => {
+          {NAV_ITEMS.map(({ view, icon: Icon, label, group }, idx) => {
             const active = currentView === view;
+            const showGroup = !sidebarCollapsed && group && (idx === 0 || NAV_ITEMS[idx - 1].group !== group);
             return (
-              <button
-                key={view}
-                onClick={() => setCurrentView(view)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${
-                  active
-                    ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
-                }`}
-                title={sidebarCollapsed ? label : undefined}
-              >
-                <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${active ? 'text-teal-600 dark:text-teal-400' : ''}`} />
-                {!sidebarCollapsed && (
-                  <span className="text-sm font-medium truncate">{label}</span>
+              <div key={view}>
+                {showGroup && (
+                  <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-600">{group}</p>
                 )}
-                {active && !sidebarCollapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-500" />
-                )}
-              </button>
+                <button
+                  onClick={() => setCurrentView(view)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${
+                    active
+                      ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400'
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
+                  }`}
+                  title={sidebarCollapsed ? label : undefined}
+                >
+                  <Icon className={`w-4.5 h-4.5 flex-shrink-0 ${active ? 'text-teal-600 dark:text-teal-400' : ''}`} />
+                  {!sidebarCollapsed && (
+                    <span className="text-sm font-medium truncate">{label}</span>
+                  )}
+                  {active && !sidebarCollapsed && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-500" />
+                  )}
+                </button>
+              </div>
             );
           })}
         </nav>
@@ -353,6 +459,8 @@ export function WebsiteToolsDashboard({ onSwitchSystem }: WebsiteToolsDashboardP
           {currentView === 'home' && <HomeView />}
           {currentView === 'jobs' && <JobListings />}
           {currentView === 'widget' && <JobWidgetSettings />}
+          {currentView === 'events' && <EventListings />}
+          {currentView === 'events-widget' && <EventWidgetSettings />}
         </main>
       </div>
     </div>
