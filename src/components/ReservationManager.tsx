@@ -851,7 +851,6 @@ export function ReservationManager() {
     { key: 'upcoming' as const, label: 'Bevorstehend' },
     { key: 'monthly' as const, label: 'Monatlich' },
     { key: 'all' as const, label: 'Alle' },
-    { key: 'abandoned' as const, label: 'Abgebrochen' },
   ];
 
   const TableGrid = ({ excludeId }: { excludeId?: string }) => (
