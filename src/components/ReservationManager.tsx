@@ -1163,7 +1163,7 @@ export function ReservationManager() {
             className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'abandoned' && !showLogs ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-orange-600 dark:hover:text-orange-400'}`}
           >
             <XCircle className="w-5 h-5" />
-            <span className="text-xs font-semibold tracking-wide">Abgebrochen</span>
+            <span className="text-xs font-semibold tracking-wide">Abgebrochene Online Reservierungen</span>
           </button>
 
           <button
