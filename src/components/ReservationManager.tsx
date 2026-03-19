@@ -702,7 +702,16 @@ export function ReservationManager() {
     setIsUpdating(true);
     const { error } = await supabase.from('reservations').update({ payment_status: 'paid', status: 'confirmed' }).eq('id', editingReservation.id);
     if (error) { alert('Fehler beim Aktualisieren'); }
-    else { setEditingReservation({ ...editingReservation, payment_status: 'paid', status: 'confirmed' }); loadReservations(); }
+    else {
+      setEditingReservation({ ...editingReservation, payment_status: 'paid', status: 'confirmed' });
+      loadReservations();
+      supabase.from('notifications').insert({
+        type: 'payment_paid',
+        title: 'Zahlungslink bezahlt',
+        message: `${editingReservation.customer_name} – ${editingReservation.party_size} Gäste, ${editingReservation.reservation_date} um ${editingReservation.reservation_time} Uhr`,
+        related_id: editingReservation.id,
+      }).then(() => {});
+    }
     setIsUpdating(false);
   };
 

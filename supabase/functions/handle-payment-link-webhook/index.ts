@@ -177,6 +177,15 @@ Deno.serve(async (req: Request) => {
         console.log("Reservation updated successfully:", reservation.id);
 
         try {
+          await supabase.from('notifications').insert({
+            type: 'payment_paid',
+            title: 'Zahlungslink bezahlt',
+            message: `${reservation.customer_name} – ${reservation.party_size} Gäste, ${reservation.reservation_date} um ${reservation.reservation_time} Uhr`,
+            related_id: reservation.id,
+          });
+        } catch (_notifErr) { /* non-blocking */ }
+
+        try {
           await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceKey}` },

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, CircleUser as UserCircle, ChevronRight, Shield } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 import { DashboardHome } from './DashboardHome';
 import { ReservationManager } from './ReservationManager';
 import { Settings } from './Settings';
@@ -106,6 +107,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
 
         {/* Bottom controls */}
         <div className="p-2 pb-4 space-y-0.5">
+          <NotificationBell collapsed={sidebarCollapsed} />
           {onSwitchSystem && (
             <button
               onClick={onSwitchSystem}

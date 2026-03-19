@@ -125,6 +125,15 @@ Deno.serve(async (req: Request) => {
         console.log("Gift card created and activated:", giftCardId);
 
         try {
+          await supabase.from('notifications').insert({
+            type: 'gift_card_purchased',
+            title: 'Gutschein gekauft',
+            message: `${meta.buyer_name} kaufte einen Gutschein über €${amount.toFixed(2)}${meta.recipient_name ? ` für ${meta.recipient_name}` : ''}`,
+            related_id: giftCardId,
+          });
+        } catch (_notifErr) { /* non-blocking */ }
+
+        try {
           const pdfResponse = await fetch(`${supabaseUrl}/functions/v1/generate-gift-card-pdf`, {
             method: "POST",
             headers: {

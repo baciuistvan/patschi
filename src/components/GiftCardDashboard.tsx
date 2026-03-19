@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Gift, Plus, Home, CreditCard, Settings as SettingsIcon, BarChart, DollarSign, Loader2, RefreshCw, LogOut, Sun, Moon, ChevronRight, Calendar, Users, Shield } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 import { CreateGiftCard } from './CreateGiftCard';
 import { ManageGiftCards } from './ManageGiftCards';
 import { SettingsPage } from './SettingsPage';
@@ -301,6 +302,7 @@ export function GiftCardDashboard({ onSwitchSystem }: GiftCardDashboardProps) {
 
         {/* Bottom controls */}
         <div className="p-2 pb-4 space-y-0.5">
+          <NotificationBell collapsed={sidebarCollapsed} />
           {onSwitchSystem && (
             <button
               onClick={onSwitchSystem}

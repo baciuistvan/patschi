@@ -416,6 +416,16 @@ Deno.serve(async (req: Request) => {
       });
     } catch (_logErr) { /* non-blocking */ }
 
+    // Write in-app notification
+    try {
+      await supabase.from('notifications').insert({
+        type: 'online_reservation',
+        title: 'Neue Online-Reservierung',
+        message: `${customer_name} – ${party_size} Gäste, ${reservation_date} um ${reservation_time} Uhr`,
+        related_id: reservation.id,
+      });
+    } catch (_notifErr) { /* non-blocking */ }
+
     // Notify admins via push notification
     try {
       await fetch(`${supabaseUrl}/functions/v1/notify-admins-new-reservation`, {

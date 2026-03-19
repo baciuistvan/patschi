@@ -119,6 +119,13 @@ export function CreateGiftCard() {
         console.error('PDF generation/upload failed:', pdfError);
       }
 
+      supabase.from('notifications').insert({
+        type: 'gift_card_purchased',
+        title: 'Gutschein erstellt',
+        message: `${adminUser?.full_name || 'Admin'} erstellte einen Gutschein über €${finalAmount.toFixed(2)}${formData.recipientName ? ` für ${formData.recipientName}` : ''}`,
+        related_id: giftCard.id,
+      }).then(() => {});
+
       setCreatedCode(code);
       setCreatedGiftCardId(giftCard.id);
       setSuccess(true);
