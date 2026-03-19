@@ -1136,6 +1136,14 @@ export function ReservationManager() {
         {/* Action header menu bar */}
         <div className="flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <button
+            onClick={() => { setFilter('monthly'); setShowLogs(false); }}
+            className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${!showLogs && filter !== 'payment_link' && filter !== 'abandoned' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
+          >
+            <CalendarDays className="w-5 h-5" />
+            <span className="text-xs font-semibold tracking-wide">Reservierungen</span>
+          </button>
+
+          <button
             onClick={() => { setFilter('payment_link'); setShowLogs(false); }}
             className={`relative flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'payment_link' && !showLogs ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-amber-600 dark:hover:text-amber-400'}`}
           >
