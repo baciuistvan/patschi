@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, CircleUser as UserCircle, ChevronRight, Shield } from 'lucide-react';
-import { NotificationBell } from './NotificationBell';
+import { NotificationBell, MobileNotificationBell } from './NotificationBell';
 import { DashboardHome } from './DashboardHome';
 import { ReservationManager } from './ReservationManager';
 import { Settings } from './Settings';
@@ -211,6 +211,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
             </button>
           );
         })}
+        <MobileNotificationBell />
         <button
           onClick={() => setMobileMenuOpen(o => !o)}
           className="flex-1 flex flex-col items-center py-2 gap-0.5 text-slate-400 dark:text-slate-500"
