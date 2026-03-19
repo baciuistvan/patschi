@@ -119,31 +119,31 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
     setOpen(o => !o);
   };
 
-  const markOneRead = async (notif: AppNotification) => {
+  const markOneRead = (notif: AppNotification) => {
     if (!user) return;
+    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
     if (!readIds.has(notif.id)) {
-      await supabase.from('notification_reads').upsert(
+      setReadIds(prev => new Set([...prev, notif.id]));
+      supabase.from('notification_reads').upsert(
         { notification_id: notif.id, admin_user_id: user.id },
         { onConflict: 'notification_id,admin_user_id' }
       );
-      setReadIds(prev => new Set([...prev, notif.id]));
     }
-    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
     if (onNavigate) {
       onNavigate(cfg.view, notif.related_id);
-      setOpen(false);
     }
+    setOpen(false);
   };
 
-  const markAllRead = async () => {
+  const markAllRead = () => {
     if (!user || notifications.length === 0) return;
     const unread = notifications.filter(n => !readIds.has(n.id));
     if (unread.length === 0) return;
-    await supabase.from('notification_reads').upsert(
+    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
+    supabase.from('notification_reads').upsert(
       unread.map(n => ({ notification_id: n.id, admin_user_id: user.id })),
       { onConflict: 'notification_id,admin_user_id' }
     );
-    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
   };
 
   return (
@@ -319,31 +319,31 @@ export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: Nav
     setOpen(o => !o);
   };
 
-  const markOneRead = async (notif: AppNotification) => {
+  const markOneRead = (notif: AppNotification) => {
     if (!user) return;
+    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
     if (!readIds.has(notif.id)) {
-      await supabase.from('notification_reads').upsert(
+      setReadIds(prev => new Set([...prev, notif.id]));
+      supabase.from('notification_reads').upsert(
         { notification_id: notif.id, admin_user_id: user.id },
         { onConflict: 'notification_id,admin_user_id' }
       );
-      setReadIds(prev => new Set([...prev, notif.id]));
     }
-    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
     if (onNavigate) {
       onNavigate(cfg.view, notif.related_id);
-      setOpen(false);
     }
+    setOpen(false);
   };
 
-  const markAllRead = async () => {
+  const markAllRead = () => {
     if (!user || notifications.length === 0) return;
     const unread = notifications.filter(n => !readIds.has(n.id));
     if (unread.length === 0) return;
-    await supabase.from('notification_reads').upsert(
+    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
+    supabase.from('notification_reads').upsert(
       unread.map(n => ({ notification_id: n.id, admin_user_id: user.id })),
       { onConflict: 'notification_id,admin_user_id' }
     );
-    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
   };
 
   return (
