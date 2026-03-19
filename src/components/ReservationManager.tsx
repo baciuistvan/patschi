@@ -1155,7 +1155,7 @@ export function ReservationManager() {
                 </span>
               )}
             </div>
-            <span className="text-xs font-semibold tracking-wide">Zahlung</span>
+            <span className="text-xs font-semibold tracking-wide">Zahlungslink Ausstehend</span>
           </button>
 
           <button
