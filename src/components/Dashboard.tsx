@@ -110,10 +110,10 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
             <button
               onClick={onSwitchSystem}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition-all duration-150 group ${sidebarCollapsed ? 'justify-center' : ''}`}
-              title={sidebarCollapsed ? 'Gutscheine' : undefined}
+              title={sidebarCollapsed ? 'Switch System' : undefined}
             >
               <Gift style={{ width: 17, height: 17 }} className="flex-shrink-0 text-slate-400 group-hover:text-emerald-600 transition-colors" />
-              {!sidebarCollapsed && <span className="text-sm font-medium">Gutscheine</span>}
+              {!sidebarCollapsed && <span className="text-sm font-medium">Switch System</span>}
             </button>
           )}
           <button
