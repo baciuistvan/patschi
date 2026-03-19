@@ -50,8 +50,8 @@ interface NotificationBellProps {
 export function NotificationBell({ collapsed = false }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0 });
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -76,16 +76,24 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
-      if (
-        panelRef.current && !panelRef.current.contains(e.target as Node) &&
-        buttonRef.current && !buttonRef.current.contains(e.target as Node)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
+
+  const handleToggle = () => {
+    if (!open && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const panelWidth = 320;
+      const left = rect.right + 8;
+      const top = Math.min(rect.top, window.innerHeight - 420);
+      setPanelPos({ top, left: Math.min(left, window.innerWidth - panelWidth - 8) });
+    }
+    setOpen(o => !o);
+  };
 
   const loadNotifications = async () => {
     const { data } = await supabase
@@ -109,10 +117,9 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
   };
 
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className="relative">
       <button
-        ref={buttonRef}
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggle}
         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition-all duration-150 group ${collapsed ? 'justify-center' : ''}`}
         title={collapsed ? `Benachrichtigungen${unreadCount > 0 ? ` (${unreadCount})` : ''}` : undefined}
       >
@@ -138,9 +145,8 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
 
       {open && (
         <div
-          ref={panelRef}
-          className="fixed left-[272px] top-auto z-50 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/40 overflow-hidden"
-          style={{ marginTop: '-8px' }}
+          className="fixed z-[9999] w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 overflow-hidden"
+          style={{ top: panelPos.top, left: panelPos.left }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
