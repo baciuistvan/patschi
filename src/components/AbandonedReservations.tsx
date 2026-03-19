@@ -433,7 +433,9 @@ export function AbandonedReservations() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">
-                      {reservation.amount ? `€${(reservation.amount / 100).toFixed(2)}` : '-'}
+                      {reservation.amount && (reservation.payment_link_sent || reservation.payment_intent_id)
+                        ? `€${(reservation.amount / 100).toFixed(2)}`
+                        : '-'}
                     </td>
                   </tr>
                 ))
@@ -571,7 +573,7 @@ export function AbandonedReservations() {
                       </span>
                     </div>
                   )}
-                  {selectedReservation.amount && (
+                  {selectedReservation.amount && (selectedReservation.payment_link_sent || selectedReservation.payment_intent_id) && (
                     <div className="flex justify-between">
                       <span className="text-slate-600 dark:text-slate-400">Betrag:</span>
                       <span className="text-slate-900 dark:text-white font-bold">
