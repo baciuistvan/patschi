@@ -10,7 +10,7 @@ import { Settings } from './Settings';
 import { UserManagement } from './UserManagement';
 import { GuestManager } from './GuestManager';
 
-type View = 'home' | 'reservations' | 'guests' | 'settings' | 'user-management';
+type View = 'home' | 'reservations' | 'guests' | 'settings' | 'user-management' | 'gift-cards';
 
 interface DashboardProps {
   onSwitchSystem?: () => void;
@@ -30,6 +30,14 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
   const [currentView, setCurrentView] = useState<View>('home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleNotificationNavigate = (view: string) => {
+    if (view === 'gift-cards' && onSwitchSystem) {
+      onSwitchSystem();
+    } else {
+      setCurrentView(view as View);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -107,7 +115,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
 
         {/* Bottom controls */}
         <div className="p-2 pb-4 space-y-0.5">
-          <NotificationBell collapsed={sidebarCollapsed} />
+          <NotificationBell collapsed={sidebarCollapsed} onNavigate={handleNotificationNavigate} />
           {onSwitchSystem && (
             <button
               onClick={onSwitchSystem}
@@ -211,7 +219,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
             </button>
           );
         })}
-        <MobileNotificationBell />
+        <MobileNotificationBell onNavigate={handleNotificationNavigate} />
         <button
           onClick={() => setMobileMenuOpen(o => !o)}
           className="flex-1 flex flex-col items-center py-2 gap-0.5 text-slate-400 dark:text-slate-500"
@@ -289,7 +297,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
       {/* Main content */}
       <div className={`flex-1 min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <main className="min-h-screen pb-20 lg:pb-0 px-4 sm:px-6 lg:px-8 py-6">
-          {currentView === 'home' && <DashboardHome />}
+          {(currentView === 'home' || currentView === 'gift-cards') && <DashboardHome />}
           {currentView === 'reservations' && <ReservationManager />}
           {currentView === 'guests' && <GuestManager />}
           {currentView === 'settings' && <Settings />}

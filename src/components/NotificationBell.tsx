@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, X, Calendar, CreditCard, Gift, CheckCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 type NotificationType = 'payment_paid' | 'online_reservation' | 'gift_card_purchased';
+type NavView = 'home' | 'reservations' | 'guests' | 'settings' | 'gift-cards';
 
 interface AppNotification {
   id: string;
@@ -10,25 +12,32 @@ interface AppNotification {
   title: string;
   message: string;
   related_id: string | null;
-  is_read: boolean;
   created_at: string;
+  is_read?: boolean;
 }
 
-const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: string; bg: string }> = {
+interface NotificationRead {
+  notification_id: string;
+}
+
+const TYPE_CONFIG: Record<NotificationType, { icon: React.ElementType; color: string; bg: string; view: NavView }> = {
   payment_paid: {
     icon: CreditCard,
     color: 'text-emerald-600 dark:text-emerald-400',
     bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    view: 'reservations',
   },
   online_reservation: {
     icon: Calendar,
     color: 'text-blue-600 dark:text-blue-400',
     bg: 'bg-blue-50 dark:bg-blue-500/10',
+    view: 'reservations',
   },
   gift_card_purchased: {
     icon: Gift,
     color: 'text-amber-600 dark:text-amber-400',
     bg: 'bg-amber-50 dark:bg-amber-500/10',
+    view: 'gift-cards',
   },
 };
 
@@ -43,35 +52,50 @@ function timeAgo(dateString: string): string {
   return `Vor ${days} Tag${days !== 1 ? 'en' : ''}`;
 }
 
-interface NotificationBellProps {
+export interface NotificationBellProps {
   collapsed?: boolean;
+  onNavigate?: (view: NavView, relatedId?: string | null) => void;
 }
 
-export function NotificationBell({ collapsed = false }: NotificationBellProps) {
+export function NotificationBell({ collapsed = false, onNavigate }: NotificationBellProps) {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [panelPos, setPanelPos] = useState({ top: 0, left: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
+
+  const loadNotifications = useCallback(async () => {
+    if (!user) return;
+    const [notifRes, readsRes] = await Promise.all([
+      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('notification_reads').select('notification_id').eq('admin_user_id', user.id),
+    ]);
+    if (notifRes.data) setNotifications(notifRes.data as AppNotification[]);
+    if (readsRes.data) setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
+  }, [user]);
 
   useEffect(() => {
     loadNotifications();
 
     const channel = supabase
-      .channel('notifications-realtime')
+      .channel('notifications-realtime-v2')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
         setNotifications(prev => [payload.new as AppNotification, ...prev].slice(0, 50));
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' }, payload => {
-        setNotifications(prev =>
-          prev.map(n => n.id === (payload.new as AppNotification).id ? payload.new as AppNotification : n)
-        );
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, payload => {
+        setNotifications(prev => prev.filter(n => n.id !== (payload.old as AppNotification).id));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_reads' }, payload => {
+        const r = payload.new as NotificationRead;
+        setReadIds(prev => new Set([...prev, r.notification_id]));
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [loadNotifications]);
 
   useEffect(() => {
     if (!open) return;
@@ -87,33 +111,39 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
   const handleToggle = () => {
     if (!open && wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
-      const panelWidth = 320;
+      const panelWidth = 340;
       const left = rect.right + 8;
-      const top = Math.min(rect.top, window.innerHeight - 420);
+      const top = Math.min(rect.top, window.innerHeight - 440);
       setPanelPos({ top, left: Math.min(left, window.innerWidth - panelWidth - 8) });
     }
     setOpen(o => !o);
   };
 
-  const loadNotifications = async () => {
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (data) setNotifications(data as AppNotification[]);
+  const markOneRead = async (notif: AppNotification) => {
+    if (!user) return;
+    if (!readIds.has(notif.id)) {
+      await supabase.from('notification_reads').upsert(
+        { notification_id: notif.id, admin_user_id: user.id },
+        { onConflict: 'notification_id,admin_user_id' }
+      );
+      setReadIds(prev => new Set([...prev, notif.id]));
+    }
+    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
+    if (onNavigate) {
+      onNavigate(cfg.view, notif.related_id);
+      setOpen(false);
+    }
   };
 
   const markAllRead = async () => {
-    const unread = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (!user || notifications.length === 0) return;
+    const unread = notifications.filter(n => !readIds.has(n.id));
     if (unread.length === 0) return;
-    await supabase.from('notifications').update({ is_read: true }).in('id', unread);
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-  };
-
-  const markOneRead = async (id: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    await supabase.from('notification_reads').upsert(
+      unread.map(n => ({ notification_id: n.id, admin_user_id: user.id })),
+      { onConflict: 'notification_id,admin_user_id' }
+    );
+    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
   };
 
   return (
@@ -146,7 +176,7 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
 
       {open && (
         <div
-          className="fixed z-[9999] w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 overflow-hidden"
+          className="fixed z-[9999] w-[340px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 overflow-hidden"
           style={{ top: panelPos.top, left: panelPos.left }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
@@ -160,15 +190,15 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
               )}
             </div>
             <div className="flex items-center gap-1">
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  title="Alle als gelesen markieren"
-                >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <button
+                onClick={markAllRead}
+                disabled={unreadCount === 0}
+                className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-default"
+                title="Alle als gelesen markieren"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>Alle lesen</span>
+              </button>
               <button
                 onClick={() => setOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -189,12 +219,13 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
                 {notifications.map(notif => {
                   const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
                   const Icon = cfg.icon;
+                  const isRead = readIds.has(notif.id);
                   return (
                     <button
                       key={notif.id}
-                      onClick={() => markOneRead(notif.id)}
+                      onClick={() => markOneRead(notif)}
                       className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-100 ${
-                        !notif.is_read ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''
+                        !isRead ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.bg}`}>
@@ -202,14 +233,14 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm font-medium leading-snug ${notif.is_read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
+                          <p className={`text-sm font-medium leading-snug ${isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
                             {notif.title}
                           </p>
-                          {!notif.is_read && (
+                          {!isRead && (
                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
                           {notif.message}
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-600 mt-1">
@@ -228,39 +259,45 @@ export function NotificationBell({ collapsed = false }: NotificationBellProps) {
   );
 }
 
-export function MobileNotificationBell() {
+export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: NavView, relatedId?: string | null) => void }) {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [panelPos, setPanelPos] = useState({ bottom: 0, left: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
+
+  const loadNotifications = useCallback(async () => {
+    if (!user) return;
+    const [notifRes, readsRes] = await Promise.all([
+      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('notification_reads').select('notification_id').eq('admin_user_id', user.id),
+    ]);
+    if (notifRes.data) setNotifications(notifRes.data as AppNotification[]);
+    if (readsRes.data) setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
+  }, [user]);
 
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (data) setNotifications(data as AppNotification[]);
-    };
-    load();
+    loadNotifications();
 
     const channel = supabase
-      .channel('mobile-notifications-realtime')
+      .channel('mobile-notifications-realtime-v2')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
         setNotifications(prev => [payload.new as AppNotification, ...prev].slice(0, 50));
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' }, payload => {
-        setNotifications(prev =>
-          prev.map(n => n.id === (payload.new as AppNotification).id ? payload.new as AppNotification : n)
-        );
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, payload => {
+        setNotifications(prev => prev.filter(n => n.id !== (payload.old as AppNotification).id));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_reads' }, payload => {
+        const r = payload.new as NotificationRead;
+        setReadIds(prev => new Set([...prev, r.notification_id]));
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [loadNotifications]);
 
   useEffect(() => {
     if (!open) return;
@@ -277,21 +314,36 @@ export function MobileNotificationBell() {
     if (!open && wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
       const navBarHeight = window.innerHeight - rect.top;
-      setPanelPos({ bottom: navBarHeight + 8, left: Math.max(8, Math.min(rect.left - 120, window.innerWidth - 336)) });
+      setPanelPos({ bottom: navBarHeight + 8, left: Math.max(8, Math.min(rect.left - 140, window.innerWidth - 344)) });
     }
     setOpen(o => !o);
   };
 
-  const markAllRead = async () => {
-    const unread = notifications.filter(n => !n.is_read).map(n => n.id);
-    if (unread.length === 0) return;
-    await supabase.from('notifications').update({ is_read: true }).in('id', unread);
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  const markOneRead = async (notif: AppNotification) => {
+    if (!user) return;
+    if (!readIds.has(notif.id)) {
+      await supabase.from('notification_reads').upsert(
+        { notification_id: notif.id, admin_user_id: user.id },
+        { onConflict: 'notification_id,admin_user_id' }
+      );
+      setReadIds(prev => new Set([...prev, notif.id]));
+    }
+    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
+    if (onNavigate) {
+      onNavigate(cfg.view, notif.related_id);
+      setOpen(false);
+    }
   };
 
-  const markOneRead = async (id: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  const markAllRead = async () => {
+    if (!user || notifications.length === 0) return;
+    const unread = notifications.filter(n => !readIds.has(n.id));
+    if (unread.length === 0) return;
+    await supabase.from('notification_reads').upsert(
+      unread.map(n => ({ notification_id: n.id, admin_user_id: user.id })),
+      { onConflict: 'notification_id,admin_user_id' }
+    );
+    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
   };
 
   return (
@@ -314,7 +366,7 @@ export function MobileNotificationBell() {
 
       {open && (
         <div
-          className="fixed z-[9999] w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 overflow-hidden"
+          className="fixed z-[9999] w-[340px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 overflow-hidden"
           style={{ bottom: panelPos.bottom, left: panelPos.left }}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
@@ -328,15 +380,15 @@ export function MobileNotificationBell() {
               )}
             </div>
             <div className="flex items-center gap-1">
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  title="Alle als gelesen markieren"
-                >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <button
+                onClick={markAllRead}
+                disabled={unreadCount === 0}
+                className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-default"
+                title="Alle als gelesen markieren"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>Alle lesen</span>
+              </button>
               <button
                 onClick={() => setOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -357,12 +409,13 @@ export function MobileNotificationBell() {
                 {notifications.map(notif => {
                   const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
                   const Icon = cfg.icon;
+                  const isRead = readIds.has(notif.id);
                   return (
                     <button
                       key={notif.id}
-                      onClick={() => markOneRead(notif.id)}
+                      onClick={() => markOneRead(notif)}
                       className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-100 ${
-                        !notif.is_read ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''
+                        !isRead ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.bg}`}>
@@ -370,14 +423,14 @@ export function MobileNotificationBell() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm font-medium leading-snug ${notif.is_read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
+                          <p className={`text-sm font-medium leading-snug ${isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
                             {notif.title}
                           </p>
-                          {!notif.is_read && (
+                          {!isRead && (
                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
                           {notif.message}
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-600 mt-1">
