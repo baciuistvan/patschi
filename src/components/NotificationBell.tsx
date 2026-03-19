@@ -295,13 +295,13 @@ export function MobileNotificationBell() {
   };
 
   return (
-    <div ref={wrapperRef} className="flex-1 flex flex-col items-center py-2 gap-0.5 relative">
+    <div ref={wrapperRef} className="flex-1 relative">
       <button
         onClick={handleToggle}
-        className="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 w-full py-0"
+        className="flex flex-col items-center py-2 gap-0.5 text-slate-400 dark:text-slate-500 w-full transition"
         aria-label="Benachrichtigungen"
       >
-        <div className="relative flex items-center justify-center" style={{ height: 20 }}>
+        <div className="relative" style={{ width: 20, height: 20 }}>
           <Bell style={{ width: 20, height: 20 }} />
           {unreadCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-3.5 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
