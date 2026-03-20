@@ -73,7 +73,14 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
       supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('notification_reads').select('notification_id').eq('admin_user_id', user.id),
     ]);
-    if (notifRes.data) setNotifications(notifRes.data as AppNotification[]);
+    if (notifRes.data) {
+      const fetched = notifRes.data as AppNotification[];
+      setNotifications(prev => {
+        const merged = [...fetched];
+        prev.forEach(n => { if (!merged.some(m => m.id === n.id)) merged.push(n); });
+        return merged.slice(0, 50);
+      });
+    }
     if (readsRes.data) setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
   }, [user]);
 
@@ -83,7 +90,11 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
     const channel = supabase
       .channel('notifications-realtime-v2')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-        setNotifications(prev => [payload.new as AppNotification, ...prev].slice(0, 50));
+        setNotifications(prev => {
+          const incoming = payload.new as AppNotification;
+          if (prev.some(n => n.id === incoming.id)) return prev;
+          return [incoming, ...prev].slice(0, 50);
+        });
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, payload => {
         setNotifications(prev => prev.filter(n => n.id !== (payload.old as AppNotification).id));
@@ -275,7 +286,14 @@ export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: Nav
       supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('notification_reads').select('notification_id').eq('admin_user_id', user.id),
     ]);
-    if (notifRes.data) setNotifications(notifRes.data as AppNotification[]);
+    if (notifRes.data) {
+      const fetched = notifRes.data as AppNotification[];
+      setNotifications(prev => {
+        const merged = [...fetched];
+        prev.forEach(n => { if (!merged.some(m => m.id === n.id)) merged.push(n); });
+        return merged.slice(0, 50);
+      });
+    }
     if (readsRes.data) setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
   }, [user]);
 
@@ -285,7 +303,11 @@ export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: Nav
     const channel = supabase
       .channel('mobile-notifications-realtime-v2')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-        setNotifications(prev => [payload.new as AppNotification, ...prev].slice(0, 50));
+        setNotifications(prev => {
+          const incoming = payload.new as AppNotification;
+          if (prev.some(n => n.id === incoming.id)) return prev;
+          return [incoming, ...prev].slice(0, 50);
+        });
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, payload => {
         setNotifications(prev => prev.filter(n => n.id !== (payload.old as AppNotification).id));
