@@ -52,46 +52,44 @@ function timeAgo(dateString: string): string {
   return `Vor ${days} Tag${days !== 1 ? 'en' : ''}`;
 }
 
+async function insertRead(notificationId: string, adminUserId: string) {
+  await supabase.from('notification_reads').insert({
+    notification_id: notificationId,
+    admin_user_id: adminUserId,
+  });
+}
+
 export interface NotificationBellProps {
   collapsed?: boolean;
   onNavigate?: (view: NavView, relatedId?: string | null) => void;
 }
 
-export function NotificationBell({ collapsed = false, onNavigate }: NotificationBellProps) {
-  const { user } = useAuth();
+function useNotifications(userId: string | undefined, channelName: string) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
-  const [open, setOpen] = useState(false);
-  const [panelPos, setPanelPos] = useState({ top: 0, left: 0 });
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
-
-  const loadNotifications = useCallback(async () => {
-    if (!user) return;
+  const load = useCallback(async () => {
+    if (!userId) return;
     const [notifRes, readsRes] = await Promise.all([
       supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
-      supabase.from('notification_reads').select('notification_id').eq('admin_user_id', user.id),
+      supabase.from('notification_reads').select('notification_id').eq('admin_user_id', userId),
     ]);
     if (notifRes.data) {
-      const fetched = notifRes.data as AppNotification[];
-      setNotifications(prev => {
-        const merged = [...fetched];
-        prev.forEach(n => { if (!merged.some(m => m.id === n.id)) merged.push(n); });
-        return merged.slice(0, 50);
-      });
+      setNotifications(notifRes.data as AppNotification[]);
     }
-    if (readsRes.data) setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
-  }, [user]);
+    if (readsRes.data) {
+      setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
+    }
+  }, [userId]);
 
   useEffect(() => {
-    loadNotifications();
+    load();
 
     const channel = supabase
-      .channel('notifications-realtime-v2')
+      .channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+        const incoming = payload.new as AppNotification;
         setNotifications(prev => {
-          const incoming = payload.new as AppNotification;
           if (prev.some(n => n.id === incoming.id)) return prev;
           return [incoming, ...prev].slice(0, 50);
         });
@@ -106,7 +104,34 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [loadNotifications]);
+  }, [load, channelName]);
+
+  const markOneRead = useCallback(async (notifId: string, adminUserId: string) => {
+    if (readIds.has(notifId)) return;
+    setReadIds(prev => new Set([...prev, notifId]));
+    await insertRead(notifId, adminUserId);
+  }, [readIds]);
+
+  const markAllRead = useCallback(async (adminUserId: string, allNotifications: AppNotification[]) => {
+    const unread = allNotifications.filter(n => !readIds.has(n.id));
+    if (unread.length === 0) return;
+    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
+    for (const n of unread) {
+      await insertRead(n.id, adminUserId);
+    }
+  }, [readIds]);
+
+  return { notifications, readIds, markOneRead, markAllRead };
+}
+
+export function NotificationBell({ collapsed = false, onNavigate }: NotificationBellProps) {
+  const { user } = useAuth();
+  const { notifications, readIds, markOneRead, markAllRead } = useNotifications(user?.id, 'notifications-realtime-v3');
+  const [open, setOpen] = useState(false);
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0 });
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
 
   useEffect(() => {
     if (!open) return;
@@ -130,31 +155,17 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
     setOpen(o => !o);
   };
 
-  const markOneRead = (notif: AppNotification) => {
+  const handleMarkOne = (notif: AppNotification) => {
     if (!user) return;
     const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
-    if (!readIds.has(notif.id)) {
-      setReadIds(prev => new Set([...prev, notif.id]));
-      supabase.from('notification_reads').upsert(
-        { notification_id: notif.id, admin_user_id: user.id },
-        { onConflict: 'notification_id,admin_user_id' }
-      );
-    }
-    if (onNavigate) {
-      onNavigate(cfg.view, notif.related_id);
-    }
+    markOneRead(notif.id, user.id);
+    if (onNavigate) onNavigate(cfg.view, notif.related_id);
     setOpen(false);
   };
 
-  const markAllRead = () => {
-    if (!user || notifications.length === 0) return;
-    const unread = notifications.filter(n => !readIds.has(n.id));
-    if (unread.length === 0) return;
-    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
-    supabase.from('notification_reads').upsert(
-      unread.map(n => ({ notification_id: n.id, admin_user_id: user.id })),
-      { onConflict: 'notification_id,admin_user_id' }
-    );
+  const handleMarkAll = () => {
+    if (!user) return;
+    markAllRead(user.id, notifications);
   };
 
   return (
@@ -202,7 +213,7 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={markAllRead}
+                onClick={handleMarkAll}
                 disabled={unreadCount === 0}
                 className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-default"
                 title="Alle als gelesen markieren"
@@ -234,7 +245,7 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
                   return (
                     <button
                       key={notif.id}
-                      onClick={() => markOneRead(notif)}
+                      onClick={() => handleMarkOne(notif)}
                       className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-100 ${
                         !isRead ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''
                       }`}
@@ -272,54 +283,12 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
 
 export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: NavView, relatedId?: string | null) => void }) {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const { notifications, readIds, markOneRead, markAllRead } = useNotifications(user?.id, 'mobile-notifications-realtime-v3');
   const [open, setOpen] = useState(false);
   const [panelPos, setPanelPos] = useState({ bottom: 0, left: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
-
-  const loadNotifications = useCallback(async () => {
-    if (!user) return;
-    const [notifRes, readsRes] = await Promise.all([
-      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
-      supabase.from('notification_reads').select('notification_id').eq('admin_user_id', user.id),
-    ]);
-    if (notifRes.data) {
-      const fetched = notifRes.data as AppNotification[];
-      setNotifications(prev => {
-        const merged = [...fetched];
-        prev.forEach(n => { if (!merged.some(m => m.id === n.id)) merged.push(n); });
-        return merged.slice(0, 50);
-      });
-    }
-    if (readsRes.data) setReadIds(new Set((readsRes.data as NotificationRead[]).map(r => r.notification_id)));
-  }, [user]);
-
-  useEffect(() => {
-    loadNotifications();
-
-    const channel = supabase
-      .channel('mobile-notifications-realtime-v2')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-        setNotifications(prev => {
-          const incoming = payload.new as AppNotification;
-          if (prev.some(n => n.id === incoming.id)) return prev;
-          return [incoming, ...prev].slice(0, 50);
-        });
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications' }, payload => {
-        setNotifications(prev => prev.filter(n => n.id !== (payload.old as AppNotification).id));
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_reads' }, payload => {
-        const r = payload.new as NotificationRead;
-        setReadIds(prev => new Set([...prev, r.notification_id]));
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [loadNotifications]);
 
   useEffect(() => {
     if (!open) return;
@@ -341,31 +310,17 @@ export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: Nav
     setOpen(o => !o);
   };
 
-  const markOneRead = (notif: AppNotification) => {
+  const handleMarkOne = (notif: AppNotification) => {
     if (!user) return;
     const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
-    if (!readIds.has(notif.id)) {
-      setReadIds(prev => new Set([...prev, notif.id]));
-      supabase.from('notification_reads').upsert(
-        { notification_id: notif.id, admin_user_id: user.id },
-        { onConflict: 'notification_id,admin_user_id' }
-      );
-    }
-    if (onNavigate) {
-      onNavigate(cfg.view, notif.related_id);
-    }
+    markOneRead(notif.id, user.id);
+    if (onNavigate) onNavigate(cfg.view, notif.related_id);
     setOpen(false);
   };
 
-  const markAllRead = () => {
-    if (!user || notifications.length === 0) return;
-    const unread = notifications.filter(n => !readIds.has(n.id));
-    if (unread.length === 0) return;
-    setReadIds(prev => new Set([...prev, ...unread.map(n => n.id)]));
-    supabase.from('notification_reads').upsert(
-      unread.map(n => ({ notification_id: n.id, admin_user_id: user.id })),
-      { onConflict: 'notification_id,admin_user_id' }
-    );
+  const handleMarkAll = () => {
+    if (!user) return;
+    markAllRead(user.id, notifications);
   };
 
   return (
@@ -403,7 +358,7 @@ export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: Nav
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={markAllRead}
+                onClick={handleMarkAll}
                 disabled={unreadCount === 0}
                 className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-default"
                 title="Alle als gelesen markieren"
@@ -435,7 +390,7 @@ export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: Nav
                   return (
                     <button
                       key={notif.id}
-                      onClick={() => markOneRead(notif)}
+                      onClick={() => handleMarkOne(notif)}
                       className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-100 ${
                         !isRead ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''
                       }`}
