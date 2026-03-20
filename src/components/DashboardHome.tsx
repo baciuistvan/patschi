@@ -118,7 +118,7 @@ function MiniCalendar({ year, month, rangeFrom, rangeTo, hovered, onDayClick, on
   const today = formatDateLocal(new Date());
 
   return (
-    <div className="w-64">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-3">
         <button onClick={onPrev} className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition">
           <ChevronLeft className="w-4 h-4" />
@@ -238,14 +238,14 @@ function DateRangePicker({ preset, from, to, onChange }: DateRangePickerProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 z-50 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex overflow-hidden">
-          <div className="flex flex-col py-2 border-r border-slate-700 min-w-[160px]">
+        <div className="absolute right-0 mt-2 z-50 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex flex-col sm:flex-row overflow-hidden max-w-[calc(100vw-2rem)]">
+          <div className="flex flex-row sm:flex-col py-2 border-b sm:border-b-0 sm:border-r border-slate-700 overflow-x-auto sm:overflow-x-visible sm:min-w-[160px]">
             {PRESETS.map(p => (
               <button
                 key={p.key}
                 onClick={() => handlePreset(p.key)}
                 className={[
-                  'text-left px-4 py-2.5 text-sm transition',
+                  'text-left px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition whitespace-nowrap',
                   activePreset === p.key
                     ? 'bg-blue-600 text-white font-semibold'
                     : 'text-slate-300 hover:bg-slate-700',
@@ -257,7 +257,7 @@ function DateRangePicker({ preset, from, to, onChange }: DateRangePickerProps) {
           </div>
 
           {activePreset === 'custom' && (
-            <div className="p-4">
+            <div className="p-4 min-w-0">
               <p className="text-xs text-slate-400 mb-3">
                 {selectingFrom ? 'Startdatum wählen' : 'Enddatum wählen'}
               </p>
@@ -329,18 +329,18 @@ function StatCard({ label, value, sub, icon: Icon, color }: StatCardProps) {
   const c = colorMap[color];
 
   return (
-    <div className="relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
+    <div className="relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group">
       <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${c.bar} pointer-events-none`} />
       <div className="relative flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`w-11 h-11 ${c.iconBg} rounded-xl flex items-center justify-center ring-4 ${c.iconRing} shadow-sm flex-shrink-0`}>
-            <Icon className={`w-5 h-5 ${c.icon}`} />
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className={`w-9 h-9 sm:w-11 sm:h-11 ${c.iconBg} rounded-xl flex items-center justify-center ring-4 ${c.iconRing} shadow-sm flex-shrink-0`}>
+            <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${c.icon}`} />
           </div>
         </div>
-        <p className={`text-xs font-bold uppercase tracking-widest ${c.accent} mb-2`}>{label}</p>
-        <p className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tight tabular-nums">{value}</p>
+        <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-widest ${c.accent} mb-1.5 sm:mb-2`}>{label}</p>
+        <p className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tight tabular-nums">{value}</p>
         {sub && (
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{sub}</p>
+          <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">{sub}</p>
         )}
       </div>
     </div>
@@ -463,13 +463,13 @@ export function DashboardHome() {
   const statusTotal = stats.confirmedReservations + stats.pendingReservations + stats.cancelledReservations || 1;
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto space-y-8 px-2">
+    <div className="w-full max-w-screen-2xl mx-auto space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{greeting}</p>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mt-0.5">{t('dashboard.overview')}</h1>
-          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-0.5">{t('dashboard.overview')}</h1>
+          <p className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 mt-1">
             {dateFrom.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
             {' – '}
             {dateTo.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -512,7 +512,7 @@ export function DashboardHome() {
       {/* Status + Peak Hours */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Status breakdown */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-8 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">{t('dashboard.reservation_status')}</h3>
           <div className="space-y-5">
             {[
@@ -569,7 +569,7 @@ export function DashboardHome() {
         </div>
 
         {/* Peak hours */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-8 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
             <Clock className="w-5 h-5 text-blue-500" />
             {t('dashboard.peak_booking_hours')}
@@ -579,18 +579,18 @@ export function DashboardHome() {
           ) : (
             <div className="space-y-4">
               {stats.peakHours.map((peak, idx) => (
-                <div key={peak.hour} className="flex items-center gap-4">
-                  <span className="text-sm font-mono font-bold text-slate-600 dark:text-slate-300 w-12 text-right flex-shrink-0">{peak.hour}</span>
-                  <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+                <div key={peak.hour} className="flex items-center gap-2 sm:gap-4">
+                  <span className="text-xs sm:text-sm font-mono font-bold text-slate-600 dark:text-slate-300 w-10 sm:w-12 text-right flex-shrink-0">{peak.hour}</span>
+                  <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 sm:h-3 overflow-hidden">
                     <div
-                      className={`h-3 rounded-full transition-all duration-700 ${
+                      className={`h-full rounded-full transition-all duration-700 ${
                         idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-blue-500' : idx === 2 ? 'bg-blue-400' : 'bg-blue-300 dark:bg-blue-600/60'
                       }`}
                       style={{ width: `${(peak.count / maxPeak) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 w-16 text-right flex-shrink-0">
-                    {peak.count} {t('dashboard.bookings')}
+                  <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 w-8 sm:w-16 text-right flex-shrink-0 tabular-nums">
+                    {peak.count}<span className="hidden sm:inline"> {t('dashboard.bookings')}</span>
                   </span>
                 </div>
               ))}
@@ -603,12 +603,12 @@ export function DashboardHome() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <button
           onClick={() => setDailyOpen(o => !o)}
-          className="w-full flex items-center justify-between px-8 py-5 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition"
+          className="w-full flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition"
         >
-          <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('dashboard.daily_breakdown')}</h3>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">{t('dashboard.daily_breakdown')}</h3>
             {stats.dailyStats.length > 0 && (
-              <span className="text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                 {stats.dailyStats.length} Tage
               </span>
             )}
@@ -618,28 +618,28 @@ export function DashboardHome() {
 
         {dailyOpen && (
           <div className="overflow-x-auto border-t border-slate-200 dark:border-slate-700">
-            <table className="w-full">
+            <table className="w-full min-w-[320px]">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-900/40">
-                  <th className="text-left py-4 px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.date')}</th>
-                  <th className="text-right py-4 px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.reservations')}</th>
-                  <th className="text-right py-4 px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.revenue')}</th>
+                  <th className="text-left py-3 sm:py-4 px-4 sm:px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.date')}</th>
+                  <th className="text-right py-3 sm:py-4 px-4 sm:px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.reservations')}</th>
+                  <th className="text-right py-3 sm:py-4 px-4 sm:px-8 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.revenue')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {stats.dailyStats.map((day, idx) => (
                   <tr key={day.date} className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition ${idx % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-900/20'}`}>
-                    <td className="py-4 px-8 text-sm font-semibold text-slate-900 dark:text-white">
+                    <td className="py-3 sm:py-4 px-4 sm:px-8 text-sm font-semibold text-slate-900 dark:text-white">
                       {new Date(day.date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
                       })}
                     </td>
-                    <td className="py-4 px-8 text-sm text-right text-slate-600 dark:text-slate-300 font-semibold">
+                    <td className="py-3 sm:py-4 px-4 sm:px-8 text-sm text-right text-slate-600 dark:text-slate-300 font-semibold">
                       {day.reservations}
                     </td>
-                    <td className="py-4 px-8 text-sm text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-3 sm:py-4 px-4 sm:px-8 text-sm text-right font-bold text-emerald-600 dark:text-emerald-400">
                       €{day.revenue.toLocaleString('de-DE')}
                     </td>
                   </tr>

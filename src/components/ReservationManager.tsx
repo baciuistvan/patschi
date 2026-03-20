@@ -186,10 +186,10 @@ function ReservationCard({
         </div>
       </div>
 
-      <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 pr-4 pl-2 print:hidden">
+      <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 pr-3 sm:pr-4 pl-2 print:hidden">
         <button
           onClick={(e) => { e.stopPropagation(); onEdit(reservation); }}
-          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150"
+          className="p-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-150 min-w-[40px] min-h-[40px] flex items-center justify-center"
           title="Bearbeiten"
         >
           <Edit2 className="w-4 h-4" />
@@ -197,7 +197,7 @@ function ReservationCard({
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(reservation.id); }}
           disabled={isUpdating}
-          className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-150 disabled:opacity-50"
+          className="p-2.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-150 disabled:opacity-50 min-w-[40px] min-h-[40px] flex items-center justify-center"
           title="Löschen"
         >
           <Trash2 className="w-4 h-4" />
@@ -1005,8 +1005,8 @@ export function ReservationManager() {
 
         <FormSectionDivider label="Gast" />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
             <label className={labelCls}>{t('reservation_widget.name')}</label>
             <input type="text" required value={newReservation.customer_name} onChange={e => setNewReservation({ ...newReservation, customer_name: e.target.value })} className={inputCls} />
           </div>
@@ -1022,7 +1022,7 @@ export function ReservationManager() {
 
         <FormSectionDivider label="Termin" />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>{t('reservation_widget.select_date')}</label>
             <input type="date" required value={newReservation.reservation_date} onChange={e => setNewReservation({ ...newReservation, reservation_date: e.target.value })} className={inputCls} />
@@ -1146,15 +1146,18 @@ export function ReservationManager() {
         <div className="flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <button
             onClick={() => { setFilter('monthly'); setShowLogs(false); }}
-            className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${!showLogs && filter !== 'payment_link' && filter !== 'abandoned' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
+            className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 flex-1 py-3 sm:py-3.5 px-1 sm:px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${!showLogs && filter !== 'payment_link' && filter !== 'abandoned' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
           >
             <CalendarDays className="w-5 h-5" />
-            <span className="text-xs font-semibold tracking-wide">Reservierungen</span>
+            <span className="text-[10px] sm:text-xs font-semibold tracking-wide leading-none text-center">
+              <span className="hidden sm:inline">Reservierungen</span>
+              <span className="sm:hidden">Buchungen</span>
+            </span>
           </button>
 
           <button
             onClick={() => { setFilter('payment_link'); setShowLogs(false); }}
-            className={`relative flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'payment_link' && !showLogs ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-amber-600 dark:hover:text-amber-400'}`}
+            className={`relative flex flex-col items-center justify-center gap-1 sm:gap-1.5 flex-1 py-3 sm:py-3.5 px-1 sm:px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'payment_link' && !showLogs ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-amber-600 dark:hover:text-amber-400'}`}
           >
             <div className="relative">
               <CreditCard className="w-5 h-5" />
@@ -1164,31 +1167,37 @@ export function ReservationManager() {
                 </span>
               )}
             </div>
-            <span className="text-xs font-semibold tracking-wide">Zahlungslink Ausstehend</span>
+            <span className="text-[10px] sm:text-xs font-semibold tracking-wide leading-none text-center">
+              <span className="hidden sm:inline">Zahlungslink Ausstehend</span>
+              <span className="sm:hidden">Zahlung</span>
+            </span>
           </button>
 
           <button
             onClick={() => { setFilter('abandoned'); setShowLogs(false); }}
-            className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'abandoned' && !showLogs ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-orange-600 dark:hover:text-orange-400'}`}
+            className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 flex-1 py-3 sm:py-3.5 px-1 sm:px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${filter === 'abandoned' && !showLogs ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-orange-600 dark:hover:text-orange-400'}`}
           >
             <XCircle className="w-5 h-5" />
-            <span className="text-xs font-semibold tracking-wide">Abgebrochene Online Reservierungen</span>
+            <span className="text-[10px] sm:text-xs font-semibold tracking-wide leading-none text-center">
+              <span className="hidden sm:inline">Abgebrochene Online Reservierungen</span>
+              <span className="sm:hidden">Abgebrochen</span>
+            </span>
           </button>
 
           <button
             onClick={() => setShowLogs(v => !v)}
-            className={`flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${showLogs ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400'}`}
+            className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 flex-1 py-3 sm:py-3.5 px-1 sm:px-4 transition-all duration-150 border-r border-slate-100 dark:border-slate-800 ${showLogs ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400'}`}
           >
             <ScrollText className="w-5 h-5" />
-            <span className="text-xs font-semibold tracking-wide">Protokoll</span>
+            <span className="text-[10px] sm:text-xs font-semibold tracking-wide leading-none">Protokoll</span>
           </button>
 
           <button
             onClick={() => window.print()}
-            className="flex flex-col items-center justify-center gap-1.5 flex-1 py-3.5 px-4 transition-all duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-200"
+            className="flex flex-col items-center justify-center gap-1 sm:gap-1.5 flex-1 py-3 sm:py-3.5 px-1 sm:px-4 transition-all duration-150 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-200"
           >
             <Printer className="w-5 h-5" />
-            <span className="text-xs font-semibold tracking-wide">Drucken</span>
+            <span className="text-[10px] sm:text-xs font-semibold tracking-wide leading-none">Drucken</span>
           </button>
         </div>
 

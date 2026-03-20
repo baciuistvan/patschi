@@ -214,33 +214,33 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
       </aside>
 
       {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center safe-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-stretch safe-bottom">
         {NAV_ITEMS.map(({ view, icon: Icon, labelKey }) => {
           const active = currentView === view;
           return (
             <button
               key={view}
               onClick={() => handleSetView(view)}
-              className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition ${
+              className={`flex-1 flex flex-col items-center justify-center py-3 gap-0.5 min-h-[56px] transition ${
                 active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'
               }`}
             >
-              <Icon style={{ width: 20, height: 20 }} />
-              <span className="text-[10px] font-medium">{navLabel(labelKey).split(' ')[0]}</span>
+              <Icon style={{ width: 22, height: 22 }} />
+              <span className="text-[11px] font-medium leading-none">{navLabel(labelKey).split(' ')[0]}</span>
             </button>
           );
         })}
         <MobileNotificationBell onNavigate={handleNotificationNavigate} />
         <button
           onClick={() => setMobileMenuOpen(o => !o)}
-          className="flex-1 flex flex-col items-center py-2 gap-0.5 text-slate-400 dark:text-slate-500"
+          className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 min-h-[56px] text-slate-400 dark:text-slate-500"
         >
-          <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-[9px] font-bold">
+          <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+            <span className="text-white text-[10px] font-bold">
               {adminUser?.full_name?.charAt(0)?.toUpperCase() ?? 'A'}
             </span>
           </div>
-          <span className="text-[10px] font-medium">Mehr</span>
+          <span className="text-[11px] font-medium leading-none">Mehr</span>
         </button>
       </nav>
 
@@ -307,7 +307,19 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
 
       {/* Main content */}
       <div className={`flex-1 min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <main className="min-h-screen pb-20 lg:pb-0 px-4 sm:px-6 lg:px-8 py-6">
+        {/* Mobile top header */}
+        <header className="lg:hidden sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 h-14">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-xs">P</span>
+            </div>
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+              {navLabel(NAV_ITEMS.find(n => n.view === currentView)?.labelKey ?? 'nav.home')}
+            </span>
+          </div>
+          <NotificationBell collapsed={false} onNavigate={handleNotificationNavigate} />
+        </header>
+        <main className="min-h-screen pb-20 lg:pb-0 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
           {(currentView === 'home' || currentView === 'gift-cards') && <DashboardHome />}
           {currentView === 'reservations' && <ReservationManager />}
           {currentView === 'guests' && <GuestManager />}

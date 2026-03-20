@@ -492,27 +492,27 @@ export function GuestManager() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-slate-400" />
-            <span className="text-xs text-slate-500 dark:text-slate-400">Gäste</span>
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 flex-shrink-0" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">Gäste</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{guests.length}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{guests.length}</p>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Star className="w-4 h-4 text-amber-400" />
-            <span className="text-xs text-slate-500 dark:text-slate-400">VIPs</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+            <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 flex-shrink-0" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">VIPs</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{vipCount}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{vipCount}</p>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Euro className="w-4 h-4 text-slate-400" />
-            <span className="text-xs text-slate-500 dark:text-slate-400">Ø Ausgaben</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-3 sm:p-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+            <Euro className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 flex-shrink-0" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">Ø Ausgaben</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">€{avgSpend.toFixed(0)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums">€{avgSpend.toFixed(0)}</p>
         </div>
       </div>
 
@@ -528,14 +528,14 @@ export function GuestManager() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {(['all', 'new', 'returning', 'vip'] as FilterType[]).map(f => {
             const labels = { all: 'Alle', new: 'Neu', returning: 'Stammgast', vip: 'VIP' };
             return (
               <button
                 key={f}
                 onClick={() => setFilterType(f)}
-                className={`px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                className={`px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   filterType === f
                     ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
                     : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
@@ -549,19 +549,19 @@ export function GuestManager() {
           <div className="relative">
             <button
               onClick={() => setShowSortMenu(s => !s)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span className="hidden md:inline">{sortLabels[sortField]}</span>
               <SlidersHorizontal className="w-3.5 h-3.5 md:hidden" />
             </button>
             {showSortMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-44 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg z-20 py-1 overflow-hidden">
+              <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 w-44 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg z-20 py-1 overflow-hidden">
                 {(Object.entries(sortLabels) as [SortField, string][]).map(([f, label]) => (
                   <button
                     key={f}
                     onClick={() => handleSort(f)}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-sm transition-colors ${
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
                       sortField === f
                         ? 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
                         : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -618,8 +618,9 @@ export function GuestManager() {
           </div>
         </div>
 
+        {/* Detail panel - side panel on desktop, hidden on mobile/tablet (shown as overlay below) */}
         {selectedGuestData && (
-          <div className="w-80 xl:w-96 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+          <div className="hidden lg:flex w-80 xl:w-96 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex-col">
             <GuestDetailPanel
               guest={selectedGuestData}
               reservations={guestReservations[selectedGuestData.customer_email]}
@@ -629,6 +630,20 @@ export function GuestManager() {
           </div>
         )}
       </div>
+
+      {/* Mobile/tablet guest detail overlay */}
+      {selectedGuestData && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/40 flex items-end">
+          <div className="w-full bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl flex flex-col" style={{ maxHeight: '92vh' }}>
+            <GuestDetailPanel
+              guest={selectedGuestData}
+              reservations={guestReservations[selectedGuestData.customer_email]}
+              loading={loadingReservations === selectedGuestData.customer_email}
+              onClose={() => setSelectedGuest(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
