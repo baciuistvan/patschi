@@ -416,14 +416,22 @@ Deno.serve(async (req: Request) => {
       });
     } catch (_logErr) { /* non-blocking */ }
 
-    // Write in-app notification
+    // Write in-app notification (deduplicated by related_id + type)
     try {
-      await supabase.from('notifications').insert({
-        type: 'online_reservation',
-        title: 'Neue Online-Reservierung',
-        message: `${customer_name} – ${party_size} Gäste, ${reservation_date} um ${reservation_time} Uhr`,
-        related_id: reservation.id,
-      });
+      const { data: existingNotif } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('type', 'online_reservation')
+        .eq('related_id', reservation.id)
+        .maybeSingle();
+      if (!existingNotif) {
+        await supabase.from('notifications').insert({
+          type: 'online_reservation',
+          title: 'Neue Online-Reservierung',
+          message: `${customer_name} – ${party_size} Gäste, ${reservation_date} um ${reservation_time} Uhr`,
+          related_id: reservation.id,
+        });
+      }
     } catch (_notifErr) { /* non-blocking */ }
 
     // Notify admins via push notification
