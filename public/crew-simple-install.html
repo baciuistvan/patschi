@@ -776,6 +776,7 @@
 
       const resList = document.querySelector('.reservation-list');
       if (resList) resList.scrollTop = 0;
+      sessionStorage.removeItem('crew_res_scroll');
 
       await fetchReservations();
       await render();
@@ -787,6 +788,7 @@
 
       const resList = document.querySelector('.reservation-list');
       if (resList) resList.scrollTop = 0;
+      sessionStorage.removeItem('crew_res_scroll');
 
       await fetchReservations();
       await render();
@@ -1988,6 +1990,20 @@
 
     let _isBackgroundRender = false;
 
+    function _saveResListScroll() {
+      const resList = document.querySelector('.reservation-list');
+      if (resList) {
+        sessionStorage.setItem('crew_res_scroll', String(resList.scrollTop));
+      }
+    }
+
+    function _attachResListScrollSaver() {
+      const resList = document.querySelector('.reservation-list');
+      if (resList) {
+        resList.addEventListener('scroll', _saveResListScroll, { passive: true });
+      }
+    }
+
     // Main render function
     async function render() {
       const app = document.getElementById('app');
@@ -1995,7 +2011,7 @@
         app.innerHTML = renderLogin();
       } else {
         const resList = document.querySelector('.reservation-list');
-        const savedScrollTop = resList ? resList.scrollTop : 0;
+        const savedScrollTop = resList ? resList.scrollTop : (parseInt(sessionStorage.getItem('crew_res_scroll') || '0', 10));
 
         app.innerHTML = await renderDashboard();
 
@@ -2003,6 +2019,7 @@
         if (newResList && savedScrollTop > 0) {
           newResList.scrollTop = savedScrollTop;
         }
+        _attachResListScrollSaver();
 
         if (!_isBackgroundRender) {
           scrollTimelineToCenter();
@@ -3588,6 +3605,11 @@
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && state.view === 'dashboard') {
+        const savedScroll = parseInt(sessionStorage.getItem('crew_res_scroll') || '0', 10);
+        if (savedScroll > 0) {
+          const resList = document.querySelector('.reservation-list');
+          if (resList) resList.scrollTop = savedScroll;
+        }
         debouncedSilentRefresh();
       }
     });
