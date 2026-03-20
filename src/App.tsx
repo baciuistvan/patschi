@@ -17,6 +17,8 @@ import { isConfigured } from './lib/supabase';
 
 type SystemType = 'reservations' | 'gift-cards' | 'website-tools' | null;
 
+const SYSTEM_KEY = 'crew_selected_system';
+
 function AppContent() {
   const { user, adminUser, loading } = useAuth();
   const [showConfig, setShowConfig] = useState(false);
@@ -24,7 +26,16 @@ function AppContent() {
   useEffect(() => {
     setShowConfig(!isConfigured());
   }, []);
-  const [selectedSystem, setSelectedSystem] = useState<SystemType>(null);
+  const [selectedSystem, setSelectedSystem] = useState<SystemType>(() => {
+    const stored = sessionStorage.getItem(SYSTEM_KEY) as SystemType;
+    return stored ?? null;
+  });
+
+  const handleSelectSystem = (system: SystemType) => {
+    if (system) sessionStorage.setItem(SYSTEM_KEY, system);
+    else sessionStorage.removeItem(SYSTEM_KEY);
+    setSelectedSystem(system);
+  };
   const path = window.location.pathname;
   const hash = window.location.hash;
   const searchParams = new URLSearchParams(window.location.search);
@@ -35,7 +46,7 @@ function AppContent() {
 
   useEffect(() => {
     if (!user || !adminUser) {
-      setSelectedSystem(null);
+      handleSelectSystem(null);
     }
   }, [user, adminUser]);
 
@@ -97,10 +108,10 @@ function AppContent() {
   }
 
   if (!selectedSystem) {
-    return <SystemSelector onSelectSystem={setSelectedSystem} />;
+    return <SystemSelector onSelectSystem={handleSelectSystem} />;
   }
 
-  const handleSwitchSystem = () => setSelectedSystem(null);
+  const handleSwitchSystem = () => handleSelectSystem(null);
 
   if (selectedSystem === 'reservations') {
     return <Dashboard onSwitchSystem={handleSwitchSystem} />;

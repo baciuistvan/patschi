@@ -23,19 +23,30 @@ const NAV_ITEMS: { view: View; icon: React.ElementType; labelKey: string }[] = [
   { view: 'settings', icon: SettingsIcon, labelKey: 'nav.settings' },
 ];
 
+const DASHBOARD_VIEW_KEY = 'crew_dashboard_view';
+
 export function Dashboard({ onSwitchSystem }: DashboardProps) {
   const { adminUser, signOut } = useAuth();
   const { t } = useLanguage();
   const { theme, setTheme } = useTheme();
-  const [currentView, setCurrentView] = useState<View>('home');
+  const [currentView, setCurrentView] = useState<View>(() => {
+    const stored = sessionStorage.getItem(DASHBOARD_VIEW_KEY) as View | null;
+    return stored ?? 'home';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleSetView = (view: View) => {
+    sessionStorage.setItem(DASHBOARD_VIEW_KEY, view);
+    setCurrentView(view);
+    setMobileMenuOpen(false);
+  };
 
   const handleNotificationNavigate = (view: string) => {
     if (view === 'gift-cards' && onSwitchSystem) {
       onSwitchSystem();
     } else {
-      setCurrentView(view as View);
+      handleSetView(view as View);
     }
   };
 
@@ -85,7 +96,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
             return (
               <button
                 key={view}
-                onClick={() => setCurrentView(view)}
+                onClick={() => handleSetView(view)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${
                   active
                     ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400'
@@ -171,7 +182,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
 
           <div className={`flex gap-1.5 ${sidebarCollapsed ? 'flex-col' : 'flex-row'} px-1`}>
             <button
-              onClick={() => setCurrentView('user-management')}
+              onClick={() => handleSetView('user-management')}
               className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-150 text-xs font-medium border border-slate-200 dark:border-slate-700"
               title="Admin Einstellungen"
             >
@@ -209,7 +220,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
           return (
             <button
               key={view}
-              onClick={() => setCurrentView(view)}
+              onClick={() => handleSetView(view)}
               className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition ${
                 active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'
               }`}
@@ -270,7 +281,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
               Crew Dashboard
             </button>
             <button
-              onClick={() => { setCurrentView('user-management'); setMobileMenuOpen(false); }}
+              onClick={() => handleSetView('user-management')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-sm font-medium"
             >
               <SettingsIcon style={{ width: 18, height: 18 }} />
