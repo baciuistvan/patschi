@@ -11,24 +11,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --charcoal: #1e1e1e;
-      --charcoal-light: #2e2e2e;
-      --warm-white: #f7f3ee;
-      --warm-cream: #ede8e0;
-      --warm-border: #d4cec4;
-      --amber: #b8924a;
+      --dark-bg: #0d0d0d;
+      --dark-panel: #111111;
+      --amber: #c9a84c;
       --amber-light: #d4aa6a;
-      --amber-pale: #f5eddc;
-      --text-primary: #1e1e1e;
-      --text-secondary: #5a5550;
-      --text-muted: #9a948e;
-      --success-pale: #eaf2ed;
-      --error: #8b2e2e;
-      --error-pale: #fdf0f0;
-      --shadow: 6px 6px 9px rgba(0,0,0,0.12);
-      --shadow-soft: 0 4px 20px rgba(0,0,0,0.08);
-      --radius: 4px;
-      --radius-lg: 8px;
+      --text-white: #f0ece6;
+      --text-muted: #888078;
+      --text-meta: #a09890;
+      --divider: #1e1e1e;
     }
 
     body {
@@ -36,104 +26,19 @@
       padding: 0;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: transparent;
-      color: var(--text-primary);
+      color: var(--text-white);
       -webkit-font-smoothing: antialiased;
     }
 
     #events-widget-root {
       max-width: 100%;
       margin: 0 auto;
+      background: var(--dark-bg);
     }
 
-    /* ── Header ── */
     .ew-widget {
-      background: white;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
+      background: var(--dark-bg);
       overflow: hidden;
-    }
-
-    .ew-header {
-      background: var(--charcoal);
-      padding: 52px 64px 44px;
-    }
-
-    .ew-header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 4px;
-    }
-
-    .ew-title {
-      font-family: 'Cardo', Georgia, serif;
-      font-size: 52px;
-      font-weight: 700;
-      color: var(--warm-white);
-      letter-spacing: 0.01em;
-      line-height: 1.15;
-    }
-
-    .ew-subtitle {
-      font-size: 13px;
-      font-weight: 500;
-      color: #9a948e;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    .ew-count-badge {
-      background: rgba(184,146,74,0.18);
-      border: 1px solid rgba(184,146,74,0.35);
-      color: var(--amber-light);
-      padding: 7px 22px;
-      border-radius: 9999px;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-      margin-top: 6px;
-    }
-
-    .ew-filters {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 28px;
-    }
-
-    .ew-filter-btn {
-      padding: 6px 18px;
-      border-radius: 9999px;
-      border: 1px solid rgba(212,206,196,0.3);
-      background: transparent;
-      color: #9a948e;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      letter-spacing: 0.02em;
-    }
-    .ew-filter-btn:hover { border-color: rgba(184,146,74,0.5); color: var(--amber-light); background: rgba(184,146,74,0.08); }
-    .ew-filter-btn.active { background: rgba(184,146,74,0.18); border-color: rgba(184,146,74,0.45); color: var(--amber-light); }
-
-    /* ── Body ── */
-    .ew-body {
-      padding: 56px 64px 72px;
-    }
-
-    @media (max-width: 768px) {
-      .ew-header { padding: 36px 28px 32px; }
-      .ew-body   { padding: 36px 28px 52px; }
-      .ew-title  { font-size: 38px; }
-    }
-
-    @media (max-width: 480px) {
-      .ew-header { padding: 28px 20px 26px; }
-      .ew-body   { padding: 28px 20px 40px; }
-      .ew-title  { font-size: 30px; }
     }
 
     /* ── Loading / Error / Empty ── */
@@ -146,11 +51,12 @@
       gap: 20px;
       color: var(--text-muted);
       font-size: 16px;
+      background: var(--dark-bg);
     }
 
     .ew-spinner {
       width: 48px; height: 48px;
-      border: 3px solid var(--warm-border);
+      border: 2px solid #2a2a2a;
       border-top-color: var(--amber);
       border-radius: 50%;
       animation: spin 0.75s linear infinite;
@@ -160,34 +66,25 @@
 
     .ew-empty {
       text-align: center;
-      padding: 80px 40px;
-    }
-
-    .ew-empty-icon {
-      width: 80px; height: 80px;
-      border-radius: var(--radius-lg);
-      background: var(--amber-pale);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 24px;
-      color: var(--amber);
+      padding: 100px 40px;
+      background: var(--dark-bg);
+      color: var(--text-muted);
     }
 
     .ew-empty h3 {
       font-family: 'Cardo', Georgia, serif;
       font-size: 28px; font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 10px;
+      color: var(--text-white);
+      margin-bottom: 12px;
     }
 
     .ew-empty p { font-size: 16px; color: var(--text-muted); line-height: 1.65; }
 
     .ew-error {
-      border: 1px solid #e8c8c8;
-      background: var(--error-pale);
-      border-radius: var(--radius-lg);
-      padding: 24px 28px;
+      background: #1a0a0a;
+      padding: 32px 40px;
       display: flex; align-items: flex-start; gap: 16px;
-      font-size: 15px; color: var(--error);
+      font-size: 15px; color: #c07070;
     }
 
     .ew-error svg { flex-shrink: 0; margin-top: 2px; }
@@ -196,21 +93,16 @@
     .ew-events-list {
       display: flex;
       flex-direction: column;
-      gap: 0;
     }
 
     /* ── Single event row ── */
     .ew-event-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      min-height: 360px;
-      border-bottom: 1px solid var(--warm-border);
+      min-height: 400px;
+      border-bottom: 1px solid var(--divider);
       overflow: hidden;
-      transition: box-shadow 0.25s ease;
     }
-
-    .ew-event-row:first-child { border-top: 1px solid var(--warm-border); }
-    .ew-event-row:hover { box-shadow: var(--shadow-soft); z-index: 1; position: relative; }
 
     /* odd  → image left,  text right */
     .ew-event-row.odd  .ew-event-img-wrap { order: 1; }
@@ -225,188 +117,126 @@
       grid-template-columns: 1fr;
     }
 
-    .ew-event-row.no-image .ew-event-content {
-      order: 1;
-      border-left: none;
-    }
-
     /* ── Image pane ── */
     .ew-event-img-wrap {
       position: relative;
       overflow: hidden;
-      background: var(--warm-cream);
-      min-height: 280px;
+      background: #1a1a1a;
+      min-height: 340px;
     }
 
     .ew-event-img-wrap img {
       width: 100%; height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.5s ease;
+      transition: transform 0.6s ease;
     }
 
     .ew-event-row:hover .ew-event-img-wrap img {
-      transform: scale(1.03);
+      transform: scale(1.04);
     }
 
     .ew-img-placeholder {
       width: 100%; height: 100%;
-      min-height: 280px;
+      min-height: 340px;
       display: flex; align-items: center; justify-content: center;
-      background: var(--warm-cream);
-      color: var(--warm-border);
+      background: #1a1a1a;
+      color: #333;
     }
 
-    /* Featured ribbon on image */
-    .ew-featured-ribbon {
+    /* Category tag on image */
+    .ew-cat-tag {
       position: absolute;
-      top: 18px; left: 18px;
+      top: 20px; left: 20px;
       background: var(--amber);
-      color: white;
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 5px 14px;
-      border-radius: 9999px;
-      display: flex; align-items: center; gap: 5px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    /* Category ribbon on image */
-    .ew-cat-ribbon {
-      position: absolute;
-      bottom: 18px; left: 18px;
+      color: #0d0d0d;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 2px;
     }
 
     /* ── Content pane ── */
     .ew-event-content {
-      padding: 44px 48px;
+      padding: 52px 56px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      background: white;
+      background: var(--dark-panel);
     }
 
-    .ew-event-row.even .ew-event-content {
-      border-right: 1px solid var(--warm-border);
-      text-align: right;
-      align-items: flex-end;
-    }
-
-    .ew-event-row.odd .ew-event-content {
-      border-left: 1px solid var(--warm-border);
-      text-align: left;
-      align-items: flex-start;
-    }
-
-    .ew-event-row.no-image .ew-event-content {
-      text-align: left;
-      align-items: flex-start;
-      padding: 40px 48px;
-    }
-
-    /* Date chip */
-    .ew-date-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      background: var(--amber-pale);
-      border: 1px solid rgba(184,146,74,0.25);
-      font-size: 13px; font-weight: 600;
-      color: var(--amber);
-      letter-spacing: 0.02em;
-      margin-bottom: 18px;
-      white-space: nowrap;
-    }
-
-    .ew-date-chip.featured-chip {
-      background: var(--amber);
-      color: white;
-      border-color: transparent;
-    }
-
-    .ew-event-title {
-      font-family: 'Cardo', Georgia, serif;
-      font-size: 32px; font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.25;
-      margin-bottom: 10px;
-    }
-
-    .ew-event-subtitle {
-      font-size: 15px;
-      color: var(--text-secondary);
-      font-style: italic;
-      margin-bottom: 18px;
-      line-height: 1.55;
-    }
-
-    .ew-event-meta {
+    /* ── Meta row (date / time / location) ── */
+    .ew-event-meta-row {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
       margin-bottom: 20px;
     }
 
-    .ew-event-row.even .ew-event-meta { align-items: flex-end; }
-    .ew-event-row.odd  .ew-event-meta { align-items: flex-start; }
-    .ew-event-row.no-image .ew-event-meta { align-items: flex-start; }
-
-    .ew-meta-item {
+    .ew-meta-piece {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      font-size: 14px;
-      color: var(--text-muted);
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-meta);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
-    .ew-meta-item svg { opacity: 0.65; flex-shrink: 0; }
+    .ew-meta-piece svg { opacity: 0.7; flex-shrink: 0; }
 
-    .ew-price-label {
-      font-size: 15px; font-weight: 700;
-      color: var(--amber);
-      margin-top: 4px;
+    .ew-meta-piece.date-piece { color: var(--amber); }
+
+    /* ── Title ── */
+    .ew-event-title {
+      font-family: 'Cardo', Georgia, serif;
+      font-size: 44px; font-weight: 700;
+      color: var(--text-white);
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.01em;
     }
 
+    /* ── Description ── */
     .ew-event-description {
       font-size: 15px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       line-height: 1.75;
       white-space: pre-line;
-      margin-top: 16px;
-      max-height: 120px;
+      margin-bottom: 32px;
+      max-height: 100px;
       overflow: hidden;
-      -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
     }
 
-    /* Category badges */
-    .ew-category-badge {
-      display: inline-flex; align-items: center;
-      padding: 3px 11px;
-      border-radius: 9999px;
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.04em; text-transform: uppercase;
-      white-space: nowrap;
-      margin-bottom: 14px;
+    /* ── CTA Button ── */
+    .ew-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 12px 28px;
+      border: 1px solid rgba(240,236,230,0.35);
+      background: transparent;
+      color: var(--text-white);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      border-radius: 1px;
+      align-self: flex-start;
     }
 
-    .badge-party        { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
-    .badge-live-music   { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-    .badge-dj-night     { background: var(--amber-pale); color: #7a5c20; border: 1px solid #e8d5a8; }
-    .badge-spezialevent { background: var(--success-pale); color: #2d6045; border: 1px solid #a8d5b8; }
-    .badge-apres-ski    { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-    .badge-konzert      { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-    .badge-sonstiges    { background: var(--warm-cream); color: var(--text-secondary); border: 1px solid var(--warm-border); }
-
-    /* Divider between rows */
-    .ew-divider {
-      height: 1px;
-      background: var(--warm-border);
+    .ew-cta-btn:hover {
+      background: var(--text-white);
+      border-color: var(--text-white);
+      color: var(--dark-bg);
     }
 
-    /* ── Mobile: stack vertically ── */
+    /* ── Mobile ── */
     @media (max-width: 680px) {
       .ew-event-row,
       .ew-event-row.odd,
@@ -419,39 +249,27 @@
       .ew-event-row.odd  .ew-event-content,
       .ew-event-row.even .ew-event-content  { order: 2; }
 
-      .ew-event-img-wrap { min-height: 220px; }
+      .ew-event-img-wrap { min-height: 260px; }
 
-      .ew-event-content,
-      .ew-event-row.odd  .ew-event-content,
-      .ew-event-row.even .ew-event-content {
-        padding: 28px 24px 32px;
-        text-align: left !important;
-        align-items: flex-start !important;
-        border-left: none !important;
-        border-right: none !important;
-        border-top: 1px solid var(--warm-border);
+      .ew-event-content {
+        padding: 36px 28px 40px;
       }
 
-      .ew-event-row.even .ew-event-meta { align-items: flex-start; }
+      .ew-event-title { font-size: 32px; }
 
-      .ew-event-title { font-size: 26px; }
+      .ew-event-meta-row { gap: 14px; }
+    }
+
+    @media (max-width: 480px) {
+      .ew-event-content { padding: 28px 20px 32px; }
+      .ew-event-title { font-size: 28px; }
     }
   </style>
 </head>
 <body>
   <div id="events-widget-root">
     <div class="ew-widget">
-      <div class="ew-header">
-        <div class="ew-header-top">
-          <div>
-            <div class="ew-subtitle">Programm</div>
-            <div class="ew-title">Veranstaltungen</div>
-          </div>
-          <div class="ew-count-badge" id="count-badge" style="display:none;"></div>
-        </div>
-        <div class="ew-filters" id="filters" style="display:none;"></div>
-      </div>
-      <div class="ew-body" id="app">
+      <div id="app">
         <div class="ew-loading" id="loading">
           <div class="ew-spinner"></div>
           <span>Events werden geladen&hellip;</span>
@@ -466,10 +284,9 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3d2Vyd2tla3ZtYXN3dXN2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzkxOTYsImV4cCI6MjA3OTU1NTE5Nn0.LkNZz4Tl0y8DzI4P3dvZn2-5a4FIjE72kYHbhK5_YvE';
 
     let allEvents = [];
-    let activeFilter = 'Alle';
 
     function icon(paths, size) {
-      size = size || 18;
+      size = size || 14;
       return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
     }
 
@@ -477,26 +294,14 @@
       calendar: icon('<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>'),
       clock:    icon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
       mapPin:   icon('<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>'),
-      star:     icon('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', 13),
-      alertCircle: icon('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>'),
+      alertCircle: icon('<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>', 20),
       imagePlaceholder: icon('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>', 56),
     };
 
-    function badgeClass(cat) {
-      const map = {
-        'Party':'badge-party','Live Music':'badge-live-music','DJ Night':'badge-dj-night',
-        'Spezialevent':'badge-spezialevent','Après-Ski':'badge-apres-ski',
-        'Konzert':'badge-konzert','Sonstiges':'badge-sonstiges',
-      };
-      return map[cat] || 'badge-sonstiges';
+    function formatMonthYear(d) {
+      return new Date(d + 'T00:00:00').toLocaleDateString('de-AT', {month:'long', year:'numeric'}).toUpperCase();
     }
 
-    function formatDay(d)   { return new Date(d + 'T00:00:00').getDate(); }
-    function formatMonth(d) { return new Date(d + 'T00:00:00').toLocaleDateString('de-AT', {month:'short'}).replace('.',''); }
-    function formatYear(d)  { return new Date(d + 'T00:00:00').getFullYear(); }
-    function formatFullDate(d) {
-      return new Date(d + 'T00:00:00').toLocaleDateString('de-AT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-    }
     function formatTime(t) { return t ? t.slice(0,5) : ''; }
 
     function escHtml(str) {
@@ -507,20 +312,15 @@
     function renderEvent(ev, index) {
       var hasImage    = ev.image_url && ev.image_url.trim();
       var hasDesc     = ev.description && ev.description.trim();
-      var hasSubtitle = ev.subtitle && ev.subtitle.trim();
       var hasTime     = ev.start_time;
       var hasLocation = ev.location && ev.location.trim();
-      var hasPriceLabel = ev.price_label && ev.price_label.trim();
-      var isFeatured  = ev.is_featured;
 
       var parity = (index % 2 === 0) ? 'odd' : 'even';
       var noImgClass = hasImage ? '' : ' no-image';
 
       var timeStr = '';
       if (hasTime) {
-        timeStr = formatTime(ev.start_time);
-        if (ev.end_time) timeStr += ' \u2013 ' + formatTime(ev.end_time);
-        timeStr += ' Uhr';
+        timeStr = 'Ab ' + formatTime(ev.start_time) + ' Uhr';
       }
 
       /* image pane */
@@ -528,43 +328,26 @@
       if (hasImage) {
         imgPane =
           '<div class="ew-event-img-wrap">' +
-            (isFeatured
-              ? '<div class="ew-featured-ribbon">' + icons.star + ' Featured</div>'
+            (ev.category
+              ? '<div class="ew-cat-tag">' + escHtml(ev.category) + '</div>'
               : '') +
             '<img src="' + escHtml(ev.image_url) + '" alt="' + escHtml(ev.title) + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=ew-img-placeholder>' + icons.imagePlaceholder + '</div>\'">' +
-            (ev.category
-              ? '<div class="ew-cat-ribbon"><span class="ew-category-badge ' + badgeClass(ev.category) + '">' + escHtml(ev.category) + '</span></div>'
-              : '') +
           '</div>';
       }
 
-      /* date chip */
-      var dateChipClass = isFeatured ? 'ew-date-chip featured-chip' : 'ew-date-chip';
-      var dateChip =
-        '<div class="' + dateChipClass + '">' +
-          icons.calendar + ' ' +
-          formatDay(ev.date) + '. ' + formatMonth(ev.date) + ' ' + formatYear(ev.date) +
-        '</div>';
-
-      /* meta lines */
-      var metaLines = '';
-      if (hasTime)     metaLines += '<span class="ew-meta-item">' + icons.clock   + ' ' + escHtml(timeStr)     + '</span>';
-      if (hasLocation) metaLines += '<span class="ew-meta-item">' + icons.mapPin  + ' ' + escHtml(ev.location)  + '</span>';
+      /* meta row */
+      var metaPieces = '';
+      metaPieces += '<span class="ew-meta-piece date-piece">' + icons.calendar + ' ' + formatMonthYear(ev.date) + '</span>';
+      if (hasTime)     metaPieces += '<span class="ew-meta-piece">' + icons.clock   + ' ' + escHtml(timeStr)    + '</span>';
+      if (hasLocation) metaPieces += '<span class="ew-meta-piece">' + icons.mapPin  + ' ' + escHtml(ev.location) + '</span>';
 
       /* content pane */
       var contentPane =
         '<div class="ew-event-content">' +
-          (ev.category && !hasImage
-            ? '<span class="ew-category-badge ' + badgeClass(ev.category) + '">' + escHtml(ev.category) + '</span>'
-            : '') +
-          dateChip +
+          '<div class="ew-event-meta-row">' + metaPieces + '</div>' +
           '<div class="ew-event-title">' + escHtml(ev.title) + '</div>' +
-          (hasSubtitle ? '<div class="ew-event-subtitle">' + escHtml(ev.subtitle) + '</div>' : '') +
-          (metaLines   ? '<div class="ew-event-meta">'  + metaLines + '</div>' : '') +
-          (hasPriceLabel ? '<div class="ew-price-label">' + escHtml(ev.price_label) + '</div>' : '') +
-          (hasDesc && !hasImage
-            ? '<div class="ew-event-description">' + escHtml(ev.description) + '</div>'
-            : '') +
+          (hasDesc ? '<div class="ew-event-description">' + escHtml(ev.description) + '</div>' : '') +
+          '<a class="ew-cta-btn" href="#">Mehr erfahren</a>' +
         '</div>';
 
       return '<div class="ew-event-row ' + parity + noImgClass + '">' +
@@ -573,33 +356,10 @@
       '</div>';
     }
 
-    function buildFilters(events) {
-      var categories = ['Alle'];
-      events.forEach(function(ev) {
-        if (ev.category && categories.indexOf(ev.category) === -1) categories.push(ev.category);
-      });
-      if (categories.length <= 2) return;
-
-      var el = document.getElementById('filters');
-      el.style.display = '';
-      el.innerHTML = categories.map(function(cat) {
-        return '<button class="ew-filter-btn' + (cat === activeFilter ? ' active' : '') +
-          '" onclick="setFilter(\'' + cat.replace(/'/g,"\\'") + '\')">' + escHtml(cat) + '</button>';
-      }).join('');
-    }
-
-    function setFilter(cat) {
-      activeFilter = cat;
-      renderList();
-      document.querySelectorAll('.ew-filter-btn').forEach(function(btn) {
-        btn.classList.toggle('active', btn.textContent === cat);
-      });
-    }
-
     function renderList() {
       var today = new Date().toISOString().slice(0, 10);
       var filtered = allEvents.filter(function(ev) {
-        return (activeFilter === 'Alle' || ev.category === activeFilter) && ev.date >= today;
+        return ev.date >= today;
       });
 
       var content = document.getElementById('content');
@@ -607,9 +367,8 @@
       if (filtered.length === 0) {
         content.innerHTML =
           '<div class="ew-empty">' +
-            '<div class="ew-empty-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></div>' +
             '<h3>Keine Veranstaltungen</h3>' +
-            '<p>' + (activeFilter !== 'Alle' ? 'Keine Events in dieser Kategorie.' : 'Aktuell sind keine Veranstaltungen geplant.') + '<br>Schau bald wieder vorbei!</p>' +
+            '<p>Aktuell sind keine Veranstaltungen geplant.<br>Schau bald wieder vorbei!</p>' +
           '</div>';
         return;
       }
@@ -636,18 +395,12 @@
         if (!allEvents || allEvents.length === 0) {
           content.innerHTML =
             '<div class="ew-empty">' +
-              '<div class="ew-empty-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></div>' +
               '<h3>Aktuell keine Veranstaltungen</h3>' +
               '<p>Schau bald wieder vorbei &ndash;<br>neue Events werden bald angek&uuml;ndigt!</p>' +
             '</div>';
           return;
         }
 
-        var badge = document.getElementById('count-badge');
-        badge.style.display = '';
-        badge.textContent = allEvents.length + ' kommende ' + (allEvents.length === 1 ? 'Veranstaltung' : 'Veranstaltungen');
-
-        buildFilters(allEvents);
         renderList();
 
       } catch (err) {
