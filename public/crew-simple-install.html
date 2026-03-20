@@ -774,6 +774,9 @@
       state.calendarMonth = newDate.getMonth();
       state.calendarYear = newDate.getFullYear();
 
+      const resList = document.querySelector('.reservation-list');
+      if (resList) resList.scrollTop = 0;
+
       await fetchReservations();
       await render();
     }
@@ -781,6 +784,10 @@
     // Select a date on calendar
     async function selectCalendarDate(year, month, day) {
       state.selectedDate = new Date(year, month, day);
+
+      const resList = document.querySelector('.reservation-list');
+      if (resList) resList.scrollTop = 0;
+
       await fetchReservations();
       await render();
     }
@@ -1992,12 +1999,12 @@
 
         app.innerHTML = await renderDashboard();
 
-        if (_isBackgroundRender) {
-          const newResList = document.querySelector('.reservation-list');
-          if (newResList && savedScrollTop > 0) {
-            newResList.scrollTop = savedScrollTop;
-          }
-        } else {
+        const newResList = document.querySelector('.reservation-list');
+        if (newResList && savedScrollTop > 0) {
+          newResList.scrollTop = savedScrollTop;
+        }
+
+        if (!_isBackgroundRender) {
           scrollTimelineToCenter();
         }
 
