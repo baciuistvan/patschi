@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase, Reservation, Table, Room } from '../lib/supabase';
 import {
   Calendar, Clock, Users, Mail, Phone, CheckCircle, XCircle,
@@ -209,6 +209,157 @@ function ReservationCard({
 
 const inputCls = "w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-150 outline-none";
 const labelCls = "block text-[11px] font-medium text-slate-400 dark:text-slate-500 mb-1 tracking-wide";
+
+function ReservationToggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer select-none">
+      <div
+        onClick={() => onChange(!checked)}
+        className={`relative flex-shrink-0 rounded-full transition-colors duration-200 ${checked ? 'bg-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}
+        style={{ width: 32, height: 18 }}
+      >
+        <div
+          className={`absolute top-0.5 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+          style={{ width: 14, height: 14 }}
+        />
+      </div>
+      <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
+    </label>
+  );
+}
+
+function ReservationFormSectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2.5 pt-1 pb-0.5">
+      <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 uppercase tracking-[0.15em] whitespace-nowrap">{label}</span>
+      <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800/80" />
+    </div>
+  );
+}
+
+function ReservationTableGrid({
+  rooms,
+  allTables,
+  tableRoomFilter,
+  selectedTables,
+  newReservationDate,
+  newReservationTime,
+  getReservedTablesForDateTime,
+  setTableRoomFilter,
+  loadAllTables,
+  setSelectedTables,
+  noTablesLabel,
+  excludeId,
+}: {
+  rooms: Room[];
+  allTables: Table[];
+  tableRoomFilter: string | null;
+  selectedTables: string[];
+  newReservationDate: string;
+  newReservationTime: string;
+  getReservedTablesForDateTime: (date: string, time: string, excludeId?: string) => Set<string>;
+  setTableRoomFilter: (id: string) => void;
+  loadAllTables: () => void;
+  setSelectedTables: (ids: string[]) => void;
+  noTablesLabel: string;
+  excludeId?: string;
+}) {
+  return (
+    <div>
+      <div className="flex gap-1.5 mb-3 flex-wrap">
+        {rooms.map(room => (
+          <button
+            key={room.id}
+            type="button"
+            onClick={() => { setTableRoomFilter(room.id); loadAllTables(); }}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${tableRoomFilter === room.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-slate-200'}`}
+          >
+            {room.name}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+        {allTables
+          .filter(table => table.capacity > 0 && table.room_id === tableRoomFilter)
+          .sort((a, b) => (parseInt(a.table_number) || 0) - (parseInt(b.table_number) || 0))
+          .map(table => {
+            const isSelected = selectedTables.includes(table.id);
+            const reservedTables = (newReservationDate && newReservationTime)
+              ? getReservedTablesForDateTime(newReservationDate, newReservationTime, excludeId)
+              : new Set<string>();
+            const isReserved = reservedTables.has(table.id);
+            const isNonBookable = !table.is_bookable;
+            return (
+              <button
+                key={table.id}
+                type="button"
+                disabled={isReserved}
+                onClick={() => {
+                  if (isReserved) return;
+                  setSelectedTables(isSelected ? selectedTables.filter(id => id !== table.id) : [...selectedTables, table.id]);
+                }}
+                className={`p-2 rounded-xl border transition-all duration-150 text-center ${
+                  isReserved ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 cursor-not-allowed opacity-60'
+                  : isSelected ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-slate-900'
+                  : isNonBookable ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-100'
+                  : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500'
+                }`}
+              >
+                <div className="text-xs font-bold">{table.table_number || table.custom_label || `T${table.id.slice(0, 4)}`}</div>
+                <div className="text-[10px] opacity-70">{table.capacity}p</div>
+              </button>
+            );
+          })}
+      </div>
+      {allTables.filter(t => t.capacity > 0 && t.room_id === tableRoomFilter).length === 0 && (
+        <p className="text-sm text-slate-400 py-2">{noTablesLabel}</p>
+      )}
+      {selectedTables.length > 0 && (
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{selectedTables.length} Tisch{selectedTables.length > 1 ? 'e' : ''} ausgewählt</p>
+      )}
+    </div>
+  );
+}
+
+function ReservationDayPicker({
+  reservationDate,
+  selectedDays,
+  setSelectedDays,
+  formatDateLocal,
+}: {
+  reservationDate: string;
+  selectedDays: string[];
+  setSelectedDays: (days: string[]) => void;
+  formatDateLocal: (date: Date) => string;
+}) {
+  const startDate = new Date(reservationDate || new Date());
+  const days: React.ReactElement[] = [];
+  const currentDate = new Date(startDate);
+  currentDate.setDate(currentDate.getDate() - 7);
+  for (let i = 0; i < 38; i++) {
+    const dateStr = formatDateLocal(currentDate);
+    const isSelected = selectedDays.includes(dateStr);
+    const isOriginalDate = dateStr === reservationDate;
+    days.push(
+      <button key={dateStr} type="button" onClick={() => {
+        if (isOriginalDate) return;
+        setSelectedDays(isSelected ? selectedDays.filter(d => d !== dateStr) : [...selectedDays, dateStr].sort());
+      }}
+        className={`p-1.5 rounded-xl text-center transition-all duration-150 min-w-[44px] ${isOriginalDate ? 'bg-emerald-600 text-white cursor-default' : isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+      >
+        <div className="text-[10px] font-medium">{new Date(currentDate).toLocaleDateString('de-DE', { weekday: 'short' })}</div>
+        <div className="text-xs font-bold">{new Date(currentDate).getDate()}</div>
+      </button>
+    );
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return (
+    <div className="overflow-x-auto">
+      <div className="grid grid-cols-7 gap-1 min-w-[330px]">{days}</div>
+      {selectedDays.length > 0 && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{selectedDays.length} zusätzliche Tag{selectedDays.length > 1 ? 'e' : ''} ausgewählt</p>}
+    </div>
+  );
+}
 
 export function ReservationManager() {
   const { t } = useLanguage();
@@ -862,116 +1013,22 @@ export function ReservationManager() {
     { key: 'all' as const, label: 'Alle' },
   ];
 
-  const TableGrid = ({ excludeId }: { excludeId?: string }) => (
-    <div>
-      <div className="flex gap-1.5 mb-3 flex-wrap">
-        {rooms.map(room => (
-          <button
-            key={room.id}
-            type="button"
-            onClick={() => { setTableRoomFilter(room.id); loadAllTables(); }}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 ${tableRoomFilter === room.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-slate-200'}`}
-          >
-            {room.name}
-          </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
-        {allTables
-          .filter(table => table.capacity > 0 && table.room_id === tableRoomFilter)
-          .sort((a, b) => (parseInt(a.table_number) || 0) - (parseInt(b.table_number) || 0))
-          .map(table => {
-            const isSelected = selectedTables.includes(table.id);
-            const reservedTables = (newReservation.reservation_date && newReservation.reservation_time)
-              ? getReservedTablesForDateTime(newReservation.reservation_date, newReservation.reservation_time, excludeId)
-              : new Set<string>();
-            const isReserved = reservedTables.has(table.id);
-            const isNonBookable = !table.is_bookable;
-            return (
-              <button
-                key={table.id}
-                type="button"
-                disabled={isReserved}
-                onClick={() => {
-                  if (isReserved) return;
-                  setSelectedTables(isSelected ? selectedTables.filter(id => id !== table.id) : [...selectedTables, table.id]);
-                }}
-                className={`p-2 rounded-xl border transition-all duration-150 text-center ${
-                  isReserved ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 cursor-not-allowed opacity-60'
-                  : isSelected ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-slate-900'
-                  : isNonBookable ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-100'
-                  : 'bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500'
-                }`}
-              >
-                <div className="text-xs font-bold">{table.table_number || table.custom_label || `T${table.id.slice(0, 4)}`}</div>
-                <div className="text-[10px] opacity-70">{table.capacity}p</div>
-              </button>
-            );
-          })}
-      </div>
-      {allTables.filter(t => t.capacity > 0 && t.room_id === tableRoomFilter).length === 0 && (
-        <p className="text-sm text-slate-400 py-2">{t('reservations.no_tables_available')}</p>
-      )}
-      {selectedTables.length > 0 && (
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{selectedTables.length} Tisch{selectedTables.length > 1 ? 'e' : ''} ausgewählt</p>
-      )}
-    </div>
-  );
-
-  const DayPicker = () => {
-    const startDate = new Date(newReservation.reservation_date || new Date());
-    const days: JSX.Element[] = [];
-    const currentDate = new Date(startDate);
-    currentDate.setDate(currentDate.getDate() - 7);
-    for (let i = 0; i < 38; i++) {
-      const dateStr = formatDateLocal(currentDate);
-      const isSelected = selectedDays.includes(dateStr);
-      const isOriginalDate = dateStr === newReservation.reservation_date;
-      days.push(
-        <button key={dateStr} type="button" onClick={() => {
-          if (isOriginalDate) return;
-          setSelectedDays(isSelected ? selectedDays.filter(d => d !== dateStr) : [...selectedDays, dateStr].sort());
-        }}
-          className={`p-1.5 rounded-xl text-center transition-all duration-150 min-w-[44px] ${isOriginalDate ? 'bg-emerald-600 text-white cursor-default' : isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
-        >
-          <div className="text-[10px] font-medium">{currentDate.toLocaleDateString('de-DE', { weekday: 'short' })}</div>
-          <div className="text-xs font-bold">{currentDate.getDate()}</div>
-        </button>
-      );
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    return (
-      <div className="overflow-x-auto">
-        <div className="grid grid-cols-7 gap-1 min-w-[330px]">{days}</div>
-        {selectedDays.length > 0 && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{selectedDays.length} zusätzliche Tag{selectedDays.length > 1 ? 'e' : ''} ausgewählt</p>}
-      </div>
-    );
+  const tableGridProps = {
+    rooms,
+    allTables,
+    tableRoomFilter,
+    selectedTables,
+    newReservationDate: newReservation.reservation_date,
+    newReservationTime: newReservation.reservation_time,
+    getReservedTablesForDateTime,
+    setTableRoomFilter,
+    loadAllTables,
+    setSelectedTables,
+    noTablesLabel: t('reservations.no_tables_available'),
   };
 
-  const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) => (
-    <label className="flex items-center gap-3 cursor-pointer select-none">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`relative flex-shrink-0 rounded-full transition-colors duration-200 ${checked ? 'bg-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}
-        style={{ width: 32, height: 18 }}
-      >
-        <div
-          className={`absolute top-0.5 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
-          style={{ width: 14, height: 14 }}
-        />
-      </div>
-      <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
-    </label>
-  );
 
-  const FormSectionDivider = ({ label }: { label: string }) => (
-    <div className="flex items-center gap-2.5 pt-1 pb-0.5">
-      <span className="text-[10px] font-semibold text-slate-300 dark:text-slate-600 uppercase tracking-[0.15em] whitespace-nowrap">{label}</span>
-      <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800/80" />
-    </div>
-  );
-
-  const FormBody = ({ isEdit }: { isEdit: boolean }) => {
+  const fakeFormBodyRender = ({ isEdit }: { isEdit: boolean }) => {
     const bm = (editingReservation as any)?.booking_method;
     const pm = (editingReservation as any)?.payment_method;
     const isOnlineEdit = isEdit && (bm === 'online' || bm === 'payment_link' || pm === 'stripe');
@@ -1003,7 +1060,7 @@ export function ReservationManager() {
           </button>
         )}
 
-        <FormSectionDivider label="Gast" />
+        <ReservationFormSectionDivider label="Gast" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
@@ -1020,7 +1077,7 @@ export function ReservationManager() {
           </div>
         </div>
 
-        <FormSectionDivider label="Termin" />
+        <ReservationFormSectionDivider label="Termin" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -1049,24 +1106,31 @@ export function ReservationManager() {
           <textarea value={newReservation.special_requests} onChange={e => setNewReservation({ ...newReservation, special_requests: e.target.value })} rows={2} className={inputCls} />
         </div>
 
-        <FormSectionDivider label="Tische" />
+        <ReservationFormSectionDivider label="Tische" />
 
-        <TableGrid excludeId={editingReservation?.id} />
+        <ReservationTableGrid {...tableGridProps} excludeId={editingReservation?.id} />
 
-        <FormSectionDivider label="Optionen" />
+        <ReservationFormSectionDivider label="Optionen" />
 
         <div className="space-y-3">
-          <Toggle
+          <ReservationToggle
             checked={multipleDays}
             onChange={v => { setMultipleDays(v); if (!v) { setSelectedDays([]); setDayAmounts({}); } }}
             label={isEdit ? t('crew.book_additional_days') : t('crew.book_multiple_days')}
           />
-          {multipleDays && <DayPicker />}
+          {multipleDays && (
+            <ReservationDayPicker
+              reservationDate={newReservation.reservation_date}
+              selectedDays={selectedDays}
+              setSelectedDays={setSelectedDays}
+              formatDateLocal={formatDateLocal}
+            />
+          )}
         </div>
 
         {!isOnlineEdit && (
           <div className="space-y-3">
-            <FormSectionDivider label="Buchungsart" />
+            <ReservationFormSectionDivider label="Buchungsart" />
             <div className="flex gap-2">
               {(['free', 'manual'] as const).map(bmt => (
                 <button key={bmt} type="button" onClick={() => { setBookingMethod(bmt); if (bmt === 'free') { setPaidWithCash(false); setCashAmount(0); } }}
@@ -1078,7 +1142,7 @@ export function ReservationManager() {
             </div>
             {bookingMethod === 'manual' && (
               <div className="space-y-2.5">
-                <Toggle
+                <ReservationToggle
                   checked={paidWithCash}
                   onChange={v => { setPaidWithCash(v); if (!v) setCashAmount(0); }}
                   label={t('crew.paid_with_cash')}
@@ -1444,7 +1508,7 @@ export function ReservationManager() {
             <div className="h-px bg-slate-100 dark:bg-white/[0.06] mx-5" />
             <div className="flex-1 px-5 py-4 overflow-y-auto">
               <form id="create-form" onSubmit={handleCreateReservation}>
-                <FormBody isEdit={false} />
+                {fakeFormBodyRender({ isEdit: false })}
               </form>
             </div>
             <div className="h-px bg-slate-100 dark:bg-white/[0.06] mx-5" />
@@ -1503,7 +1567,7 @@ export function ReservationManager() {
             <div className="h-px bg-slate-100 dark:bg-white/[0.06] mx-5" />
             <div className="flex-1 px-5 py-4 overflow-y-auto">
               <form id="edit-form" onSubmit={handleUpdateReservation}>
-                <FormBody isEdit={true} />
+                {fakeFormBodyRender({ isEdit: true })}
               </form>
             </div>
             <div className="h-px bg-slate-100 dark:bg-white/[0.06] mx-5" />
