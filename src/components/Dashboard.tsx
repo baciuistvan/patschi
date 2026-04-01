@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { LogOut, Calendar, Settings as SettingsIcon, Home, Sun, Moon, Users, Gift, CircleUser as UserCircle, ChevronRight, Shield } from 'lucide-react';
-import { NotificationBell, MobileNotificationBell } from './NotificationBell';
+import { NotificationBell, MobileNotificationBell, HeaderNotificationBell } from './NotificationBell';
 import { DashboardHome } from './DashboardHome';
 import { ReservationManager } from './ReservationManager';
 import { Settings } from './Settings';
@@ -317,7 +317,7 @@ export function Dashboard({ onSwitchSystem }: DashboardProps) {
               {navLabel(NAV_ITEMS.find(n => n.view === currentView)?.labelKey ?? 'nav.home')}
             </span>
           </div>
-          <NotificationBell collapsed={false} onNavigate={handleNotificationNavigate} />
+          <HeaderNotificationBell onNavigate={handleNotificationNavigate} />
         </header>
         <main className="min-h-screen pb-20 lg:pb-0 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
           {(currentView === 'home' || currentView === 'gift-cards') && <DashboardHome />}

@@ -281,6 +281,134 @@ export function NotificationBell({ collapsed = false, onNavigate }: Notification
   );
 }
 
+export function HeaderNotificationBell({ onNavigate }: { onNavigate?: (view: NavView, relatedId?: string | null) => void }) {
+  const { user } = useAuth();
+  const { notifications, readIds, markOneRead, markAllRead } = useNotifications(user?.id, 'header-notifications-realtime-v3');
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const handleMarkOne = (notif: AppNotification) => {
+    if (!user) return;
+    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
+    markOneRead(notif.id, user.id);
+    if (onNavigate) onNavigate(cfg.view, notif.related_id);
+    setOpen(false);
+  };
+
+  const handleMarkAll = () => {
+    if (!user) return;
+    markAllRead(user.id, notifications);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative flex-shrink-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-150"
+        aria-label="Benachrichtigungen"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 min-w-[14px] h-3.5 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 z-[9999] w-[calc(100vw-2rem)] max-w-[340px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-black/15 dark:shadow-black/50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">Benachrichtigungen</span>
+              {unreadCount > 0 && (
+                <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full">
+                  {unreadCount} neu
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleMarkAll}
+                disabled={unreadCount === 0}
+                className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-default"
+                title="Alle als gelesen markieren"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>Alle lesen</span>
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-y-auto max-h-80">
+            {notifications.length === 0 ? (
+              <div className="px-4 py-10 text-center">
+                <Bell className="w-8 h-8 text-slate-200 dark:text-slate-700 mx-auto mb-2" />
+                <p className="text-sm text-slate-400 dark:text-slate-500">Keine Benachrichtigungen</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                {notifications.map(notif => {
+                  const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.online_reservation;
+                  const Icon = cfg.icon;
+                  const isRead = readIds.has(notif.id);
+                  return (
+                    <button
+                      key={notif.id}
+                      onClick={() => handleMarkOne(notif)}
+                      className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-100 ${
+                        !isRead ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.bg}`}>
+                        <Icon className={`w-4 h-4 ${cfg.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={`text-sm font-medium leading-snug ${isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>
+                            {notif.title}
+                          </p>
+                          {!isRead && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5 leading-relaxed line-clamp-2">
+                          {notif.message}
+                        </p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-600 mt-1">
+                          {timeAgo(notif.created_at)}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 export function MobileNotificationBell({ onNavigate }: { onNavigate?: (view: NavView, relatedId?: string | null) => void }) {
   const { user } = useAuth();
   const { notifications, readIds, markOneRead, markAllRead } = useNotifications(user?.id, 'mobile-notifications-realtime-v3');
