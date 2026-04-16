@@ -40,6 +40,9 @@ export function ReservationWidget() {
   const [stripeError, setStripeError] = useState('');
   const [stripeEnabled, setStripeEnabled] = useState(true);
   const [stripeMode, setStripeMode] = useState<'test' | 'live'>('test');
+  const [vacancyMode, setVacancyMode] = useState(false);
+  const [vacancyMessage, setVacancyMessage] = useState('');
+  const [vacancyLoaded, setVacancyLoaded] = useState(false);
   const [roomAvailability, setRoomAvailability] = useState<Record<string, 'available' | 'unavailable' | 'checking' | 'unknown'>>({});
   const availabilityCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,7 +62,28 @@ export function ReservationWidget() {
     loadRooms();
     loadDepositAmount();
     loadStripeModeAndInitialize();
+    loadVacancySettings();
   }, []);
+
+  const loadVacancySettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['widget_vacancy_mode', 'widget_vacancy_message']);
+
+      if (data) {
+        const modeRow = data.find(r => r.key === 'widget_vacancy_mode');
+        const msgRow = data.find(r => r.key === 'widget_vacancy_message');
+        if (modeRow) setVacancyMode(modeRow.value === 'true');
+        if (msgRow) setVacancyMessage(msgRow.value || '');
+      }
+    } catch {
+      // On error, default to showing the widget normally
+    } finally {
+      setVacancyLoaded(true);
+    }
+  };
 
   useEffect(() => {
     selectedTablesRef.current = selectedTables;
@@ -791,21 +815,58 @@ export function ReservationWidget() {
   }
 
 
-  return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-8 px-safe bg-white rounded-3xl shadow-2xl ios-scroll">
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
-          <svg className="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+  if (!vacancyLoaded) {
+    return (
+      <div className="max-w-2xl mx-auto p-4 sm:p-8 bg-white rounded-3xl shadow-2xl">
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-8 h-8 border-3 border-slate-200 border-t-slate-600 rounded-full animate-spin" style={{ borderWidth: '3px' }} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-3">Wartungsarbeiten</h2>
-        <p className="text-slate-600 text-lg mb-2">Das Online-Reservierungssystem wird gerade gewartet.</p>
-        <p className="text-slate-500">Bitte versuchen Sie es sp&auml;ter erneut oder kontaktieren Sie uns direkt.</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (vacancyMode) {
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div className="h-2 bg-gradient-to-r from-slate-700 via-slate-500 to-slate-700" />
+        <div className="p-8 sm:p-12">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-8">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center">
+                <svg className="w-12 h-12 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center border-2 border-white">
+                <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 leading-tight">
+              Reservierungen derzeit nicht verfügbar
+            </h2>
+
+            <div className="w-12 h-0.5 bg-slate-200 rounded-full mb-5" />
+
+            <p className="text-slate-600 text-base sm:text-lg leading-relaxed max-w-md">
+              {vacancyMessage.trim()
+                ? vacancyMessage
+                : 'Liebe Gäste, Online-Reservierungen sind aktuell nicht möglich. Wir freuen uns, Sie in der nächsten Saison wieder bei uns begrüßen zu dürfen.'}
+            </p>
+
+            <div className="mt-8 w-full max-w-xs bg-slate-50 rounded-2xl px-6 py-5 border border-slate-100">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Kontakt</p>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Für Anfragen stehen wir Ihnen gerne per Telefon oder E-Mail zur Verfügung.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-8 px-safe bg-white rounded-3xl shadow-2xl ios-scroll">
